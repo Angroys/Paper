@@ -2395,5 +2395,29 @@
   "errorServer": "Paper is having trouble right now. Try again in a few minutes.",
   "@errorServer": {
     "description": "5xx error. Max 80 chars."
+  },
+  "aiVisualShow": "Show a visual",
+  "@aiVisualShow": {
+    "description": "Button on a complete ExplanationCard that asks for the visual aid (online only). Max 24 chars."
+  },
+  "authPasteLinkLabel": "Paste the link from your browser",
+  "@authPasteLinkLabel": {
+    "description": "Desktop fallback field in AuthBrowserWaitState when paper:// links can’t open the app. Max 40 chars."
+  },
+  "authPasteLinkInvalid": "That isn’t a Paper sign-in link. Copy the whole link and try again.",
+  "@authPasteLinkInvalid": {
+    "description": "Field error for authPasteLinkLabel. Max 80 chars."
+  },
+  "authNotConfigured": "Sign-in isn’t set up in this build of Paper.",
+  "@authNotConfigured": {
+    "description": "Sign-in status banner for builds without a Supabase config. Max 60 chars."
+  },
+  "settingsExportNotes": "Copy all notes",
+  "@settingsExportNotes": {
+    "description": "Settings › Account tile: copies every note on this device as plain text. Max 24 chars."
+  },
+  "settingsNotesCopied": "Notes copied.",
+  "@settingsNotesCopied": {
+    "description": "Snackbar after settingsExportNotes. Max 40 chars."
   }
 }
