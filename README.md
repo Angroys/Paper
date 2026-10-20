@@ -255,8 +255,9 @@ in "not configured" mode with fakes. They need no network and no secrets.
 
 ## CI
 
-`.github/workflows/ci.yml` runs on **every branch push, every `v*` tag, pull
-requests, and manual dispatch** (`workflow_dispatch`). Newer runs on the
+`.github/workflows/ci.yml` runs on **pushes to `main`, every `v*` tag, pull
+requests, and manual dispatch** (`workflow_dispatch`). Feature branches are
+built through their pull request, so each commit runs once. Newer runs on the
 same ref cancel older ones. The shared setup action
 (`.github/actions/setup-paper`) installs Flutter 3.47.7 and runs pub get,
 gen-l10n and build_runner.
