@@ -69,15 +69,10 @@ jobs:
 
       - uses: ./.github/actions/setup-paper
 
-      - name: Artifact label
+      # <ver> = tag without leading "v" on tag pushes, else the short sha.
+      - name: Version
         id: meta
-        shell: bash
-        run: |
-          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
-            echo "label=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
-          else
-            echo "label=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-          fi
+        run: bash scripts/ci/version.sh
 
       - name: Build APK (debug, unsigned)
         run: |
@@ -86,22 +81,22 @@ jobs:
             --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
             --dart-define=PAPER_API_BASE_URL="$PAPER_API_BASE_URL"
 
-      - name: Rename APK
+      - name: Stage APK
         env:
-          LABEL: ${{ steps.meta.outputs.label }}
+          VER: ${{ steps.meta.outputs.ver }}
         run: |
           mkdir -p dist
-          cp build/app/outputs/flutter-apk/app-debug.apk "dist/paper-android-debug-${LABEL}.apk"
+          cp build/app/outputs/flutter-apk/app-debug.apk "dist/Paper-${VER}-android.apk"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: paper-android-debug-apk-${{ steps.meta.outputs.label }}
-          path: dist/paper-android-debug-${{ steps.meta.outputs.label }}.apk
+          name: paper-android-debug-apk-${{ steps.meta.outputs.ver }}
+          path: dist/Paper-${{ steps.meta.outputs.ver }}-android.apk
           if-no-files-found: error
           retention-days: 14
 
   build-windows:
-    name: Build Windows (debug)
+    name: Build Windows (debug, zip + installer)
     needs: analyze-test
     runs-on: windows-latest
     timeout-minutes: 45
@@ -113,14 +108,9 @@ jobs:
 
       - uses: ./.github/actions/setup-paper
 
-      - name: Artifact label
+      - name: Version
         id: meta
-        run: |
-          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
-            echo "label=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
-          else
-            echo "label=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-          fi
+        run: bash scripts/ci/version.sh
 
       - name: Build Windows (debug)
         run: |
@@ -129,24 +119,50 @@ jobs:
             --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
             --dart-define=PAPER_API_BASE_URL="$PAPER_API_BASE_URL"
 
-      - name: Zip runner output
+      - name: Zip portable build
         shell: pwsh
         env:
-          LABEL: ${{ steps.meta.outputs.label }}
+          VER: ${{ steps.meta.outputs.ver }}
         run: |
           New-Item -ItemType Directory -Force -Path dist | Out-Null
           Compress-Archive -Path build/windows/x64/runner/Debug/* `
-            -DestinationPath "dist/paper-windows-debug-$env:LABEL.zip" -Force
+            -DestinationPath "dist/Paper-$env:VER-windows.zip" -Force
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress }
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe not found at $iscc" }
+
+      # pwsh, not bash: MSYS would rewrite the /D... switches as paths.
+      - name: Build installer (unsigned)
+        shell: pwsh
+        env:
+          VER: ${{ steps.meta.outputs.ver }}
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          $root = (Get-Location).Path
+          & $iscc `
+            "/DAppVersion=$env:VER" `
+            "/DSourceDir=$root\build\windows\x64\runner\Debug" `
+            "/DOutputDir=$root\dist" `
+            "/DOutputBaseFilename=Paper-$env:VER-windows-setup" `
+            installer\windows\paper.iss
+          if ($LASTEXITCODE -ne 0) { throw "iscc failed ($LASTEXITCODE)" }
+          if (-not (Test-Path "dist/Paper-$env:VER-windows-setup.exe")) { throw "installer missing" }
 
       - uses: actions/upload-artifact@v4
         with:
-          name: paper-windows-debug-${{ steps.meta.outputs.label }}
-          path: dist/paper-windows-debug-${{ steps.meta.outputs.label }}.zip
+          name: paper-windows-debug-${{ steps.meta.outputs.ver }}
+          path: |
+            dist/Paper-${{ steps.meta.outputs.ver }}-windows.zip
+            dist/Paper-${{ steps.meta.outputs.ver }}-windows-setup.exe
           if-no-files-found: error
           retention-days: 14
 
   build-macos:
-    name: Build macOS (debug)
+    name: Build macOS (debug DMG)
     needs: analyze-test
     runs-on: macos-latest
     timeout-minutes: 45
@@ -155,14 +171,9 @@ jobs:
 
       - uses: ./.github/actions/setup-paper
 
-      - name: Artifact label
+      - name: Version
         id: meta
-        run: |
-          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
-            echo "label=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
-          else
-            echo "label=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-          fi
+        run: bash scripts/ci/version.sh
 
       - name: Build macOS (debug)
         run: |
@@ -171,23 +182,27 @@ jobs:
             --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
             --dart-define=PAPER_API_BASE_URL="$PAPER_API_BASE_URL"
 
-      - name: Zip app bundle
+      - name: Package DMG (unsigned)
         env:
-          LABEL: ${{ steps.meta.outputs.label }}
+          VER: ${{ steps.meta.outputs.ver }}
         run: |
           mkdir -p dist
-          ditto -c -k --keepParent build/macos/Build/Products/Debug/Paper.app \
-            "dist/paper-macos-debug-${LABEL}.zip"
+          stage="$RUNNER_TEMP/dmg"
+          rm -rf "$stage" && mkdir -p "$stage"
+          ditto build/macos/Build/Products/Debug/Paper.app "$stage/Paper.app"
+          ln -s /Applications "$stage/Applications"
+          hdiutil create -volname Paper -srcfolder "$stage" -ov -format UDZO \
+            "dist/Paper-${VER}-macos.dmg"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: paper-macos-debug-${{ steps.meta.outputs.label }}
-          path: dist/paper-macos-debug-${{ steps.meta.outputs.label }}.zip
+          name: paper-macos-debug-${{ steps.meta.outputs.ver }}
+          path: dist/Paper-${{ steps.meta.outputs.ver }}-macos.dmg
           if-no-files-found: error
           retention-days: 14
 
   release:
-    name: Draft GitHub Release
+    name: GitHub prerelease
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [build-android, build-windows, build-macos]
     runs-on: ubuntu-latest
@@ -204,12 +219,16 @@ jobs:
       - name: List release files
         run: ls -la dist
 
+      # Prerelease (not draft) while builds are unsigned.
       - uses: softprops/action-gh-release@v2
         with:
-          draft: true
+          draft: false
+          prerelease: true
           name: Paper ${{ github.ref_name }}
           generate_release_notes: true
           fail_on_unmatched_files: true
           files: |
-            dist/*.apk
-            dist/*.zip
+            dist/Paper-*-android.apk
+            dist/Paper-*-windows-setup.exe
+            dist/Paper-*-windows.zip
+            dist/Paper-*-macos.dmg
