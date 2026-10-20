@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/app_settings.dart';
 import '../../theme/paper_tokens.dart';
+import '../panel/panel_session.dart';
 import 'reader_screen.dart';
 
 /// Library -> Reader fade-through (motion.md §2.1, catalog #2).
@@ -70,5 +73,29 @@ Page<void> buildReaderPage(GoRouterState state) => CustomTransitionPage<void>(
   transitionDuration: PaperMotion.page,
   reverseTransitionDuration: PaperMotion.page,
   transitionsBuilder: readerRouteTransition,
-  child: ReaderScreen(paperId: state.pathParameters['paperId']!),
+  child: ReaderRouteHost(paperId: state.pathParameters['paperId']!),
 );
+
+/// The reader route's root: applies Settings › Reader preferences to
+/// [ReaderScreen] and keeps the per-paper side panel sessions alive for the
+/// life of the route, so an Explain / Note request is never lost while its
+/// tab body is still unbuilt.
+class ReaderRouteHost extends ConsumerWidget {
+  const ReaderRouteHost({super.key, required this.paperId});
+
+  final String paperId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final prefs = ref.watch(readerPrefsProvider);
+    // listen (not watch): keep alive without rebuilding the reader.
+    ref
+      ..listen(explanationStackProvider(paperId), (_, _) {})
+      ..listen(noteRequestProvider(paperId), (_, _) {});
+    return ReaderScreen(
+      paperId: paperId,
+      singleKeyShortcuts: prefs.singleKeyShortcuts,
+      preferOverlayPanel: prefs.panelStyle == PanelStyle.overlay,
+    );
+  }
+}
