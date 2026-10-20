@@ -1,0 +1,36 @@
+name: Set up Paper (Flutter + codegen)
+description: >-
+  Installs the pinned Flutter SDK (with SDK + pub cache), resolves packages and
+  produces the generated sources that are not committed (l10n, drift/*.g.dart).
+
+inputs:
+  flutter-version:
+    description: Flutter SDK version (stable channel).
+    required: false
+    default: "3.47.7"
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Flutter ${{ inputs.flutter-version }}
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ inputs.flutter-version }}
+        channel: stable
+        cache: true
+
+    - name: Flutter version
+      shell: bash
+      run: flutter --version
+
+    - name: Resolve packages
+      shell: bash
+      run: flutter pub get
+
+    - name: Generate localizations
+      shell: bash
+      run: flutter gen-l10n
+
+    - name: Generate code (build_runner)
+      shell: bash
+      run: dart run build_runner build --delete-conflicting-outputs

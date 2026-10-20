@@ -1,0 +1,260 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Optional repository secrets. Empty values are fine: the app then boots in
+  # "not configured" mode. Passed via env (never inlined into run scripts).
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+  PAPER_API_BASE_URL: ${{ secrets.PAPER_API_BASE_URL }}
+  # Tag/release builds (v*) are offline-only test builds: no sign-in, sync
+  # or AI (lib/core/build_flags.dart). PR and main builds stay online.
+  PAPER_OFFLINE_ONLY: ${{ startsWith(github.ref, 'refs/tags/v') && 'true' || 'false' }}
+
+jobs:
+  analyze-test:
+    name: Analyze & test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install native toolchain (clang for pdfium_dart hook, sqlite3 for drift tests)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang libsqlite3-dev
+
+      - uses: ./.github/actions/setup-paper
+
+      - name: Check formatting (tracked sources only, generated code excluded)
+        run: |
+          git ls-files -z -- 'lib/*.dart' 'test/*.dart' \
+            | xargs -0 --no-run-if-empty dart format --output=none --set-exit-if-changed
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      # The same offline tests, compiled with the flag the release uses.
+      - name: Test (offline-only build flag)
+        run: flutter test --tags offline --dart-define=PAPER_OFFLINE_ONLY=true
+
+  build-android:
+    name: Build Android (debug APK)
+    needs: analyze-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install clang (pdfium_dart native-assets hook)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - uses: ./.github/actions/setup-paper
+
+      # <ver> = tag without leading "v" on tag pushes, else the short sha.
+      - name: Version
+        id: meta
+        run: bash scripts/ci/version.sh
+
+      - name: Build APK (debug, unsigned)
+        run: |
+          flutter build apk --debug \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+            --dart-define=PAPER_API_BASE_URL="$PAPER_API_BASE_URL" \
+            --dart-define=PAPER_OFFLINE_ONLY="$PAPER_OFFLINE_ONLY"
+
+      - name: Stage APK
+        env:
+          VER: ${{ steps.meta.outputs.ver }}
+        run: |
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-debug.apk "dist/Paper-${VER}-android.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paper-android-debug-apk-${{ steps.meta.outputs.ver }}
+          path: dist/Paper-${{ steps.meta.outputs.ver }}-android.apk
+          if-no-files-found: error
+          retention-days: 14
+
+  build-windows:
+    name: Build Windows (zip + installer)
+    needs: analyze-test
+    runs-on: windows-latest
+    timeout-minutes: 45
+    # Tag builds (v*) are release mode: a Debug runner links the debug MSVC
+    # CRT (vcruntime140d.dll etc.) and will not start on PCs without Visual
+    # Studio. Every other push/PR stays debug. Both are unsigned.
+    env:
+      BUILD_MODE: ${{ startsWith(github.ref, 'refs/tags/v') && 'release' || 'debug' }}
+      RUNNER_DIR: build/windows/x64/runner/${{ startsWith(github.ref, 'refs/tags/v') && 'Release' || 'Debug' }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: ./.github/actions/setup-paper
+
+      - name: Version
+        id: meta
+        run: bash scripts/ci/version.sh
+
+      - name: Build Windows (${{ env.BUILD_MODE }})
+        run: |
+          flutter build windows "--${BUILD_MODE}" \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+            --dart-define=PAPER_API_BASE_URL="$PAPER_API_BASE_URL" \
+            --dart-define=PAPER_OFFLINE_ONLY="$PAPER_OFFLINE_ONLY"
+
+      - name: Zip portable build
+        shell: pwsh
+        env:
+          VER: ${{ steps.meta.outputs.ver }}
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Compress-Archive -Path "$env:RUNNER_DIR/*" `
+            -DestinationPath "dist/Paper-$env:VER-windows.zip" -Force
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress }
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe not found at $iscc" }
+
+      # pwsh, not bash: MSYS would rewrite the /D... switches as paths.
+      - name: Build installer (unsigned)
+        shell: pwsh
+        env:
+          VER: ${{ steps.meta.outputs.ver }}
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          $root = (Get-Location).Path
+          & $iscc `
+            "/DAppVersion=$env:VER" `
+            "/DSourceDir=$(Join-Path $root $env:RUNNER_DIR)" `
+            "/DOutputDir=$root\dist" `
+            "/DOutputBaseFilename=Paper-$env:VER-windows-setup" `
+            installer\windows\paper.iss
+          if ($LASTEXITCODE -ne 0) { throw "iscc failed ($LASTEXITCODE)" }
+          if (-not (Test-Path "dist/Paper-$env:VER-windows-setup.exe")) { throw "installer missing" }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paper-windows-${{ env.BUILD_MODE }}-${{ steps.meta.outputs.ver }}
+          path: |
+            dist/Paper-${{ steps.meta.outputs.ver }}-windows.zip
+            dist/Paper-${{ steps.meta.outputs.ver }}-windows-setup.exe
+          if-no-files-found: error
+          retention-days: 14
+
+  build-macos:
+    name: Build macOS (debug DMG)
+    needs: analyze-test
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: ./.github/actions/setup-paper
+
+      - name: Version
+        id: meta
+        run: bash scripts/ci/version.sh
+
+      # Debug only. The debug .app is built for the runner's architecture,
+      # i.e. arm64-only on macos-latest (Apple Silicon); no Intel slice.
+      - name: Build macOS (debug)
+        run: |
+          flutter build macos --debug \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+            --dart-define=PAPER_API_BASE_URL="$PAPER_API_BASE_URL" \
+            --dart-define=PAPER_OFFLINE_ONLY="$PAPER_OFFLINE_ONLY"
+
+      - name: Package DMG (unsigned)
+        env:
+          VER: ${{ steps.meta.outputs.ver }}
+        run: |
+          mkdir -p dist
+          stage="$RUNNER_TEMP/dmg"
+          rm -rf "$stage" && mkdir -p "$stage"
+          ditto build/macos/Build/Products/Debug/Paper.app "$stage/Paper.app"
+          ln -s /Applications "$stage/Applications"
+          hdiutil create -volname Paper -srcfolder "$stage" -ov -format UDZO \
+            "dist/Paper-${VER}-macos.dmg"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paper-macos-debug-${{ steps.meta.outputs.ver }}
+          path: dist/Paper-${{ steps.meta.outputs.ver }}-macos.dmg
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: GitHub prerelease
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-android, build-windows, build-macos]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: paper-*
+          path: dist
+          merge-multiple: true
+
+      - name: List release files
+        run: ls -la dist
+
+      # Prerelease (not draft) while builds are unsigned.
+      - uses: softprops/action-gh-release@v2
+        with:
+          draft: false
+          prerelease: true
+          name: Paper ${{ github.ref_name }} (offline test build)
+          body: |
+            **Offline build — no sign-in, sync or AI.**
+
+            This test release is built with `--dart-define=PAPER_OFFLINE_ONLY=true`:
+            it opens straight into your library, keeps everything on this device and
+            makes no network calls. Import PDFs from files; highlights, notes and the
+            split view work as usual. Builds are unsigned (see the README,
+            "Installing test builds").
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            dist/Paper-*-android.apk
+            dist/Paper-*-windows-setup.exe
+            dist/Paper-*-windows.zip
+            dist/Paper-*-macos.dmg

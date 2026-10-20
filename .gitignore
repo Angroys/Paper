@@ -1,0 +1,56 @@
+# Orchestration / tooling (never commit)
+.handoffs/
+graphify-out/
+.codegraph/
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+build/
+coverage/
+*.iml
+.idea/
+.vscode/
+*.swp
+.DS_Store
+.metadata.bak
+
+# Generated code: produced locally and in CI, never committed.
+#   flutter gen-l10n                                   -> lib/l10n/app_localizations*.dart
+#   dart run build_runner build --delete-conflicting-outputs -> *.g.dart (drift, etc.)
+lib/l10n/app_localizations*.dart
+*.g.dart
+*.drift.dart
+*.freezed.dart
+*.mocks.dart
+
+# Secrets: real env files stay local. Only the example is tracked.
+env/*.json
+!env/example.json
+*.env
+.env*
+
+# Android
+android/.gradle/
+android/captures/
+android/gradlew
+android/gradlew.bat
+android/local.properties
+android/key.properties
+android/app/debug
+android/app/profile
+android/app/release
+android/**/GeneratedPluginRegistrant.java
+*.jks
+*.keystore
+
+# macOS
+macos/Flutter/ephemeral/
+macos/Pods/
+macos/**/xcuserdata/
+
+# Windows
+windows/flutter/ephemeral/

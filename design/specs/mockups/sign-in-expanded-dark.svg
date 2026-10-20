@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1194" height="834" viewBox="0 0 1194 834" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif">
+<title>Sign-in — expanded — dark</title>
+<desc>Sign-in, expanded (840–1199dp) tablet landscape, dark theme. 5/7 column split; email field focused.</desc>
+<defs><filter id="shadow2" x="-10%" y="-10%" width="120%" height="140%"><feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.10"/></filter><filter id="shadow3" x="-10%" y="-10%" width="120%" height="140%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#000000" flood-opacity="0.10"/></filter></defs>
+<rect x="0" y="0" width="1194" height="834" fill="#0a0a0a"/>
+<rect x="24.5" y="24.5" width="462.5" height="745" fill="#171717" rx="11.5" stroke="#262626" stroke-width="1"/>
+<rect x="64" y="174" width="303.5" height="380" fill="#ffffff" rx="4"/>
+<rect x="92" y="206" width="166.925" height="10" fill="#404040" rx="2"/>
+<rect x="92" y="224" width="106.225" height="6" fill="#a3a3a3" rx="2"/>
+<rect x="92" y="258" width="227.7" height="5" fill="#d4d4d4" rx="2"/>
+<rect x="92" y="280" width="217.8" height="5" fill="#d4d4d4" rx="2"/>
+<rect x="92" y="302" width="235.125" height="5" fill="#d4d4d4" rx="2"/>
+<rect x="92" y="324" width="148.5" height="5" fill="#d4d4d4" rx="2"/>
+<rect x="92" y="356" width="222.75" height="5" fill="#d4d4d4" rx="2"/>
+<rect x="88" y="372" width="240.65" height="18" fill="#818cf8" rx="3"/>
+<rect x="92" y="378" width="232.65" height="5" fill="#312e81" rx="2"/>
+<rect x="92" y="400" width="210.375" height="5" fill="#d4d4d4" rx="2"/>
+<rect x="92" y="422" width="240.075" height="5" fill="#d4d4d4" rx="2"/>
+<rect x="92" y="444" width="173.25" height="5" fill="#d4d4d4" rx="2"/>
+<rect x="92" y="466" width="222.75" height="5" fill="#d4d4d4" rx="2"/>
+<rect x="92" y="488" width="202.95" height="5" fill="#d4d4d4" rx="2"/>
+<rect x="134.5" y="444.5" width="332.5" height="149" fill="#262626" rx="11.5" stroke="#262626" stroke-width="1"/>
+<rect x="134" y="456" width="3" height="126" fill="#818cf8" rx="1.5"/>
+<text x="152" y="474" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="11" font-weight="600" fill="#818cf8" letter-spacing="0.44">IN EVERYDAY TERMS</text>
+<text x="152" y="500" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="400" fill="#d4d4d4">Each word looks at every other word and</text>
+<text x="152" y="522" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="400" fill="#d4d4d4">decides how much it matters — like a reader</text>
+<text x="152" y="544" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="400" fill="#d4d4d4">scanning a sentence for the words that</text>
+<text x="152" y="566" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="400" fill="#d4d4d4">explain the one they are stuck on.</text>
+<svg x="640.75" y="96" width="40" height="40" viewBox="18 18 72 72"><rect x="18" y="18" width="72" height="72" rx="14.4" fill="#171717"/><path d="M39 31H62L72 41V74A3 3 0 0 1 69 77H39A3 3 0 0 1 36 74V34A3 3 0 0 1 39 31Z" fill="#fafafa"/><path d="M62 31V38A3 3 0 0 0 65 41H72Z" fill="#d4d4d4"/><rect x="42" y="45" width="16" height="3.2" rx="1.6" fill="#404040"/><rect x="42" y="51.6" width="24" height="2.4" rx="1.2" fill="#a3a3a3"/><rect x="40.5" y="56.6" width="27" height="7" rx="2" fill="#818cf8"/><rect x="42" y="58.9" width="24" height="2.4" rx="1.2" fill="#312e81"/><rect x="42" y="67" width="18" height="2.4" rx="1.2" fill="#a3a3a3"/></svg>
+<text x="692.75" y="123" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="20" font-weight="600" fill="#f5f5f5" letter-spacing="-0.2">Paper</text>
+<text x="640.75" y="192" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="24" font-weight="600" fill="#f5f5f5" letter-spacing="-0.6">Sign in to Paper</text>
+<text x="640.75" y="220" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="400" fill="#d4d4d4">Read any paper without getting stuck.</text>
+<rect x="641.25" y="260.5" width="399" height="47" fill="#171717" rx="5.5" stroke="#737373" stroke-width="1"/>
+<g transform="translate(754.245 274) scale(0.4167)"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></g>
+<text x="786.245" y="288.9" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="500" fill="#f5f5f5">Continue with Google</text>
+<line x1="640.75" y1="338" x2="820.75" y2="338" stroke="#262626" stroke-width="1"/>
+<line x1="860.75" y1="338" x2="1040.75" y2="338" stroke="#262626" stroke-width="1"/>
+<text x="840.75" y="342.2" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="12" font-weight="500" fill="#a3a3a3" text-anchor="middle">or</text>
+<text x="640.75" y="378" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="500" fill="#f5f5f5">Email</text>
+<rect x="641.5" y="386.75" width="398.5" height="46.5" fill="#262626" rx="5.25" stroke="#818cf8" stroke-width="1.5"/>
+<text x="652.75" y="415.25" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="15" font-weight="400" fill="#f5f5f5">ana@university</text>
+<line x1="759.129" y1="401" x2="759.129" y2="419" stroke="#818cf8" stroke-width="1.5"/>
+<rect x="637.75" y="383" width="406" height="54" fill="none" rx="9" stroke="#818cf8" stroke-width="2"/>
+<text x="640.75" y="468" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="500" fill="#f5f5f5">Password</text>
+<rect x="641.25" y="476.5" width="399" height="47" fill="#262626" rx="5.5" stroke="#404040" stroke-width="1"/>
+<g transform="translate(1004.75 490) scale(0.8333)" fill="none" stroke="#d4d4d4" color="#d4d4d4" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></g>
+<rect x="640.75" y="548" width="400" height="48" fill="#818cf8" rx="6"/>
+<text x="818.321" y="576.9" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="500" fill="#1e1b4b">Sign in</text>
+<text x="640.75" y="626.9" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="500" fill="#818cf8">Forgot password?</text>
+<text x="1040.75" y="626.9" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="500" fill="#818cf8" text-anchor="end">Email me a sign-in link</text>
+<line x1="640.75" y1="652" x2="1040.75" y2="652" stroke="#262626" stroke-width="1"/>
+<text x="640.75" y="690.9" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="400" fill="#d4d4d4">New to Paper? </text>
+<text x="739.254" y="690.9" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="500" fill="#818cf8">Create an account</text>
+<text x="24" y="798" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="12" font-weight="500" fill="#d4d4d4">Terms  ·  Privacy Policy</text>
+<text x="1170" y="798" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="12" font-weight="400" fill="#a3a3a3" text-anchor="end">Version 1.0.0</text>
+</svg>
