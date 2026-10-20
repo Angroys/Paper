@@ -39,7 +39,7 @@ App
 │       └── Side panel tabs: Notes · Glossary · Explanation
 └── Settings  [top-level dest] /settings
     ├── Account
-    ├── Appearance (theme)
+    ├── Appearance (theme: System / Light / Dark, default Dark)
     ├── Reader
     ├── Storage & offline
     ├── Sync
@@ -54,27 +54,29 @@ Deep links: `paper://auth-callback` (OAuth return), `paper://paper/:id` (open a 
 
 ## 3. Window classes and breakpoints
 
+> **Naming = tokens.** Class ids are `PaperWindowClass` from `design/tokens/paper_tokens.dart` (`PaperBreakpoints`): `compact` < 600 · `medium` 600–839 · `expanded` 840–1199 · `large` 1200–1599 · `extraLarge` ≥ 1600. Brief terms map as: phone / tablet split-screen = `compact`, tablet portrait = `medium`, tablet landscape = `expanded`, laptop = `large`, large desktop = `extraLarge`. Panel widths and gutters below are UX values for design-ui to reconcile into tokens.
+
 | Class id | Width (dp) | Typical device | Nav pattern | Columns | Outer margin | Gutter |
 | --- | --- | --- | --- | --- | --- | --- |
-| `fallback` | < 600 | Phone, tablet split-screen 1/3, tiny desktop window | **Bottom NavigationBar** (2 dests) | 4 | 16 | 8 |
-| `compact` | 600 – 839 | Tablet portrait, half-split desktop | **NavigationRail** (collapsed, icons + labels below) | 8 | 24 | 16 |
-| `medium` | 840 – 1199 | Tablet landscape, small laptop window | **NavigationRail** (collapsed) | 12 | 24 | 24 |
-| `expanded` (laptop) | 1200 – 1599 | Laptop full-screen | **Extended rail / sidebar** (icon + label rows, 240dp, user-collapsible to rail) | 12 | 32 | 24 |
-| `large` (desktop) | ≥ 1600 | External monitor | **Extended sidebar** (256dp, default open) | 12 | 40 | 24 (content max-width 1440, centred in library/settings) |
+| `compact` | < 600 | Phone, tablet split-screen 1/3, tiny desktop window | **Bottom NavigationBar** (2 dests) | 4 | 16 | 8 |
+| `medium` | 600 – 839 | Tablet portrait, half-split desktop | **NavigationRail** (collapsed, icons + labels below) | 8 | 24 | 16 |
+| `expanded` | 840 – 1199 | Tablet landscape, small laptop window | **NavigationRail** (collapsed) | 12 | 24 | 24 |
+| `large` (laptop) | 1200 – 1599 | Laptop full-screen | **Extended rail / sidebar** (icon + label rows, 240dp, user-collapsible to rail) | 12 | 32 | 24 |
+| `extraLarge` (desktop) | ≥ 1600 | External monitor | **Extended sidebar** (256dp, default open) | 12 | 40 | 24 (content max-width 1440, centred in library/settings) |
 
-Hysteresis: to avoid flicker while a user drags a desktop window edge across a breakpoint, a class change commits only when width has been on the new side for ≥ 1 frame **and** ≥ 8dp past the boundary. (Engineering hint: `LayoutBuilder` → `WindowClass.of(width, previous)`.)
+Hysteresis: to avoid flicker while a user drags a desktop window edge across a breakpoint, a class change commits only when width has been on the new side for ≥ 1 frame **and** ≥ 8dp past the boundary. (Engineering hint: `LayoutBuilder` → `PaperWindowClass.of(width)` wrapped in an app-side hysteresis helper that also takes the previous class; the token resolver itself is stateless.)
 
-Height rule: if window height < 480dp on any class, the reader toolbar auto-hides on scroll (same as `fallback`) and the side panel cannot be in split mode (overlay only).
+Height rule: if window height < 480dp on any class, the reader toolbar auto-hides on scroll (same as `compact`) and the side panel cannot be in split mode (overlay only).
 
 ### 3.1 Navigation per class
 
 | Class | Library / Settings shell | Inside Reader |
 | --- | --- | --- |
-| `fallback` | Bottom bar: Library · Settings. SyncBadge in the top app bar trailing slot. | No nav bar. Back arrow in ReaderToolbar returns to Library. |
-| `compact` | NavigationRail (72dp) left: Library, Settings; SyncBadge pinned to rail bottom. | Rail hidden (reader is a full-screen route). Back arrow in toolbar. |
-| `medium` | Same as compact. | Same. |
-| `expanded` | Sidebar 240dp: app mark, Library, Settings, divider, SyncBadge row ("Synced · 2 min ago"), account chip at bottom. Collapse toggle → rail. | Sidebar hidden. Back arrow + breadcrumb "Library / {paper title}". |
-| `large` | Sidebar 256dp default open. | Same as expanded. |
+| `compact` | Bottom bar: Library · Settings. SyncBadge in the top app bar trailing slot. | No nav bar. Back arrow in ReaderToolbar returns to Library. |
+| `medium` | NavigationRail (72dp) left: Library, Settings; SyncBadge pinned to rail bottom. | Rail hidden (reader is a full-screen route). Back arrow in toolbar. |
+| `expanded` | Same as medium. | Same. |
+| `large` | Sidebar 240dp: app mark, Library, Settings, divider, SyncBadge row ("Synced · 2 min ago"), account chip at bottom. Collapse toggle → rail. | Sidebar hidden. Back arrow + breadcrumb "Library / {paper title}". |
+| `extraLarge` | Sidebar 256dp default open. | Same as large. |
 
 Rationale: the reader is a focus surface; the shell nav never coexists with the PDF (gives back 72–256dp of width on every class).
 
@@ -86,11 +88,11 @@ Side panel = **ReaderSidePanel** with tabs Notes · Glossary · Explanation (`sc
 
 | Class | Panel mode | Default width | Min | Max | Resize | Open by default? |
 | --- | --- | --- | --- | --- | --- | --- |
-| `fallback` | **Modal bottom sheet** (DraggableScrollableSheet: snap 40% / 90% height) | full width | — | — | Drag sheet handle vertically | No |
-| `compact` | **Overlay side sheet** from right, scrim over PDF, PDF does not resize | 360 | 320 | 85% width | No horizontal resize | No |
-| `medium` | **Resizable split** (PDF shrinks; overlay if the user prefers, Settings › Reader › "Panel style") | 360 | 300 | 50% window | SplitDragHandle | No (opens on first highlight-explain) |
-| `expanded` | **Resizable split** | 380 | 300 | 50% window | SplitDragHandle | Restores last state per device |
-| `large` | **Resizable split** | 420 | 320 | 45% window (and PDF never < 720) | SplitDragHandle | Restores last state; default open on first run |
+| `compact` | **Modal bottom sheet** (DraggableScrollableSheet: snap 40% / 90% height) | full width | — | — | Drag sheet handle vertically | No |
+| `medium` | **Overlay side sheet** from right, scrim over PDF, PDF does not resize | 360 | 320 | 85% width | No horizontal resize | No |
+| `expanded` | **Resizable split** (PDF shrinks; overlay if the user prefers, Settings › Reader › "Panel style") | 360 | 300 | 50% window | SplitDragHandle | No (opens on first highlight-explain) |
+| `large` | **Resizable split** | 380 | 300 | 50% window | SplitDragHandle | Restores last state per device |
+| `extraLarge` | **Resizable split** | 420 | 320 | 45% window (and PDF never < 720) | SplitDragHandle | Restores last state; default open on first run |
 
 **Constraint solver:** PDF viewport min width = 480dp. If a split would push the PDF below 480, the panel falls back to overlay mode for that window size (announced once via a non-blocking hint `readerPanelOverlayHint`).
 
@@ -110,12 +112,12 @@ Side panel = **ReaderSidePanel** with tabs Notes · Glossary · Explanation (`sc
 
 | Class | ReaderToolbar | PageNavigator | Zoom control | Tool modes (select / highlight / pen / figure) |
 | --- | --- | --- | --- | --- |
-| `fallback` | Top app bar 56dp: back, title (1 line, ellipsis), overflow menu. Auto-hides on scroll down, reappears on scroll up or tap on page margin. | Bottom floating pill "12 / 34" (tap → jump dialog) | Pinch only; zoom % in overflow | Bottom **ToolDock** (floating, 56dp tall, centred) |
-| `compact` | Top bar 64dp: back, title, ToolModeSegmented, panel toggle, overflow. Auto-hide on scroll. | Bottom-right floating pill | Pinch + overflow | In top bar (segmented, icons only) |
-| `medium` | Top bar 64dp, persistent (not auto-hide), all controls inline. | Inline in toolbar: `[‹] 12 / 34 [›]` | Inline: `[–] 125% [+]` + fit menu | Inline segmented, icon + tooltip |
-| `expanded` / `large` | Top bar 48dp (dense when pointer), persistent; title centred on macOS (in title-bar row, see §8). | Inline | Inline + fit-width / fit-page | Inline segmented with labels on `large` |
+| `compact` | Top app bar 56dp: back, title (1 line, ellipsis), overflow menu. Auto-hides on scroll down, reappears on scroll up or tap on page margin. | Bottom floating pill "12 / 34" (tap → jump dialog) | Pinch only; zoom % in overflow | Bottom **ToolDock** (floating, 56dp tall, centred) |
+| `medium` | Top bar 64dp: back, title, ToolModeSegmented, panel toggle, overflow. Auto-hide on scroll. | Bottom-right floating pill | Pinch + overflow | In top bar (segmented, icons only) |
+| `expanded` | Top bar 64dp, persistent (not auto-hide), all controls inline. | Inline in toolbar: `[‹] 12 / 34 [›]` | Inline: `[–] 125% [+]` + fit menu | Inline segmented, icon + tooltip |
+| `large` / `extraLarge` | Top bar 48dp (dense when pointer), persistent; title centred on macOS (in title-bar row, see §8). | Inline | Inline + fit-width / fit-page | Inline segmented with labels on `extraLarge` |
 
-Toolbars never overlap the PDF on `medium+` — they sit above it, so the PDF viewport is a stable rectangle (L1). On `compact`/`fallback`, auto-hide uses a transform/opacity animation, **not** a size change, so the PDF never re-lays out.
+Toolbars never overlap the PDF on `expanded+` — they sit above it, so the PDF viewport is a stable rectangle (L1). On `medium`/`compact`, auto-hide uses a transform/opacity animation, **not** a size change, so the PDF never re-lays out.
 
 Selection / citation popovers float over the PDF on all classes (see `screens/reader.md`).
 
@@ -152,7 +154,7 @@ Density switching does not animate layout of the PDF; only chrome (toolbar heigh
 
 ### macOS
 - Use a **unified, transparent title bar** (full-size content view). Traffic lights at top-left, inset **(x: 20, y: 18)** from window origin; reserve a **78 × 52dp** no-content zone top-left.
-- Title-bar row height **52dp** (merged with toolbar on `expanded/large`): sidebar occupies it at left (traffic lights sit over the sidebar header); in the reader, the ReaderToolbar *is* the title bar row — back button starts at x = 86.
+- Title-bar row height **52dp** (merged with toolbar on `large/extraLarge`): sidebar occupies it at left (traffic lights sit over the sidebar header); in the reader, the ReaderToolbar *is* the title bar row — back button starts at x = 86.
 - Empty toolbar regions are draggable (window move); double-click empty area = system zoom behaviour.
 - Full-screen mode: traffic lights hide; reclaim the 78dp reserve.
 - Native menu bar (PlatformMenuBar): Paper · File (Import from URL…, Import file…, Close paper) · Edit · View (Toggle side panel, Zoom in/out, Actual size, Enter full screen) · Window · Help. Menu items mirror shortcuts in §9.
@@ -164,7 +166,7 @@ Density switching does not animate layout of the PDF; only chrome (toolbar heigh
 - No menu bar; shortcuts discoverable through tooltips and a **Keyboard shortcuts** dialog (`Ctrl+/`).
 
 ### Window minimums
-- Min window size: **480 × 560dp** (falls into `fallback` layout). Default first-launch size: 1280 × 800, centred. Persist size/position per display.
+- Min window size: **480 × 560dp** (falls into `compact` layout). Default first-launch size: 1280 × 800, centred. Persist size/position per display.
 
 ---
 
@@ -196,7 +198,7 @@ Density switching does not animate layout of the PDF; only chrome (toolbar heigh
 | Toggle side panel | Ctrl+\ | Cmd+\ | R |
 | Side panel tab: Notes / Glossary / Explanation | Ctrl+Alt+1 / 2 / 3 | Cmd+Option+1 / 2 / 3 | R |
 | Highlight selection (last colour) | H | H | R (with selection) |
-| Highlight colour 1–5 | 1 … 5 | 1 … 5 | R (with selection / picker open) |
+| Highlight colour 1–6 (Yellow, Green, Blue, Pink, Purple, Orange) | 1 … 6 | 1 … 6 | R (with selection / picker open) |
 | Explain selection (AI) | E | E | R (with selection) |
 | Add note to selection | N | N | R (with selection) |
 | Copy selection | Ctrl+C | Cmd+C | R |
@@ -228,10 +230,10 @@ Names are canonical — design-ui, design-copy and Flutter engineers should use 
 | Component | Purpose |
 | --- | --- |
 | `AppShell` | Window-class-aware scaffold choosing bottom bar / rail / sidebar |
-| `WindowClass` | Enum + resolver (`fallback`, `compact`, `medium`, `expanded`, `large`) with hysteresis |
-| `AppNavigationBar` | Bottom nav (fallback) |
-| `AppNavigationRail` | Collapsed rail (compact/medium; collapsed expanded) |
-| `AppSidebar` | Extended sidebar (expanded/large) |
+| `PaperWindowClass` | Enum + resolver (`compact`, `medium`, `expanded`, `large`, `extraLarge`) with hysteresis |
+| `AppNavigationBar` | Bottom nav (compact) |
+| `AppNavigationRail` | Collapsed rail (medium/expanded; collapsed large) |
+| `AppSidebar` | Extended sidebar (large/extraLarge) |
 | `DesktopTitleBar` | macOS traffic-light reserve / Windows caption buttons + drag region |
 | `CaptionButtons` | Windows min/max/close |
 | `ShortcutsDialog` | Keyboard shortcuts reference |
@@ -265,14 +267,14 @@ Names are canonical — design-ui, design-copy and Flutter engineers should use 
 | `ReaderScreen` | Route scaffold: toolbar, PDF view, side panel |
 | `ReaderToolbar` | Top bar |
 | `ToolModeSegmented` | Select / Highlight / Pen / Figure modes |
-| `ToolDock` | Floating bottom variant (fallback) |
+| `ToolDock` | Floating bottom variant (compact) |
 | `PdfViewport` | pdfium-backed page list, zoom/pan |
 | `PageNavigator` | `‹ n / N ›` + jump |
 | `PageJumpDialog` | Go to page |
 | `ZoomControl` | −/% /+ and fit menu |
 | `FindBar` | In-document search |
 | `SelectionPopover` | Highlight / colour / Explain / Note / Copy |
-| `HighlightPicker` | 5 named colours + delete |
+| `HighlightPicker` | 6 named colours (`PaperHighlightColor`: Yellow default, Green, Blue, Pink, Purple, Orange) + delete |
 | `HighlightMark` | Rendered highlight overlay (text or ink) |
 | `InkLayer` | Stylus strokes → highlight geometry |
 | `FigureSelectionBox` | Rectangle capture for figure highlights |
@@ -311,4 +313,4 @@ Names are canonical — design-ui, design-copy and Flutter engineers should use 
 
 Onboarding (flow F1, no dedicated screen file): `onboardingReadTitle`, `onboardingReadBody`, `onboardingExplainTitle`, `onboardingExplainBody`, `onboardingOfflineTitle`, `onboardingOfflineBody`, `onboardingSkip`, `onboardingNext`, `onboardingGetStarted`, `onboardingPageIndicator`.
 
-Full key list across all screens is in each screen file and aggregated in the handoff.
+Full key list across all screens is in each screen file; the de-duplicated, sorted union is [`copy-keys.txt`](./copy-keys.txt) (one key per line) for ARB reconciliation.

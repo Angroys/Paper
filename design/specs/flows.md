@@ -31,7 +31,7 @@ Each flow states **one user goal** up front, then entry → steps → exit, ever
 | CTA | Persistent "Skip" on every page; "Get started" on page 3 | `onboardingSkip`, `onboardingNext`, `onboardingGetStarted` |
 
 - Swipe / arrow keys / PageDown advance; page indicator is a semantics `"Page {n} of 3"` (`onboardingPageIndicator`).
-- On `expanded+` the carousel is a single centred card (max 560dp), not full-bleed.
+- On `large+` the carousel is a single centred card (max 560dp), not full-bleed.
 - **Offline on first run with no session:** carousel works; Sign-in shows OfflineBanner (`authOfflineTitle`) and disables buttons with reason (not hidden).
 - After first successful sign-in, a single CoachMark on the Import button (`coachImportPaper`) — dismissible, never repeats.
 - No permissions are requested during onboarding (file picker permission is just-in-time at import).
@@ -153,11 +153,12 @@ Imported papers are **downloaded for offline by default** when imported from fil
 | **Mouse / trackpad** | Click-drag select → SelectionPopover; or press **H** for last colour | Hover over existing highlight shows outline; click opens HighlightPicker (change colour, add note, delete) |
 | **Figure** (figure mode, all inputs) | Drag a rectangle | FigureSelectionBox → Save as figure highlight (+ optional note) |
 
+Persistence: highlight colour and notes are local-first — see [Data-model gap](#data-model-gap-highlight-colour-notes-edit-timestamps-needs-cto-decision).
 States: created highlight is written to local DB immediately (optimistic, never waits for network) → SyncBadge pending count +1 → synced in background.
 Undo: snackbar `highlightCreatedUndo` for 5s (+ Mod+Z) after create/delete.
 Failure: local write failure (disk full) → `highlightSaveFailed` with Retry; highlight not shown as saved.
 
-Reading position: last page + zoom saved on page change (debounced 1s) and synced (LWW).
+Reading position: last page + zoom saved locally on page change (debounced 1s); device-local in v1 (no server column — see Data-model gap).
 
 ---
 
@@ -245,6 +246,39 @@ Delete while paper open in reader (other window/device): reader shows ReaderErro
 ```
 
 "Remove download" (frees disk, keeps paper in library) is a separate, non-destructive action and never shares the Delete affordance position.
+
+---
+
+## Data-model gap: highlight colour, notes, edit timestamps (needs CTO decision)
+
+**Gap (verified against RPR `supabase/migrations/`):**
+- `public.highlights` (`20250101000000_init_schema.sql`) has `id, user_id, paper_id, selected_text, context_before, context_after, page_number, position jsonb, created_at` — **no `color`, no `note`, no `updated_at`.** Server highlights are therefore create/delete-only; per-row LWW is impossible for them.
+- There is **no `notes` table** (neither highlight-attached nor free page notes).
+- `public.figure_highlights` (`20261004000000_figure_highlights.sql`) **does** have `note` and `updated_at` → figure notes can sync with LWW today.
+- `public.papers` has `title` and `read_at` but no reading-page column → last page + zoom has no server home.
+
+**Local-first fallback (v1 behaviour unless the CTO decides otherwise).** The local SQLite DB is the source of truth for everything below; the outbox only carries ops the server schema can accept.
+
+| Data | Stored locally (SQLite) | Synced to server? | Conflict rule |
+| --- | --- | --- | --- |
+| Highlight row (text, position, page) | `highlights` mirror of server columns + `sync_state` | **Yes** — create / delete | Create/delete only; no edit conflicts possible |
+| Highlight colour | `highlights.color` (enum of the 6 `PaperHighlightColor` names, default `yellow`) + `local_updated_at` | **No** — device-local | n/a. Highlights arriving from the server or web (no colour) render **Yellow** |
+| Note on a text highlight | `notes` (`id, paper_id, highlight_id, page_number, body, created_at, updated_at, sync_state='localOnly'`) | **No** — device-local | n/a |
+| Free page note | `notes` with `highlight_id = null` | **No** — device-local | n/a |
+| Note on a figure highlight | `figure_highlights.note` mirror | **Yes** — `figure_highlights.note` | LWW on server `updated_at` (F6) |
+| Reading position (page, zoom) | `reading_state` | **No** — device-local (`papers.read_at` is still updated on open) | n/a |
+| Rename / delete paper | `papers` mirror | **Yes** | LWW / tombstone (F6, F7) |
+
+**UX rules for device-local data (so nothing is silently lost):**
+- Device-local items never count as "pending" in `SyncBadge` (they will never sync, so a permanent pending count would be a lie).
+- Local-only notes show a small device glyph + `syncLocalOnlyBadge` ("On this device only") on `NoteCard`; tooltip/semantics `syncLocalOnlyExplainer`. Colours carry no marker (low stakes) but "How syncing works" (`syncHowItWorksBody`) states that colours and notes stay on this device in v1.
+- Sign out clears the local DB, so `SignOutDialog` adds `signOutLocalOnlyBody` ("{n} notes are only on this device and will be removed") whenever local-only notes exist, with the same [Cancel] default focus. No export in v1 (flag: copy-to-clipboard of all notes is a cheap mitigation the CTO may add).
+- Server deletes a highlight that has a local note → the note is not deleted; it becomes a free page note on the same page, quoting the highlight excerpt, and appears in SyncSheet › "Replaced versions" for 30 days.
+- Deleting a paper (F7) deletes its local-only notes and colours with it (same undo window).
+
+**CTO decision needed** — pick one before implementation of the sync layer:
+- **(A) Ship local-first as above** (no server change). Cross-device colour/notes parity is not available in v1.
+- **(B) Extend the server schema** (RPR migration: `highlights.color text`, `highlights.updated_at timestamptz`, a `notes` table with RLS, optional `papers.last_page`) and flip those rows to "Synced, LWW". The web app must tolerate/ignore the new columns. The UX in this spec holds for both: under (B) the "On this device only" marker and the sign-out warning simply never trigger.
 
 ---
 

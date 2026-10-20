@@ -6,13 +6,13 @@ Flows: [F4](../flows.md#f4-open--read--highlight), [F5](../flows.md#f5-ask-ai-ex
 ## Regions
 1. **ReaderToolbar** — back, title, `ToolModeSegmented`, `PageNavigator`, `ZoomControl`, find, panel toggle, overflow (Download/Remove download, Rename, Paper info, Shortcuts), `SyncBadge` (compact form).
 2. **PdfViewport** — continuous vertical scroll of pages (default), pinch/Mod+wheel zoom, pan when zoomed. Overlays: `HighlightMark`s, `InkLayer`, `FigureSelectionBox`, `SelectionPopover`, `CitationPopover`, `HighlightPicker`.
-3. **Floating chrome** — page pill (fallback/compact), `ToolDock` (fallback), "Back to page N" return pill after following an internal link/citation (bottom-centre).
+3. **Floating chrome** — page pill (compact/medium), `ToolDock` (compact), "Back to page N" return pill after following an internal link/citation (bottom-centre).
 4. **ReaderSidePanel** (split or overlay per class).
 5. **FindBar** (slides under toolbar).
 
 ## Wireframes
 
-### fallback (<600)
+### compact (<600)
 ```
 ┌──────────────────────────────┐
 │ ←  Attention Is All Yo…  ⋮   │ auto-hides on scroll down
@@ -27,7 +27,7 @@ Flows: [F4](../flows.md#f4-open--read--highlight), [F5](../flows.md#f5-ask-ai-ex
 └──────────────────────────────┘
 ```
 
-### compact (600–839, portrait tablet)
+### medium (600–839, portrait tablet)
 ```
 ┌──────────────────────────────────────────────┐
 │ ←  Attention Is All You Need   [▸|✎|🖊|▢]  ▤  ⋮ │ 64dp, auto-hide
@@ -41,7 +41,7 @@ Flows: [F4](../flows.md#f4-open--read--highlight), [F5](../flows.md#f5-ask-ai-ex
 Panel ▤ → overlay side sheet from right (360dp) with scrim.
 ```
 
-### medium (840–1199, landscape tablet) — split open
+### expanded (840–1199, landscape tablet) — split open
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │ ← Title…  [▸|✎|🖊|▢]  ‹ 12 / 34 ›  [–]125%[+]  🔍  ◎  ▤  ⋮          │ persistent 64dp
@@ -54,7 +54,7 @@ Panel ▤ → overlay side sheet from right (360dp) with scrim.
                                     SplitDragHandle
 ```
 
-### expanded / large (desktop) — macOS shown; Windows: caption buttons right instead of traffic lights left
+### large / extraLarge (desktop) — macOS shown; Windows: caption buttons right instead of traffic lights left
 ```
 ┌───────────────────────────────────────────────────────────────────────────────┐
 │ ●●●  ← Library / Attention Is All You Need   [Select|Highlight|Pen|Figure]     │
@@ -94,22 +94,22 @@ Esc / tapping the active mode returns to Select. Mode persists per device.
 Appears above selection (below if < 56dp space above; never covers selection). On touch, placed clear of the system selection handles.
 ```
 ┌───────────────────────────────────────────────────┐
-│ ● ● ● ● ●  │ ✦ Explain │ ✎ Note │ ⧉ Copy │ ⋯ │
-└───────────────────────────────────────────────────┘
+│ ● ● ● ● ● ●  │ ✦ Explain │ ✎ Note │ ⧉ Copy │ ⋯ │
+└─────────────────────────────────────────────────────┘
   └ HighlightPicker colours (tap = highlight in that colour)
 ```
 - ⋯ = Search the web for selection, Look up in Glossary (if exists).
 - Offline: Explain shows a small offline glyph; still tappable → queued card (F5).
-- Keyboard: popover is reachable via Tab from selection; shortcuts H, 1–5, E, N, Mod+C.
+- Keyboard: popover is reachable via Tab from selection; shortcuts H, 1–6, E, N, Mod+C.
 
 ## HighlightPicker (on existing highlight)
 Tap/click a highlight → picker anchored to it:
 ```
 ┌───────────────────────────────────────────┐
-│ ● ● ● ● ●   │ ✎ Note │ ✦ Explain │ 🗑 Delete │
-└───────────────────────────────────────────┘
+│ ● ● ● ● ● ●   │ ✎ Note │ ✦ Explain │ 🗑 Delete │
+└─────────────────────────────────────────────┘
 ```
-5 colours with names: Yellow, Green, Blue, Pink, Purple (keys `highlightColorYellow` … `highlightColorPurple`). Selected colour shows a check glyph, not just a ring. Hover (pointer) over a highlight shows an outline + tooltip of note preview if any.
+6 colours with names, in token order (`PaperHighlightColor`): Yellow (default), Green, Blue, Pink, Purple, Orange (keys `highlightColorYellow` … `highlightColorOrange`; shortcuts 1–6 in that order). Selected colour shows a check glyph, not just a ring. Hover (pointer) over a highlight shows an outline + tooltip of note preview if any.
 
 ## CitationPopover
 Tap/click an in-text citation marker ([12], (Smith 2020)) → anchored dialog:
@@ -128,7 +128,9 @@ Tap/click an in-text citation marker ([12], (Smith 2020)) → anchored dialog:
 States: loading metadata (skeleton lines), resolved, not resolvable (`citationNotFound` – raw reference text only), importing (`importInProgress`), imported (`citationImported` [Open]), in library (`citationInLibrary` [Open]), error (`citationImportFailed` [Retry]). "Go to reference" jumps and shows the "Back to page N" pill.
 
 ## Notes on highlights
-`NoteEditorInline` opens from Note: multi-line field anchored near highlight (compact) or focuses the Notes tab with the new note (split classes). Autosaves on blur / 1s idle; never a Save button only.
+> Colour and notes persistence: see [flows.md › Data-model gap](../flows.md#data-model-gap-highlight-colour-notes-edit-timestamps-needs-cto-decision). Until the CTO decides, colour and notes are local-first (SQLite) and sync only where the server schema has a column.
+
+`NoteEditorInline` opens from Note: multi-line field anchored near highlight (`compact` / `medium`, no split) or focuses the Notes tab with the new note (split classes). Autosaves on blur / 1s idle; never a Save button only.
 
 ## FindBar
 `[🔍 term____] 3 of 17 [↑][↓] [Aa] [×]` — matches highlighted transiently; results count announced.
@@ -150,7 +152,7 @@ States: loading metadata (skeleton lines), resolved, not resolvable (`citationNo
 `ReaderScreen`, `ReaderToolbar`, `ToolModeSegmented`, `ToolDock`, `PdfViewport`, `PageNavigator`, `PageJumpDialog`, `ZoomControl`, `FindBar`, `SelectionPopover`, `HighlightPicker`, `HighlightMark`, `InkLayer`, `FigureSelectionBox`, `CitationPopover`, `NoteEditorInline`, `StylusModeHint`, `ReaderLoadingState`, `ReaderErrorState`, `SyncBadge`, `ReaderSidePanel`, `SplitDragHandle`, `AppSnackbar`.
 
 ## Microcopy keys
-`readerBack`, `readerBackToPage`, `readerToolSelect`, `readerToolHighlight`, `readerToolPen`, `readerToolFigure`, `readerToolEraser`, `readerPageIndicator`, `readerPrevPage`, `readerNextPage`, `readerGoToPage`, `readerPageJumpTitle`, `readerPageJumpField`, `readerPageOutOfRange`, `readerZoomIn`, `readerZoomOut`, `readerZoomLevel`, `readerFitWidth`, `readerFitPage`, `readerFind`, `readerFindResultCount`, `readerFindNoResults`, `readerFindMatchCase`, `readerTogglePanel`, `readerMore`, `readerPaperInfo`, `readerDownloading`, `readerDownloadFailed`, `readerRenderFailed`, `readerRedownload`, `readerPaperDeleted`, `readerFirstHighlightHint`, `readerFirstHighlightHintPen`, `readerStylusHint`, `readerStylusAutoSwitchOff`, `readerNoTextLayer`, `readerGotIt`, `selectionExplain`, `selectionExplainOffline`, `selectionNote`, `selectionCopy`, `selectionCopied`, `selectionMore`, `selectionSearchWeb`, `selectionLookUpGlossary`, `highlightColorYellow`, `highlightColorGreen`, `highlightColorBlue`, `highlightColorPink`, `highlightColorPurple`, `highlightDelete`, `highlightCreatedUndo`, `highlightDeletedUndo`, `highlightSaveFailed`, `highlightAnnouncement`, `figureSaveHighlight`, `figureAddNote`, `figureCancel`, `citationLoading`, `citationNotFound`, `citationImport`, `citationOpenLink`, `citationGoToReference`, `citationImported`, `citationInLibrary`, `citationOpen`, `citationImportFailed`, `citationOfflineHint`, `noteInlinePlaceholder`, `noteSaved`, `readerFindActOnMatch`.
+`readerBack`, `readerBackToPage`, `readerToolSelect`, `readerToolHighlight`, `readerToolPen`, `readerToolFigure`, `readerToolEraser`, `readerPageIndicator`, `readerPrevPage`, `readerNextPage`, `readerGoToPage`, `readerPageJumpTitle`, `readerPageJumpField`, `readerPageOutOfRange`, `readerZoomIn`, `readerZoomOut`, `readerZoomLevel`, `readerFitWidth`, `readerFitPage`, `readerFind`, `readerFindResultCount`, `readerFindNoResults`, `readerFindMatchCase`, `readerTogglePanel`, `readerMore`, `readerPaperInfo`, `readerDownloading`, `readerDownloadFailed`, `readerRenderFailed`, `readerRedownload`, `readerPaperDeleted`, `readerFirstHighlightHint`, `readerFirstHighlightHintPen`, `readerStylusHint`, `readerStylusAutoSwitchOff`, `readerNoTextLayer`, `readerGotIt`, `selectionExplain`, `selectionExplainOffline`, `selectionNote`, `selectionCopy`, `selectionCopied`, `selectionMore`, `selectionSearchWeb`, `selectionLookUpGlossary`, `highlightColorYellow`, `highlightColorGreen`, `highlightColorBlue`, `highlightColorPink`, `highlightColorPurple`, `highlightColorOrange`, `highlightDelete`, `highlightCreatedUndo`, `highlightDeletedUndo`, `highlightSaveFailed`, `highlightAnnouncement`, `figureSaveHighlight`, `figureAddNote`, `figureCancel`, `citationLoading`, `citationNotFound`, `citationImport`, `citationOpenLink`, `citationGoToReference`, `citationImported`, `citationInLibrary`, `citationOpen`, `citationImportFailed`, `citationOfflineHint`, `noteInlinePlaceholder`, `noteSaved`, `readerFindActOnMatch`.
 
 ## Accessibility
 - Page semantics: each page node labelled `readerPageIndicator` ("Page 12 of 34") with its extracted text; screen readers can read linearly.

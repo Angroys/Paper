@@ -5,11 +5,11 @@ Flows: [F3 Import](../flows.md#f3-import-paper-url--file), [F4 Open](../flows.md
 
 ## Regions
 1. **Nav** (per class: bottom bar / rail / sidebar) with `SyncBadge`.
-2. **LibraryHeader**: title "Library", `LibrarySearchField`, `ImportButton` (→ `ImportMenu`), sort menu (Recently opened · Recently added · Title A–Z), view toggle (grid / list; list is default on `expanded+` with pointer, grid on touch).
+2. **LibraryHeader**: title "Library", `LibrarySearchField`, `ImportButton` (→ `ImportMenu`), sort menu (Recently opened · Recently added · Title A–Z), view toggle (grid / list; list is default on `large+` with pointer, grid on touch).
 3. **Filter chips** (single row, scrollable): All · Downloaded · Unread. (`libraryFilterAll`, `libraryFilterDownloaded`, `libraryFilterUnread`)
 4. **Import progress zone**: `ImportProgressTile`s pinned above the list.
 5. **Content**: `PaperGrid` of `PaperCard` or `PaperList` of `PaperRow`.
-6. **Transient**: `AppSnackbar` / `DeleteUndoSnackbar` bottom (above bottom bar on fallback).
+6. **Transient**: `AppSnackbar` / `DeleteUndoSnackbar` bottom (above bottom bar on compact).
 
 ## PaperCard anatomy
 ```
@@ -39,7 +39,7 @@ When offline, `cloudOnly` cards render dimmed (structure: reduced emphasis, not 
 
 ## Wireframes
 
-### fallback (<600)
+### compact (<600)
 ```
 ┌──────────────────────────────┐
 │ Library              [◎ Sync]│ top app bar
@@ -55,22 +55,22 @@ When offline, `cloudOnly` cards render dimmed (structure: reduced emphasis, not 
 └──────────────────────────────┘
 ```
 
-### compact (600–839) / medium (840–1199)
+### medium (600–839) / expanded (840–1199)
 ```
 ┌────┬───────────────────────────────────────────────┐
 │ ▣  │ Library                    [🔍 Search ⌘K ] [＋ Import ▾] │
 │Lib │ (All)(Downloaded)(Unread)      Sort ▾  [▦|☰] │
 │    │ ┌ ImportProgressTile: Importing arxiv.org/… ━━━━  [×] ┐ │
-│ ⚙  │ ┌──────┐ ┌──────┐ ┌──────┐ (┌──────┐ medium)   │
+│ ⚙  │ ┌──────┐ ┌──────┐ ┌──────┐ (┌──────┐ expanded)   │
 │Set │ │ card │ │ card │ │ card │  │ card │          │
 │    │ └──────┘ └──────┘ └──────┘  └──────┘          │
 │    │                                               │
 │ ◎  │                                               │ ← SyncBadge at rail bottom
 └────┴───────────────────────────────────────────────┘
 ```
-Grid: compact 3 columns (card min 168dp), medium 4–5 (card min 180dp). Auto-fill by min width.
+Grid: medium 3 columns (card min 168dp), expanded 4–5 (card min 180dp). Auto-fill by min width.
 
-### expanded / large (sidebar + list default)
+### large / extraLarge (sidebar + list default)
 ```
 ┌─────────────┬──────────────────────────────────────────────────────────────┐
 │ ●●●  Paper  │ Library                      [🔍 Search papers    ⌘K] [＋ Import ▾]│
@@ -85,7 +85,7 @@ Grid: compact 3 columns (card min 168dp), medium 4–5 (card min 180dp). Auto-fi
 │ (A) Ana  ▾  │                                                              │
 └─────────────┴──────────────────────────────────────────────────────────────┘
 ```
-`large`: content max width 1440 centred; grid 6 columns if grid view.
+`extraLarge`: content max width 1440 centred; grid 6 columns if grid view.
 
 ## States
 

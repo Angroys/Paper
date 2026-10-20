@@ -6,9 +6,9 @@ Flow: [F6](../flows.md#f6-offline-edit--reconnect--sync-last-write-wins).
 ## Placement per window class
 | Class | SyncBadge placement | Form | Opens |
 | --- | --- | --- | --- |
-| fallback | Top app bar trailing (Library/Settings); reader overflow row | icon only (+ count dot) | `SyncSheet` as modal bottom sheet |
-| compact / medium | Rail bottom; reader toolbar (icon) | icon + count dot | `SyncSheet` as anchored popover (medium) / bottom sheet (compact) |
-| expanded / large | Sidebar row above account chip; reader toolbar (icon + short text) | icon + text "Synced · 2 min ago" | anchored popover (360dp) |
+| compact | Top app bar trailing (Library/Settings); reader overflow row | icon only (+ count dot) | `SyncSheet` as modal bottom sheet |
+| medium / expanded | Rail bottom; reader toolbar (icon) | icon + count dot | `SyncSheet` as anchored popover (expanded) / bottom sheet (medium) |
+| large / extraLarge | Sidebar row above account chip; reader toolbar (icon + short text) | icon + text "Synced · 2 min ago" | anchored popover (360dp) |
 
 ## States
 | State | Icon slot | Short text key | Long text key | Live announce? | Action |
@@ -58,6 +58,7 @@ Pending list groups by type per paper; collapses beyond 5 rows ("and {n} more", 
 
 ## Edge cases
 - Clock skew: LWW uses server-assigned `updated_at` on accept, not device clock, for ordering final state; device time only orders the local outbox.
+- Device-local data (highlight colours, text-highlight notes, free page notes, reading position — see [flows.md › Data-model gap](../flows.md#data-model-gap-highlight-colour-notes-edit-timestamps-needs-cto-decision)) never enters the outbox and never counts as pending.
 - Very large outbox (> 500 ops): progress shown; app remains usable; sync runs in background isolate.
 - Sign-out with pending: see settings.md `SignOutDialog`.
 - Auth expired: error state with [Sign in again]; outbox retained across re-auth for the same user id only.
@@ -66,7 +67,7 @@ Pending list groups by type per paper; collapses beyond 5 rows ("and {n} more", 
 `SyncBadge`, `SyncSheet`, `ConflictNotice`, `AppSnackbar`, `OfflineBanner`.
 
 ## Microcopy keys
-`syncStateSynced`, `syncStateSyncing`, `syncStatePending`, `syncStateOffline`, `syncStateError`, `syncLastSynced`, `syncNeverSynced`, `syncProgress`, `syncPendingCount`, `syncPendingOffline`, `syncOfflineNoChanges`, `syncErrorSummary`, `syncAuthExpired`, `syncSignInAgain`, `syncNow`, `syncRetry`, `syncDetails`, `syncDiscard`, `syncKeepAsNewNote`, `syncItemPaperDeleted`, `syncItemRejected`, `syncAndMore`, `syncChangeHighlights`, `syncChangeNotes`, `syncChangeRename`, `syncChangeDelete`, `syncChangeReadingPosition`, `syncChangeUpload`, `syncConflictSummary`, `syncReview`, `syncReplacedVersions`, `syncReplacedYours`, `syncReplacedKept`, `syncRestoreMine`, `syncDismiss`, `syncReplacedExpiry`, `syncHowItWorksTitle`, `syncHowItWorksBody`, `syncSettingsLink`, `syncBadgeSemantics`.
+`syncStateSynced`, `syncStateSyncing`, `syncStatePending`, `syncStateOffline`, `syncStateError`, `syncLastSynced`, `syncNeverSynced`, `syncProgress`, `syncPendingCount`, `syncPendingOffline`, `syncOfflineNoChanges`, `syncErrorSummary`, `syncAuthExpired`, `syncSignInAgain`, `syncNow`, `syncRetry`, `syncDetails`, `syncDiscard`, `syncKeepAsNewNote`, `syncItemPaperDeleted`, `syncItemRejected`, `syncAndMore`, `syncChangeHighlights`, `syncChangeNotes`, `syncChangeRename`, `syncChangeDelete`, `syncChangeReadingPosition`, `syncChangeUpload`, `syncConflictSummary`, `syncReview`, `syncReplacedVersions`, `syncReplacedYours`, `syncReplacedKept`, `syncRestoreMine`, `syncDismiss`, `syncReplacedExpiry`, `syncHowItWorksTitle`, `syncHowItWorksBody`, `syncSettingsLink`, `syncBadgeSemantics`, `syncLocalOnlyBadge`, `syncLocalOnlyExplainer`.
 
 ## Accessibility
 - SyncBadge is a button with full long-form label in semantics (`syncBadgeSemantics`: "Sync status: {long text}. Opens details"), even when visually icon-only.

@@ -14,7 +14,7 @@ Flow: [flows.md › F2](../flows.md#f2-sign-in). Layout rules: [layout-system.md
 
 ## Wireframes
 
-### fallback (<600) and compact (600–839, portrait)
+### compact (<600) and medium (600–839, portrait)
 ```
 ┌──────────────────────────────┐
 │          [ logo ]            │
@@ -39,7 +39,7 @@ Flow: [flows.md › F2](../flows.md#f2-sign-in). Layout rules: [layout-system.md
 ```
 Form column max width 400dp, centred; scrolls with IME.
 
-### medium (840–1199) / expanded / large
+### expanded (840–1199) / large / extraLarge
 ```
 ┌───────────────────────────────────────────────────────────────┐
 │ [traffic lights / caption buttons reserve]          drag area │
@@ -58,7 +58,7 @@ Form column max width 400dp, centred; scrolls with IME.
 │ Terms · Privacy                                     v1.0.0    │
 └───────────────────────────────────────────────────────────────┘
 ```
-Two columns 5/7 of 12-col grid on `medium`, 6/6 on `large`. Brand panel hidden when height < 560.
+Two columns 5/7 of 12-col grid on `expanded`, 6/6 on `extraLarge`. Brand panel hidden when height < 560.
 
 ### AuthBrowserWaitState (replaces regions 3–5)
 ```

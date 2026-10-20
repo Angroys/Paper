@@ -9,11 +9,11 @@ Flows: [F5](../flows.md#f5-ask-ai-explanation--glossary--citations--visuals-with
 3. **Tab footer** (Notes only): "New note" composer.
 4. **Offline/AI-unavailable strip** (Glossary + Explanation tabs, when applicable).
 
-Container per class: bottom sheet (fallback) · overlay side sheet (compact) · split with `SplitDragHandle` (medium+).
+Container per class: bottom sheet (compact) · overlay side sheet (medium) · split with `SplitDragHandle` (expanded+).
 
 ## Wireframes
 
-### Split (medium+), Explanation tab active
+### Split (expanded+), Explanation tab active
 ```
 ╫─┬───────────────────────────────────┐
 ║ │ [Notes] [Glossary] [Explanation•]  ✕ │  • = new unread result badge
@@ -36,7 +36,7 @@ Container per class: bottom sheet (fallback) · overlay side sheet (compact) · 
 ╨─┴───────────────────────────────────┘
 ```
 
-### Bottom sheet (fallback)
+### Bottom sheet (compact)
 ```
 ┌──────────────────────────────┐
 │ (page, dimmed above 40%)     │
@@ -63,6 +63,7 @@ Container per class: bottom sheet (fallback) · overlay side sheet (compact) · 
 │ [ + New note on page 12 _________ ]  │ paper-level note composer
 ```
 Sort: Page order (default) · Recently edited. Notes = (a) notes attached to highlights/figure highlights, (b) free notes anchored to a page.
+Persistence: notes on text highlights and free page notes are **device-local** in v1 (RPR has no notes table) and carry the `syncLocalOnlyBadge` marker; figure-highlight notes sync via `figure_highlights.note`. See [flows.md › Data-model gap](../flows.md#data-model-gap-highlight-colour-notes-edit-timestamps-needs-cto-decision) (needs CTO decision).
 
 ### Glossary tab
 ```
@@ -97,7 +98,7 @@ Panel-level: when online returns, queued cards transition to pending automatical
 `ReaderSidePanel`, `SplitDragHandle`, `PanelTabBar`, `NotesList`, `NoteCard`, `NoteEditor`, `GlossaryList`, `GlossaryTermTile`, `ExplanationStack`, `ExplanationCard`, `VisualAidPlayer`, `AiOfflineState`, `OfflineBanner` (strip variant), `EmptyState`, `SkeletonRow`, `InlineError`.
 
 ## Microcopy keys
-`panelTabNotes`, `panelTabGlossary`, `panelTabExplanation`, `panelClose`, `panelTabNewResult`, `notesEmptyTitle`, `notesEmptyBody`, `notesEmptyBodyPen`, `notesLoadFailed`, `notesSortPageOrder`, `notesSortRecent`, `notesComposerPlaceholder`, `notesEditedAgo`, `notesPendingSync`, `notesSyncFailed`, `noteDelete`, `noteDeletedUndo`, `noteJumpToHighlight`, `glossaryFilterHint`, `glossaryEmptyTitle`, `glossaryEmptyBody`, `glossaryLoadFailed`, `glossaryNoCachedExplanation`, `glossaryOfflineUncached`, `glossaryExplainAgain`, `explanationEmptyTitle`, `explanationEmptyBody`, `explanationPending`, `explanationReexplain`, `explanationReexplaining`, `explanationRateLabel`, `explanationRated`, `explanationJumpToPage`, `explanationAnalogyHeading`, `explanationFormalHeading`, `aiExplainFailed`, `aiReexplainFailed`, `aiRetry`, `aiOfflineStrip`, `aiOfflineCardTitle`, `aiOfflineCardBody`, `aiExplainWhenOnline`, `aiCachedExplanation`, `aiVisualOffline`, `aiVisualPlay`, `aiVisualPause`, `aiVisualSeek`, `aiNeedsConnection`, `aiUnavailableTitle`, `aiUnavailableBody`.
+`panelTabNotes`, `panelTabGlossary`, `panelTabExplanation`, `panelClose`, `panelTabNewResult`, `notesEmptyTitle`, `notesEmptyBody`, `notesEmptyBodyPen`, `notesLoadFailed`, `notesSortPageOrder`, `notesSortRecent`, `notesComposerPlaceholder`, `notesEditedAgo`, `notesPendingSync`, `notesSyncFailed`, `syncLocalOnlyBadge`, `noteDelete`, `noteDeletedUndo`, `noteJumpToHighlight`, `glossaryFilterHint`, `glossaryEmptyTitle`, `glossaryEmptyBody`, `glossaryLoadFailed`, `glossaryNoCachedExplanation`, `glossaryOfflineUncached`, `glossaryExplainAgain`, `explanationEmptyTitle`, `explanationEmptyBody`, `explanationPending`, `explanationReexplain`, `explanationReexplaining`, `explanationRateLabel`, `explanationRated`, `explanationJumpToPage`, `explanationAnalogyHeading`, `explanationFormalHeading`, `aiExplainFailed`, `aiReexplainFailed`, `aiRetry`, `aiOfflineStrip`, `aiOfflineCardTitle`, `aiOfflineCardBody`, `aiExplainWhenOnline`, `aiCachedExplanation`, `aiVisualOffline`, `aiVisualPlay`, `aiVisualPause`, `aiVisualSeek`, `aiNeedsConnection`, `aiUnavailableTitle`, `aiUnavailableBody`.
 
 ## Accessibility
 - Panel is a `complementary` region labelled by the active tab; tab bar uses tab semantics with selected state.
