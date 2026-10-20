@@ -26,3 +26,13 @@ Widget testApp(Widget home, {ThemeMode themeMode = ThemeMode.dark}) =>
       supportedLocales: AppLocalizations.supportedLocales,
       home: home,
     );
+
+/// Unmounts the tree (disposing the ProviderScope) inside the test, then
+/// lets drift's zero-duration stream-close timers run, so no timer is left
+/// pending when the test ends.
+Future<void> disposeTree(WidgetTester tester) async {
+  await tester.pumpWidget(const SizedBox.shrink());
+  for (var i = 0; i < 3; i++) {
+    await tester.pump(const Duration(milliseconds: 1));
+  }
+}

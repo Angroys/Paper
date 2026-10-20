@@ -23,6 +23,7 @@ void main() {
     final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
     expect(app.themeMode, ThemeMode.dark);
     expect(app.themeAnimationDuration, Duration.zero);
+    await disposeTree(tester);
   });
 
   testWidgets('navigates to settings and to the full-screen reader', (
@@ -33,6 +34,11 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Settings').first);
+    await tester.pumpAndSettle();
+    // Master–detail on large windows: open the Appearance section.
+    await tester.tap(
+      find.byKey(const ValueKey<String>('settings-nav-appearance')),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Theme'), findsOneWidget);
 
@@ -45,5 +51,6 @@ void main() {
     // The reader is outside the shell: no navigation chrome.
     expect(find.byType(NavigationRail), findsNothing);
     expect(find.byType(NavigationBar), findsNothing);
+    await disposeTree(tester);
   });
 }
