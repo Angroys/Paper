@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../domain/domain.dart';
 import 'env.dart';
+import 'network_connectivity_service.dart';
 
 /// Compile-time config. `main()` overrides this with [Env.fromEnvironment];
 /// tests get [Env.unconfigured] by default.
@@ -26,13 +29,18 @@ final deepLinkServiceProvider = Provider<DeepLinkService>(
   (ref) => const NoDeepLinkService(),
 );
 
-/// Online/offline signal.
-///
-/// Placeholder: always online. The data-layer agent replaces the body with
-/// a connectivity_plus + ping implementation.
-final connectivityServiceProvider = Provider<ConnectivityService>(
-  (ref) => const AlwaysOnlineConnectivityService(),
-);
+/// Online/offline signal: connectivity_plus + a ping to the Supabase auth
+/// health endpoint (any HTTP answer = reachable). Unconfigured builds
+/// (tests) are always online.
+final connectivityServiceProvider = Provider<ConnectivityService>((ref) {
+  final env = ref.watch(envProvider);
+  if (!env.isConfigured) return const AlwaysOnlineConnectivityService();
+  final service = NetworkConnectivityService.create(
+    pingUri: Uri.parse(env.supabaseUrl).replace(path: '/auth/v1/health'),
+  );
+  ref.onDispose(() => unawaited(service.dispose()));
+  return service;
+});
 
 /// Convenience stream of online state for widgets.
 final isOnlineProvider = StreamProvider<bool>(
