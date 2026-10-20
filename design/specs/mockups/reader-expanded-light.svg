@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1194" height="834" viewBox="0 0 1194 834" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif">
+<title>Reader — expanded — light</title>
+<desc>Reader, expanded (840–1199dp) tablet landscape, light theme, touch density (64dp toolbar). Text selection with SelectionPopover; existing yellow/green/blue highlights, AI term and citation marks.</desc>
+<defs><filter id="shadow2" x="-10%" y="-10%" width="120%" height="140%"><feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.10"/></filter><filter id="shadow3" x="-10%" y="-10%" width="120%" height="140%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#000000" flood-opacity="0.10"/></filter></defs>
+<rect x="0" y="0" width="1194" height="834" fill="#fafafa"/>
+<rect x="0" y="64" width="1194" height="770" fill="#e5e5e5"/>
+<rect x="237.5" y="40.5" width="719" height="931" fill="#ffffff" stroke="#e5e5e5" stroke-width="1"/>
+<rect x="308.0" y="188.0" width="165.5" height="18.0" rx="2" fill="#fbbf24" fill-opacity="0.4" style="mix-blend-mode:multiply"/>
+<rect x="308.0" y="208.0" width="130.9" height="18.0" rx="2" fill="#60a5fa" fill-opacity="0.1"/>
+<line x1="309" y1="225" x2="437.911" y2="225" stroke="#2563eb" stroke-width="1" stroke-dasharray="2 2"/>
+<rect x="493.4" y="274.0" width="185.3" height="18.0" rx="2" fill="#4ade80" fill-opacity="0.4" style="mix-blend-mode:multiply"/>
+<rect x="731.3" y="467.0" width="19.1" height="18.0" rx="2" fill="#818cf8" fill-opacity="0.1"/>
+<rect x="739.3" y="618.0" width="19.0" height="18.0" rx="2" fill="#818cf8" fill-opacity="0.1"/>
+<rect x="450.6" y="547.0" width="289.9" height="18.0" rx="2" fill="#60a5fa" fill-opacity="0.4" style="mix-blend-mode:multiply"/>
+<rect x="670.1" y="638.0" width="203.3" height="18.0" fill="#4f46e5" fill-opacity="0.302"/>
+<rect x="308.0" y="658.0" width="277.1" height="18.0" fill="#4f46e5" fill-opacity="0.302"/>
+<text x="309" y="129.232" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14.95" font-weight="600" fill="#171717">3.2 Attention</text>
+<text x="309" y="161.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">An attention function can be described as mapping a query and a set of key-value pairs to an</text>
+<text x="309" y="181.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">output, where the query, keys, values, and output are all vectors. The output is computed as a</text>
+<text x="309" y="201.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">weighted sum of the values, where the weight assigned to each value is computed by a</text>
+<text x="309" y="221.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">compatibility function of the query with the corresponding key.</text>
+<text x="309" y="255.232" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14.95" font-weight="600" fill="#171717">3.2.1 Scaled Dot-Product Attention</text>
+<text x="309" y="287.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">We call our particular attention "Scaled Dot-Product Attention" (Figure 2). The input consists of</text>
+<text x="309" y="307.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">queries and keys of dimension dk, and values of dimension dv. We compute the dot products of</text>
+<text x="309" y="327.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">the query with all keys, divide each by √dk, and apply a softmax function to obtain the weights</text>
+<text x="309" y="347.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">on the values.</text>
+<text x="309" y="378.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">In practice, we compute the attention function on a set of queries simultaneously, packed</text>
+<text x="309" y="398.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">together into a matrix Q. The keys and values are also packed together into matrices K and V. We</text>
+<text x="309" y="418.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">compute the matrix of outputs as:</text>
+<text x="465.92" y="449.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">Attention(Q, K, V) = softmax(QK^T / √dk) V (1)</text>
+<text x="309" y="480.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">The two most commonly used attention functions are additive attention [2], and dot-product</text>
+<text x="309" y="500.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">(multiplicative) attention. Dot-product attention is identical to our algorithm, except for the scaling</text>
+<text x="309" y="520.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">factor of 1/√dk. Additive attention computes the compatibility function using a feed-forward</text>
+<text x="309" y="540.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">network with a single hidden layer. While the two are similar in theoretical complexity,</text>
+<text x="309" y="560.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">dot-product attention is much faster and more space-efficient in practice, since it can be</text>
+<text x="309" y="580.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">implemented using highly optimized matrix multiplication code.</text>
+<text x="309" y="611.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">While for small values of dk the two mechanisms perform similarly, additive attention</text>
+<text x="309" y="631.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">outperforms dot product attention without scaling for larger values of dk [3]. We suspect that for</text>
+<text x="309" y="651.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">large values of dk, the dot products grow large in magnitude, pushing the softmax function into</text>
+<text x="309" y="671.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">regions where it has extremely small gradients. To counteract this effect, we scale the dot</text>
+<text x="309" y="691.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">products by 1/√dk.</text>
+<text x="309" y="725.232" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14.95" font-weight="600" fill="#171717">3.2.2 Multi-Head Attention</text>
+<text x="309" y="757.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">Instead of performing a single attention function with dmodel-dimensional keys, values and</text>
+<text x="309" y="777.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">queries, we found it beneficial to linearly project the queries, keys and values h times with</text>
+<text x="309" y="797.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">different, learned linear projections to dk, dk and dv dimensions, respectively. On each of these</text>
+<text x="309" y="817.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">projected versions of queries, keys and values we then perform the attention function in parallel,</text>
+<text x="309" y="837.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">yielding dv-dimensional output values. These are concatenated and once again projected,</text>
+<text x="309" y="857.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">resulting in the final values.</text>
+<text x="309" y="888.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">Multi-head attention allows the model to jointly attend to information from different</text>
+<text x="309" y="908.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">representation subspaces at different positions. With a single attention head, averaging inhibits</text>
+<text x="309" y="928.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">this.</text>
+<text x="442.721" y="959.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">MultiHead(Q, K, V) = Concat(head1, ..., headh) W^O (2)</text>
+<text x="309" y="990.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">In this work we employ h = 8 parallel attention layers, or heads. For each of these we use dk = dv</text>
+<text x="309" y="1010.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">= dmodel/h = 64. Due to the reduced dimension of each head, the total computational cost is</text>
+<text x="309" y="1030.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">similar to that of single-head attention with full dimensionality.</text>
+<text x="309" y="1064.23" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14.95" font-weight="600" fill="#171717">3.3 Position-wise Feed-Forward Networks</text>
+<text x="309" y="1096.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">In addition to attention sub-layers, each of the layers in our encoder and decoder contains a fully</text>
+<text x="309" y="1116.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">connected feed-forward network, which is applied to each position separately and identically.</text>
+<text x="309" y="1136.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#171717">This consists of two linear transformations with a ReLU activation in between.</text>
+<line x1="670.148" y1="638" x2="670.148" y2="656" stroke="#4f46e5" stroke-width="2"/>
+<circle cx="670.148" cy="633" r="6" fill="#4f46e5"/>
+<line x1="585.136" y1="676" x2="585.136" y2="658" stroke="#4f46e5" stroke-width="2"/>
+<circle cx="585.136" cy="681" r="6" fill="#4f46e5"/>
+<rect x="0" y="0" width="1194" height="64" fill="#ffffff"/>
+<line x1="0" y1="63.5" x2="1194" y2="63.5" stroke="#e5e5e5" stroke-width="1"/>
+<g transform="translate(22 22) scale(0.8333)" fill="none" stroke="#525252" color="#525252" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></g>
+<g transform="translate(1152 22) scale(0.8333)" fill="none" stroke="#525252" color="#525252" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5.5" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="18.5" r="1.6" fill="currentColor" stroke="none"/></g>
+<g transform="translate(1104 22) scale(0.8333)" fill="none" stroke="#525252" color="#525252" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M14.5 4.5v15"/></g>
+<g transform="translate(1056 22) scale(0.8333)" fill="none" stroke="#15803d" color="#15803d" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 18.5h10a4 4 0 0 0 .55-7.96 6 6 0 0 0-11.55 1.2A3.4 3.4 0 0 0 7.5 18.5z"/><path d="M9.3 14.2l2 2 3.6-3.7"/></g>
+<g transform="translate(1008 22) scale(0.8333)" fill="none" stroke="#525252" color="#525252" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20 20"/></g>
+<g transform="translate(848 22) scale(0.8333)" fill="none" stroke="#525252" color="#525252" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12h12"/></g>
+<text x="908" y="36.55" font-family="'Geist Mono', GeistMono, Consolas, Menlo, monospace" font-size="13" font-weight="500" fill="#171717" text-anchor="middle">125%</text>
+<g transform="translate(948 22) scale(0.8333)" fill="none" stroke="#525252" color="#525252" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></g>
+<g transform="translate(684 22) scale(0.8333)" fill="none" stroke="#525252" color="#525252" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6l-6 6 6 6"/></g>
+<rect x="716" y="18" width="72" height="28" fill="#f5f5f5" rx="6"/>
+<text x="752" y="36.2" font-family="'Geist Mono', GeistMono, Consolas, Menlo, monospace" font-size="12" font-weight="500" fill="#171717" text-anchor="middle">4 / 15</text>
+<g transform="translate(800 22) scale(0.8333)" fill="none" stroke="#525252" color="#525252" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 6l6 6-6 6"/></g>
+<rect x="472" y="12" width="186" height="40" fill="#f5f5f5" rx="8"/>
+<rect x="474.5" y="14.5" width="43" height="35" fill="#ffffff" rx="5.5" stroke="#e5e5e5" stroke-width="1"/>
+<g transform="translate(486 22) scale(0.8333)" fill="none" stroke="#4f46e5" color="#4f46e5" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l12.5 7.4-5.6 1.4-2.8 5.6z"/></g>
+<g transform="translate(532 22) scale(0.8333)" fill="none" stroke="#525252" color="#525252" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14.2 4.8l5 5-7.7 7.7H6.5v-5z"/><path d="M4 20.5h16"/></g>
+<g transform="translate(578 22) scale(0.8333)" fill="none" stroke="#525252" color="#525252" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16.3 4l3.7 3.7L8.2 19.5H4.5v-3.7z"/><path d="M13.8 6.5l3.7 3.7"/></g>
+<g transform="translate(624 22) scale(0.8333)" fill="none" stroke="#525252" color="#525252" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5.5" width="17" height="13" rx="1.5" stroke-dasharray="2.6 2"/><path d="M7 15.5l3.2-3.6 2.4 2.4 1.6-1.5 2.8 2.7"/></g>
+<text x="64" y="37.6" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="16" font-weight="600" fill="#171717">Attention Is All You Need</text>
+<rect x="506.016" y="574.5" width="531.572" height="47" fill="#ffffff" rx="11.5" stroke="#e5e5e5" stroke-width="1" filter="url(#shadow2)"/>
+<circle cx="531.516" cy="598" r="11" fill="#fbbf24" stroke="#d97706" stroke-width="1.5"/>
+<g transform="translate(523.516 590) scale(0.6667)" fill="none" stroke="#171717" color="#171717" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 12.5l4.2 4.2L18.5 8"/></g>
+<circle cx="567.516" cy="598" r="11" fill="#4ade80" stroke="#16a34a" stroke-width="1.5"/>
+<circle cx="603.516" cy="598" r="11" fill="#60a5fa" stroke="#2563eb" stroke-width="1.5"/>
+<circle cx="639.516" cy="598" r="11" fill="#f472b6" stroke="#db2777" stroke-width="1.5"/>
+<circle cx="675.516" cy="598" r="11" fill="#a78bfa" stroke="#7c3aed" stroke-width="1.5"/>
+<circle cx="711.516" cy="598" r="11" fill="#fb923c" stroke="#ea580c" stroke-width="1.5"/>
+<line x1="737.516" y1="584" x2="737.516" y2="612" stroke="#e5e5e5" stroke-width="1"/>
+<g transform="translate(750.516 588) scale(0.8333)" fill="none" stroke="#4f46e5" color="#4f46e5" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3.5l1.9 5.1L18 10.5l-5.1 1.9L11 17.5l-1.9-5.1L4 10.5l5.1-1.9z"/><path d="M18.5 15l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></g>
+<text x="776.516" y="602.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="500" fill="#4f46e5">Explain</text>
+<g transform="translate(845.209 588) scale(0.8333)" fill="none" stroke="#171717" color="#171717" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5h14v9.5l-5.5 5.5H5z"/><path d="M13.5 19.5V14H19"/></g>
+<text x="871.209" y="602.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="500" fill="#171717">Note</text>
+<g transform="translate(924.654 588) scale(0.8333)" fill="none" stroke="#171717" color="#171717" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2"/><path d="M15.5 8.5V6A1.5 1.5 0 0 0 14 4.5H6A1.5 1.5 0 0 0 4.5 6v8A1.5 1.5 0 0 0 6 15.5h2.5"/></g>
+<text x="950.654" y="602.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="500" fill="#171717">Copy</text>
+<g transform="translate(1004.09 588) scale(0.8333)" fill="none" stroke="#525252" color="#525252" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="18.5" cy="12" r="1.6" fill="currentColor" stroke="none"/></g>
+</svg>

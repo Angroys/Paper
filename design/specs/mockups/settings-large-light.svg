@@ -1,0 +1,209 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif">
+<title>Settings — large — light (Windows)</title>
+<desc>Settings master–detail, large (1200–1599dp) laptop on Windows, light theme, pointer density. Storage and offline section: StorageUsageBar, value and destructive tiles, downloaded papers list (hover row, keyboard focus on a Remove button).</desc>
+<defs><filter id="shadow2" x="-10%" y="-10%" width="120%" height="140%"><feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.10"/></filter><filter id="shadow3" x="-10%" y="-10%" width="120%" height="140%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#000000" flood-opacity="0.10"/></filter></defs>
+<rect x="0" y="0" width="1440" height="900" fill="#fafafa"/>
+<rect x="0" y="0" width="1440" height="40" fill="#f5f5f5"/>
+<svg x="12" y="10" width="20" height="20" viewBox="18 18 72 72"><rect x="18" y="18" width="72" height="72" rx="14.4" fill="#171717"/><path d="M39 31H62L72 41V74A3 3 0 0 1 69 77H39A3 3 0 0 1 36 74V34A3 3 0 0 1 39 31Z" fill="#fafafa"/><path d="M62 31V38A3 3 0 0 0 65 41H72Z" fill="#d4d4d4"/><rect x="42" y="45" width="16" height="3.2" rx="1.6" fill="#404040"/><rect x="42" y="51.6" width="24" height="2.4" rx="1.2" fill="#a3a3a3"/><rect x="40.5" y="56.6" width="27" height="7" rx="2" fill="#818cf8"/><rect x="42" y="58.9" width="24" height="2.4" rx="1.2" fill="#312e81"/><rect x="42" y="67" width="18" height="2.4" rx="1.2" fill="#a3a3a3"/></svg>
+<text x="40" y="24.2" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="12" font-weight="500" fill="#171717">Paper</text>
+<line x1="1320" y1="16" x2="1330" y2="16" stroke="#525252" stroke-width="1"/>
+<rect x="1366.5" y="11.5" width="9" height="9" fill="none" stroke="#525252" stroke-width="1"/>
+<line x1="1412" y1="11" x2="1422" y2="21" stroke="#525252" stroke-width="1"/>
+<line x1="1422" y1="11" x2="1412" y2="21" stroke="#525252" stroke-width="1"/>
+<rect x="0" y="40" width="240" height="860" fill="#f5f5f5"/>
+<line x1="239.5" y1="40" x2="239.5" y2="900" stroke="#e5e5e5" stroke-width="1"/>
+<g transform="translate(24 66) scale(0.8333)" fill="none" stroke="#525252" color="#525252" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 4.5h4v15h-4zM10.5 4.5h4v15h-4zM16 5.6l3.3-.9 3.2 13.9-3.3.9z"/></g>
+<text x="56" y="80.9" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="500" fill="#171717">Library</text>
+<rect x="12" y="100" width="216" height="40" fill="#eef2ff" rx="6"/>
+<g transform="translate(24 110) scale(0.8333)" fill="none" stroke="#312e81" color="#312e81" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 13.87 L18.15 16.11 L17.33 19.98 L13.44 19.26 L10.13 21.42 L7.89 18.15 L4.02 17.33 L4.74 13.44 L2.58 10.13 L5.85 7.89 L6.67 4.02 L10.56 4.74 L13.87 2.58 L16.11 5.85 L19.98 6.67 L19.26 10.56Z"/><circle cx="12" cy="12" r="3"/></g>
+<text x="56" y="124.9" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="600" fill="#312e81">Settings</text>
+<line x1="24" y1="152" x2="216" y2="152" stroke="#e5e5e5" stroke-width="1"/>
+<g transform="translate(24 172) scale(0.8333)" fill="none" stroke="#15803d" color="#15803d" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 18.5h10a4 4 0 0 0 .55-7.96 6 6 0 0 0-11.55 1.2A3.4 3.4 0 0 0 7.5 18.5z"/><path d="M9.3 14.2l2 2 3.6-3.7"/></g>
+<text x="54" y="187" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="500" fill="#171717">Synced · 2 min ago</text>
+<line x1="0" y1="835.5" x2="239" y2="835.5" stroke="#e5e5e5" stroke-width="1"/>
+<circle cx="36" cy="868" r="16" fill="#eef2ff"/>
+<text x="36" y="872.2" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="12" font-weight="600" fill="#312e81" text-anchor="middle">AP</text>
+<text x="62" y="864" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="500" fill="#171717">Ana Popescu</text>
+<text x="62" y="881" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="12" font-weight="400" fill="#525252">ana@university.edu</text>
+<g transform="translate(200 858) scale(0.8333)" fill="none" stroke="#525252" color="#525252" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"/></g>
+<rect x="240" y="40" width="280" height="860" fill="#ffffff"/>
+<line x1="519.5" y1="40" x2="519.5" y2="900" stroke="#e5e5e5" stroke-width="1"/>
+<text x="264" y="88" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="24" font-weight="600" fill="#171717" letter-spacing="-0.6">Settings</text>
+<g transform="translate(264 126) scale(0.8333)" fill="none" stroke="#525252" color="#525252" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></g>
+<text x="296" y="140.9" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="500" fill="#171717">Account</text>
+<rect x="252" y="160" width="256" height="40" fill="#f5f5f5" rx="6"/>
+<g transform="translate(264 170) scale(0.8333)" fill="none" stroke="#525252" color="#525252" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></g>
+<text x="296" y="184.9" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="500" fill="#171717">Appearance</text>
+<g transform="translate(264 214) scale(0.8333)" fill="none" stroke="#525252" color="#525252" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5h6a3 3 0 0 1 3 3V20a2.5 2.5 0 0 0-2.5-2.5H3zM21 5.5h-6a3 3 0 0 0-3 3V20a2.5 2.5 0 0 1 2.5-2.5H21z"/></g>
+<text x="296" y="228.9" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="500" fill="#171717">Reader</text>
+<rect x="252" y="248" width="256" height="40" fill="#eef2ff" rx="6"/>
+<g transform="translate(264 258) scale(0.8333)" fill="none" stroke="#312e81" color="#312e81" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5v9M8 10l4 4 4-4"/><rect x="3.5" y="15.5" width="17" height="4.5" rx="1.5"/></g>
+<text x="296" y="272.9" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="600" fill="#312e81">Storage and offline</text>
+<g transform="translate(264 302) scale(0.8333)" fill="none" stroke="#525252" color="#525252" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12a7.5 7.5 0 0 1-12.9 5.2M4.5 12a7.5 7.5 0 0 1 12.9-5.2"/><path d="M17.6 3.3v3.6H14M6.4 20.7v-3.6H10"/></g>
+<text x="296" y="316.9" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="500" fill="#171717">Sync</text>
+<g transform="translate(482 302) scale(0.8333)" fill="none" stroke="#15803d" color="#15803d" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 18.5h10a4 4 0 0 0 .55-7.96 6 6 0 0 0-11.55 1.2A3.4 3.4 0 0 0 7.5 18.5z"/><path d="M9.3 14.2l2 2 3.6-3.7"/></g>
+<g transform="translate(264 346) scale(0.8333)" fill="none" stroke="#525252" color="#525252" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.3"/><circle cx="12" cy="7.9" r="1.25" fill="currentColor" stroke="none"/></g>
+<text x="296" y="360.9" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="500" fill="#171717">About</text>
+<text x="560" y="96" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="20" font-weight="600" fill="#171717" letter-spacing="-0.5">Storage and offline</text>
+<rect x="560.5" y="124.5" width="719" height="119" fill="#ffffff" rx="7.5" stroke="#e5e5e5" stroke-width="1"/>
+<text x="576" y="154" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="16" font-weight="600" fill="#171717">1.2 GB of 64 GB used</text>
+<rect x="576" y="172" width="688" height="12" fill="#d4d4d4" rx="6"/>
+<rect x="576" y="172" width="206.4" height="12" fill="#737373" rx="6"/>
+<rect x="576" y="172" width="165.12" height="12" fill="#4f46e5" rx="6"/>
+<rect x="576" y="211" width="10" height="10" fill="#4f46e5" rx="2"/>
+<text x="592" y="220.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#525252">Downloads 1.0 GB</text>
+<rect x="723.03" y="211" width="10" height="10" fill="#737373" rx="2"/>
+<text x="739.03" y="220.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#525252">Cache 0.2 GB</text>
+<rect x="845.079" y="211.5" width="9" height="9" fill="#d4d4d4" rx="1.5" stroke="#737373" stroke-width="1"/>
+<text x="860.579" y="220.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="400" fill="#525252">Free 62.8 GB</text>
+<rect x="560.5" y="268.5" width="719" height="103" fill="#ffffff" rx="7.5" stroke="#e5e5e5" stroke-width="1"/>
+<text x="576" y="298.9" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="500" fill="#171717">Auto-download new papers</text>
+<text x="1174.79" y="298.9" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="500" fill="#525252">Wi-Fi only</text>
+<g transform="translate(1244 284) scale(0.8333)" fill="none" stroke="#525252" color="#525252" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"/></g>
+<line x1="576" y1="320.5" x2="1264" y2="320.5" stroke="#e5e5e5" stroke-width="1"/>
+<text x="576" y="350.9" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="500" fill="#b91c1c">Remove all downloads</text>
+<text x="560" y="410" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="600" fill="#171717">Downloaded papers (4)</text>
+<rect x="560.5" y="424.5" width="719" height="223" fill="#ffffff" rx="7.5" stroke="#e5e5e5" stroke-width="1"/>
+<rect x="576.5" y="434.5" width="27" height="35" fill="#ffffff" rx="1.5" stroke="#e5e5e5" stroke-width="1"/>
+<rect x="578" y="436" width="24" height="32" fill="#ffffff"/>
+<rect x="581.61" y="439.2" width="16.7808" height="3" fill="#404040" rx="1"/>
+<rect x="584.528" y="440.48" width="10.944" height="3" fill="#404040" rx="1"/>
+<rect x="584.528" y="442.4" width="10.944" height="2" fill="#a3a3a3" rx="1"/>
+<rect x="580.88" y="444.32" width="17.6928" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="445.216" width="16.416" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="446.112" width="18.24" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="447.008" width="17.1456" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="447.904" width="12.768" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="448.8" width="18.24" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="449.696" width="17.5104" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="450.592" width="16.0512" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="451.488" width="18.0576" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="452.384" width="10.944" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="453.28" width="16.9632" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="454.176" width="18.24" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="455.072" width="15.504" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="455.968" width="17.6928" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="456.864" width="13.68" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="457.76" width="18.24" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="458.656" width="16.416" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="459.552" width="17.328" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="460.448" width="17.6928" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="461.344" width="16.416" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="462.24" width="18.24" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="463.136" width="17.1456" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="464.032" width="12.768" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="464.928" width="18.24" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<text x="616" y="456.9" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="500" fill="#171717">Attention Is All You Need</text>
+<text x="1164" y="456.55" font-family="'Geist Mono', GeistMono, Consolas, Menlo, monospace" font-size="13" font-weight="400" fill="#737373" text-anchor="end">2.1 MB</text>
+<rect x="1180.5" y="436.5" width="83" height="31" fill="#ffffff" rx="5.5" stroke="#d4d4d4" stroke-width="1"/>
+<text x="1197.46" y="456.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="500" fill="#171717">Remove</text>
+<rect x="561" y="480" width="718" height="56" fill="#f5f5f5"/>
+<line x1="576" y1="480.5" x2="1264" y2="480.5" stroke="#e5e5e5" stroke-width="1"/>
+<rect x="576.5" y="490.5" width="27" height="35" fill="#ffffff" rx="1.5" stroke="#e5e5e5" stroke-width="1"/>
+<rect x="578" y="492" width="24" height="32" fill="#ffffff"/>
+<rect x="581.61" y="495.2" width="16.7808" height="3" fill="#404040" rx="1"/>
+<rect x="584.528" y="496.48" width="10.944" height="3" fill="#404040" rx="1"/>
+<rect x="584.528" y="498.4" width="10.944" height="2" fill="#a3a3a3" rx="1"/>
+<rect x="580.88" y="500.32" width="16.416" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="501.216" width="18.24" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="502.112" width="17.1456" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="503.008" width="12.768" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="503.904" width="18.24" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="504.8" width="17.5104" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="505.696" width="16.0512" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="506.592" width="18.0576" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="507.488" width="10.944" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="508.384" width="16.9632" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="509.28" width="18.24" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="510.176" width="15.504" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="511.072" width="17.6928" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="511.968" width="13.68" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="512.864" width="18.24" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="513.76" width="16.416" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="514.656" width="17.328" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="515.552" width="17.6928" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="516.448" width="16.416" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="517.344" width="18.24" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="518.24" width="17.1456" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="519.136" width="12.768" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="520.032" width="18.24" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="520.928" width="17.5104" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<text x="616" y="512.9" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="500" fill="#171717">BERT: Pre-training of Deep Bidirectional Transformers…</text>
+<text x="1164" y="512.55" font-family="'Geist Mono', GeistMono, Consolas, Menlo, monospace" font-size="13" font-weight="400" fill="#737373" text-anchor="end">0.8 MB</text>
+<rect x="1180.5" y="492.5" width="83" height="31" fill="#ffffff" rx="5.5" stroke="#d4d4d4" stroke-width="1"/>
+<text x="1197.46" y="512.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="500" fill="#171717">Remove</text>
+<line x1="576" y1="536.5" x2="1264" y2="536.5" stroke="#e5e5e5" stroke-width="1"/>
+<rect x="576.5" y="546.5" width="27" height="35" fill="#ffffff" rx="1.5" stroke="#e5e5e5" stroke-width="1"/>
+<rect x="578" y="548" width="24" height="32" fill="#ffffff"/>
+<rect x="581.61" y="551.2" width="16.7808" height="3" fill="#404040" rx="1"/>
+<rect x="584.528" y="552.48" width="10.944" height="3" fill="#404040" rx="1"/>
+<rect x="584.528" y="554.4" width="10.944" height="2" fill="#a3a3a3" rx="1"/>
+<rect x="580.88" y="556.32" width="18.24" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="557.216" width="17.1456" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="558.112" width="12.768" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="559.008" width="18.24" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="559.904" width="17.5104" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="560.8" width="16.0512" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="561.696" width="18.0576" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="562.592" width="10.944" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="563.488" width="16.9632" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="564.384" width="18.24" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="565.28" width="15.504" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="566.176" width="17.6928" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="567.072" width="13.68" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="567.968" width="18.24" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="568.864" width="16.416" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="569.76" width="17.328" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="570.656" width="17.6928" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="571.552" width="16.416" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="572.448" width="18.24" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="573.344" width="17.1456" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="574.24" width="12.768" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="575.136" width="18.24" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="576.032" width="17.5104" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="576.928" width="16.0512" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<text x="616" y="568.9" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="500" fill="#171717">Generative Adversarial Nets</text>
+<text x="1164" y="568.55" font-family="'Geist Mono', GeistMono, Consolas, Menlo, monospace" font-size="13" font-weight="400" fill="#737373" text-anchor="end">0.5 MB</text>
+<rect x="1180.5" y="548.5" width="83" height="31" fill="#ffffff" rx="5.5" stroke="#d4d4d4" stroke-width="1"/>
+<text x="1197.46" y="568.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="500" fill="#171717">Remove</text>
+<rect x="1177" y="545" width="90" height="38" fill="none" rx="9" stroke="#4f46e5" stroke-width="2"/>
+<line x1="576" y1="592.5" x2="1264" y2="592.5" stroke="#e5e5e5" stroke-width="1"/>
+<rect x="576.5" y="602.5" width="27" height="35" fill="#ffffff" rx="1.5" stroke="#e5e5e5" stroke-width="1"/>
+<rect x="578" y="604" width="24" height="32" fill="#ffffff"/>
+<rect x="581.61" y="607.2" width="16.7808" height="3" fill="#404040" rx="1"/>
+<rect x="584.528" y="608.48" width="10.944" height="3" fill="#404040" rx="1"/>
+<rect x="584.528" y="610.4" width="10.944" height="2" fill="#a3a3a3" rx="1"/>
+<rect x="580.88" y="612.32" width="17.1456" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="613.216" width="12.768" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="614.112" width="18.24" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="615.008" width="17.5104" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="615.904" width="16.0512" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="616.8" width="18.0576" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="617.696" width="10.944" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="618.592" width="16.9632" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="619.488" width="18.24" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="620.384" width="15.504" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="621.28" width="17.6928" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="622.176" width="13.68" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="623.072" width="18.24" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="623.968" width="16.416" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="624.864" width="17.328" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="625.76" width="17.6928" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="626.656" width="16.416" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="627.552" width="18.24" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="628.448" width="17.1456" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="629.344" width="12.768" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="630.24" width="18.24" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="631.136" width="17.5104" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="632.032" width="16.0512" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<rect x="580.88" y="632.928" width="18.0576" height="1.5" fill="#d4d4d4" rx="0.75"/>
+<text x="616" y="624.9" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="500" fill="#171717">Neural Ordinary Differential Equations</text>
+<text x="1164" y="624.55" font-family="'Geist Mono', GeistMono, Consolas, Menlo, monospace" font-size="13" font-weight="400" fill="#737373" text-anchor="end">1.4 MB</text>
+<rect x="1180.5" y="604.5" width="83" height="31" fill="#ffffff" rx="5.5" stroke="#d4d4d4" stroke-width="1"/>
+<text x="1197.46" y="624.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="500" fill="#171717">Remove</text>
+<rect x="560.5" y="664.5" width="719" height="55" fill="#ffffff" rx="7.5" stroke="#e5e5e5" stroke-width="1"/>
+<text x="576" y="696.9" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="14" font-weight="500" fill="#171717">Cache</text>
+<text x="629.623" y="696.55" font-family="'Geist Mono', GeistMono, Consolas, Menlo, monospace" font-size="13" font-weight="400" fill="#737373">0.2 GB</text>
+<rect x="1159.92" y="676.5" width="103.58" height="31" fill="#ffffff" rx="5.5" stroke="#d4d4d4" stroke-width="1"/>
+<text x="1175.42" y="696.55" font-family="Geist, 'Segoe UI', 'SF Pro Text', Roboto, sans-serif" font-size="13" font-weight="500" fill="#171717">Clear cache</text>
+</svg>
