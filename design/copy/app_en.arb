@@ -1,0 +1,1796 @@
+{
+  "@@locale": "en",
+  "@@context": "Paper (paper.college) app UI strings. Source English. See design/copy/voice.md.",
+  "appName": "Paper",
+  "@appName": {
+    "description": "App name, window title and launcher label. max 12 chars."
+  },
+  "appTagline": "Read any paper without getting stuck.",
+  "@appTagline": {
+    "description": "Splash / sign-in tagline under the logo. max 48 chars."
+  },
+  "appWindowTitleWithPaper": "{paperTitle} – Paper",
+  "@appWindowTitleWithPaper": {
+    "description": "Desktop window title while a paper is open; truncate paperTitle in UI. max 80 chars (excluding variable text).",
+    "placeholders": {
+      "paperTitle": {
+        "type": "String",
+        "example": "Attention Is All You Need",
+        "description": "Paper title"
+      }
+    }
+  },
+  "onboardingWelcomeTitle": "Welcome to Paper",
+  "@onboardingWelcomeTitle": {
+    "description": "Onboarding screen 1 headline. max 32 chars."
+  },
+  "onboardingWelcomeBody": "Read research papers without getting stuck. Highlight a term and get a plain-English explanation in place.",
+  "@onboardingWelcomeBody": {
+    "description": "Onboarding screen 1 body. max 140 chars."
+  },
+  "onboardingHighlightTitle": "Highlight what matters",
+  "@onboardingHighlightTitle": {
+    "description": "Onboarding screen 2 headline. max 32 chars."
+  },
+  "onboardingHighlightBody": "Mark text, figures, or draw with your pen. Add a note to any highlight.",
+  "@onboardingHighlightBody": {
+    "description": "Onboarding screen 2 body. max 140 chars."
+  },
+  "onboardingGlossaryTitle": "Your glossary builds itself",
+  "@onboardingGlossaryTitle": {
+    "description": "Onboarding screen 3 headline. max 32 chars."
+  },
+  "onboardingGlossaryBody": "Every term you look up is saved, so you can review it later in any paper.",
+  "@onboardingGlossaryBody": {
+    "description": "Onboarding screen 3 body. max 140 chars."
+  },
+  "onboardingOfflineTitle": "Read anywhere",
+  "@onboardingOfflineTitle": {
+    "description": "Onboarding screen 4 headline. max 32 chars."
+  },
+  "onboardingOfflineBody": "Download papers to read and take notes offline. Your changes sync when you are back online.",
+  "@onboardingOfflineBody": {
+    "description": "Onboarding screen 4 body. max 140 chars."
+  },
+  "onboardingNext": "Next",
+  "@onboardingNext": {
+    "description": "Onboarding primary button. max 18 chars."
+  },
+  "onboardingSkip": "Skip",
+  "@onboardingSkip": {
+    "description": "Onboarding text button, top-right. max 18 chars."
+  },
+  "onboardingGetStarted": "Get started",
+  "@onboardingGetStarted": {
+    "description": "Onboarding final-screen primary button. max 18 chars."
+  },
+  "onboardingStep": "Step {current} of {total}",
+  "@onboardingStep": {
+    "description": "Onboarding page indicator semantics label. max 24 chars.",
+    "placeholders": {
+      "current": {
+        "type": "int",
+        "example": "1",
+        "description": "1-based step"
+      },
+      "total": {
+        "type": "int",
+        "example": "4",
+        "description": "Total steps"
+      }
+    }
+  },
+  "authSignInTitle": "Sign in to Paper",
+  "@authSignInTitle": {
+    "description": "Sign-in screen headline. max 32 chars."
+  },
+  "authSignInSubtitle": "Your library, highlights, and notes follow you to every device.",
+  "@authSignInSubtitle": {
+    "description": "Sign-in screen subtitle. max 90 chars."
+  },
+  "authContinueWithGoogle": "Continue with Google",
+  "@authContinueWithGoogle": {
+    "description": "Google sign-in button. max 24 chars."
+  },
+  "authOrDivider": "or",
+  "@authOrDivider": {
+    "description": "Divider text between Google and email options. max 6 chars."
+  },
+  "authEmailLabel": "Email",
+  "@authEmailLabel": {
+    "description": "Email text field label. max 24 chars."
+  },
+  "authEmailHint": "you@university.edu",
+  "@authEmailHint": {
+    "description": "Email text field placeholder. max 32 chars."
+  },
+  "authPasswordLabel": "Password",
+  "@authPasswordLabel": {
+    "description": "Password text field label. max 24 chars."
+  },
+  "authPasswordHint": "At least 8 characters",
+  "@authPasswordHint": {
+    "description": "Password field helper text. max 40 chars."
+  },
+  "authShowPassword": "Show password",
+  "@authShowPassword": {
+    "description": "Password visibility toggle tooltip. max 24 chars."
+  },
+  "authHidePassword": "Hide password",
+  "@authHidePassword": {
+    "description": "Password visibility toggle tooltip. max 24 chars."
+  },
+  "authSignInButton": "Sign in",
+  "@authSignInButton": {
+    "description": "Email + password submit button. max 18 chars."
+  },
+  "authCreateAccountButton": "Create account",
+  "@authCreateAccountButton": {
+    "description": "Sign-up submit button. max 18 chars."
+  },
+  "authSendMagicLink": "Email me a sign-in link",
+  "@authSendMagicLink": {
+    "description": "Magic-link submit button. max 24 chars."
+  },
+  "authUsePasswordInstead": "Use a password instead",
+  "@authUsePasswordInstead": {
+    "description": "Text button switching magic link to password. max 32 chars."
+  },
+  "authUseMagicLinkInstead": "Email me a link instead",
+  "@authUseMagicLinkInstead": {
+    "description": "Text button switching password to magic link. max 32 chars."
+  },
+  "authNoAccount": "New to Paper? Create an account",
+  "@authNoAccount": {
+    "description": "Text button under sign-in form. max 40 chars."
+  },
+  "authHaveAccount": "Have an account? Sign in",
+  "@authHaveAccount": {
+    "description": "Text button under sign-up form. max 40 chars."
+  },
+  "authForgotPassword": "Forgot password?",
+  "@authForgotPassword": {
+    "description": "Text button under password field. max 24 chars."
+  },
+  "authSigningIn": "Signing in…",
+  "@authSigningIn": {
+    "description": "Button / status while signing in. max 24 chars."
+  },
+  "authCreatingAccount": "Creating account…",
+  "@authCreatingAccount": {
+    "description": "Button / status while signing up. max 24 chars."
+  },
+  "authMagicLinkSentTitle": "Check your email",
+  "@authMagicLinkSentTitle": {
+    "description": "Magic-link sent screen headline. max 32 chars."
+  },
+  "authMagicLinkSentBody": "We sent a sign-in link to {email}. Open it on this device to continue.",
+  "@authMagicLinkSentBody": {
+    "description": "Magic-link sent screen body. max 120 chars (excluding variable text).",
+    "placeholders": {
+      "email": {
+        "type": "String",
+        "example": "ada@uni.edu",
+        "description": "Address the link was sent to"
+      }
+    }
+  },
+  "authConfirmEmailBody": "Check your email to confirm your account, then come back here.",
+  "@authConfirmEmailBody": {
+    "description": "Shown after sign-up when email confirmation is required. max 90 chars."
+  },
+  "authResetSentBody": "If an account exists for {email}, a reset link is on its way.",
+  "@authResetSentBody": {
+    "description": "Password reset confirmation. max 100 chars (excluding variable text).",
+    "placeholders": {
+      "email": {
+        "type": "String",
+        "example": "ada@uni.edu",
+        "description": "Address entered"
+      }
+    }
+  },
+  "authResend": "Send again",
+  "@authResend": {
+    "description": "Resend magic link / confirmation button. max 18 chars."
+  },
+  "authResendIn": "Send again in {seconds}s",
+  "@authResendIn": {
+    "description": "Disabled resend button with cooldown. max 24 chars.",
+    "placeholders": {
+      "seconds": {
+        "type": "int",
+        "example": "30",
+        "description": "Seconds left"
+      }
+    }
+  },
+  "authUseDifferentEmail": "Use a different email",
+  "@authUseDifferentEmail": {
+    "description": "Text button on magic-link sent screen. max 32 chars."
+  },
+  "authBrowserOpenedTitle": "Finish signing in in your browser",
+  "@authBrowserOpenedTitle": {
+    "description": "Shown while Google OAuth runs in the system browser. max 40 chars."
+  },
+  "authBrowserOpenedBody": "We opened your browser. When you are done, Paper will open again on its own.",
+  "@authBrowserOpenedBody": {
+    "description": "Body under authBrowserOpenedTitle. max 120 chars."
+  },
+  "authReopenBrowser": "Open browser again",
+  "@authReopenBrowser": {
+    "description": "Button to relaunch the OAuth URL. max 24 chars."
+  },
+  "authReturningTitle": "Signing you in…",
+  "@authReturningTitle": {
+    "description": "Shown when the paper:// deep link returns. max 32 chars."
+  },
+  "authReturnedSuccess": "You are signed in.",
+  "@authReturnedSuccess": {
+    "description": "Snackbar after successful deep-link return. max 40 chars."
+  },
+  "authLegalNotice": "By continuing, you agree to the Terms and Privacy Policy.",
+  "@authLegalNotice": {
+    "description": "Small print under sign-in buttons. max 90 chars."
+  },
+  "authTerms": "Terms",
+  "@authTerms": {
+    "description": "Link text inside legal notice. max 18 chars."
+  },
+  "authPrivacy": "Privacy Policy",
+  "@authPrivacy": {
+    "description": "Link text inside legal notice. max 18 chars."
+  },
+  "authErrorInvalidCredentials": "That email and password do not match. Try again.",
+  "@authErrorInvalidCredentials": {
+    "description": "Inline form error. max 80 chars."
+  },
+  "authErrorInvalidEmail": "Enter a full email address.",
+  "@authErrorInvalidEmail": {
+    "description": "Email field error. max 60 chars."
+  },
+  "authErrorPasswordTooShort": "Use at least 8 characters.",
+  "@authErrorPasswordTooShort": {
+    "description": "Password field error. max 60 chars."
+  },
+  "authErrorEmailInUse": "An account with this email already exists. Sign in instead.",
+  "@authErrorEmailInUse": {
+    "description": "Sign-up form error. max 80 chars."
+  },
+  "authErrorEmailNotConfirmed": "Confirm your email first. Check your inbox for the link.",
+  "@authErrorEmailNotConfirmed": {
+    "description": "Sign-in form error. max 80 chars."
+  },
+  "authErrorCancelled": "Sign-in was cancelled.",
+  "@authErrorCancelled": {
+    "description": "Snackbar when user closes the OAuth browser flow. max 40 chars."
+  },
+  "authErrorLinkExpired": "This sign-in link has expired. Ask for a new one.",
+  "@authErrorLinkExpired": {
+    "description": "Shown when deep link token is expired or used. max 80 chars."
+  },
+  "authErrorDeepLink": "Couldn’t finish signing in. Try again from the app.",
+  "@authErrorDeepLink": {
+    "description": "Shown when paper:// return has bad or missing params. max 80 chars."
+  },
+  "authErrorTooManyAttempts": "Too many tries. Wait a minute and try again.",
+  "@authErrorTooManyAttempts": {
+    "description": "Rate-limit error on auth forms. max 80 chars."
+  },
+  "authErrorGeneric": "Couldn’t sign you in. Check your connection and try again.",
+  "@authErrorGeneric": {
+    "description": "Fallback auth error. max 80 chars."
+  },
+  "authSignOut": "Sign out",
+  "@authSignOut": {
+    "description": "Settings / account menu action. max 18 chars."
+  },
+  "authSignOutConfirmTitle": "Sign out of Paper?",
+  "@authSignOutConfirmTitle": {
+    "description": "Sign-out dialog title. max 32 chars."
+  },
+  "authSignOutConfirmBody": "Downloaded papers stay on this device. Changes that have not synced yet will be lost.",
+  "@authSignOutConfirmBody": {
+    "description": "Sign-out dialog body. max 120 chars."
+  },
+  "authSignOutPendingBody": "{count, plural, =1{1 change has not synced yet. Sign out anyway and lose it?} other{{count} changes have not synced yet. Sign out anyway and lose them?}}",
+  "@authSignOutPendingBody": {
+    "description": "Sign-out dialog body when the sync queue is not empty. max 100 chars.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3",
+        "description": "Unsynced changes"
+      }
+    }
+  },
+  "libraryTitle": "Library",
+  "@libraryTitle": {
+    "description": "App bar / nav title. max 18 chars."
+  },
+  "libraryNavLabel": "Library",
+  "@libraryNavLabel": {
+    "description": "Navigation rail / bar destination label. max 12 chars."
+  },
+  "librarySubtitle": "Your papers, newest first.",
+  "@librarySubtitle": {
+    "description": "Library header subtitle. max 40 chars."
+  },
+  "librarySearchHint": "Search your papers",
+  "@librarySearchHint": {
+    "description": "Search field placeholder. max 32 chars."
+  },
+  "libraryEmptyTitle": "No papers yet",
+  "@libraryEmptyTitle": {
+    "description": "Library empty state headline. max 32 chars."
+  },
+  "libraryEmptyBody": "Paste a link or pick a PDF from your device. It opens right away.",
+  "@libraryEmptyBody": {
+    "description": "Library empty state body. max 100 chars."
+  },
+  "libraryEmptyImportUrl": "Paste a link",
+  "@libraryEmptyImportUrl": {
+    "description": "Library empty state primary button. max 18 chars."
+  },
+  "libraryEmptyImportFile": "Choose a PDF",
+  "@libraryEmptyImportFile": {
+    "description": "Library empty state secondary button. max 18 chars."
+  },
+  "librarySearchNoResultsTitle": "No matches",
+  "@librarySearchNoResultsTitle": {
+    "description": "Search no-results headline. max 32 chars."
+  },
+  "librarySearchNoResultsBody": "Nothing matches “{query}”. Try a shorter word or check the spelling.",
+  "@librarySearchNoResultsBody": {
+    "description": "Search no-results body; truncate query in UI. max 100 chars (excluding variable text).",
+    "placeholders": {
+      "query": {
+        "type": "String",
+        "example": "transformer",
+        "description": "Search text"
+      }
+    }
+  },
+  "librarySearchClear": "Clear search",
+  "@librarySearchClear": {
+    "description": "Search no-results button / clear icon tooltip. max 18 chars."
+  },
+  "libraryImport": "Add paper",
+  "@libraryImport": {
+    "description": "FAB / toolbar button opening import sheet. max 18 chars."
+  },
+  "libraryImportSheetTitle": "Add a paper",
+  "@libraryImportSheetTitle": {
+    "description": "Import sheet / dialog title. max 32 chars."
+  },
+  "libraryImportUrlLabel": "Link to a PDF",
+  "@libraryImportUrlLabel": {
+    "description": "URL field label. max 32 chars."
+  },
+  "libraryImportUrlHint": "https://arxiv.org/pdf/…",
+  "@libraryImportUrlHint": {
+    "description": "URL field placeholder. max 32 chars."
+  },
+  "libraryImportUrlHelper": "Max 20 MB. arXiv and DOI links work too.",
+  "@libraryImportUrlHelper": {
+    "description": "URL field helper text. max 60 chars."
+  },
+  "libraryImportUrlSubmit": "Import",
+  "@libraryImportUrlSubmit": {
+    "description": "URL import submit button. max 18 chars."
+  },
+  "libraryImportFile": "Choose a PDF file",
+  "@libraryImportFile": {
+    "description": "File-picker button in import sheet. max 24 chars."
+  },
+  "libraryImportFileHelper": "PDF only, max 20 MB.",
+  "@libraryImportFileHelper": {
+    "description": "Helper under file-picker button. max 40 chars."
+  },
+  "libraryImportDropHint": "Drop a PDF here",
+  "@libraryImportDropHint": {
+    "description": "Desktop drag-and-drop overlay text. max 32 chars."
+  },
+  "libraryImportFetching": "Fetching the PDF…",
+  "@libraryImportFetching": {
+    "description": "Import progress, URL. max 32 chars."
+  },
+  "libraryImportUploading": "Uploading your paper…",
+  "@libraryImportUploading": {
+    "description": "Import progress, file. max 32 chars."
+  },
+  "libraryImportPreparing": "Preparing your paper…",
+  "@libraryImportPreparing": {
+    "description": "Import progress, post-upload processing. max 32 chars."
+  },
+  "libraryImportSuccess": "Added to your library.",
+  "@libraryImportSuccess": {
+    "description": "Snackbar on import success. max 40 chars."
+  },
+  "libraryImportOpen": "Open",
+  "@libraryImportOpen": {
+    "description": "Snackbar action after import. max 12 chars."
+  },
+  "libraryImportErrorUrlEmpty": "Paste a link to a PDF first.",
+  "@libraryImportErrorUrlEmpty": {
+    "description": "URL field error. max 60 chars."
+  },
+  "libraryImportErrorUrlInvalid": "That doesn’t look like a link. Paste a full https:// address.",
+  "@libraryImportErrorUrlInvalid": {
+    "description": "URL field error. max 80 chars."
+  },
+  "libraryImportErrorNotPdf": "That link doesn’t lead to a PDF. Paste the direct PDF link.",
+  "@libraryImportErrorNotPdf": {
+    "description": "URL import error. max 80 chars."
+  },
+  "libraryImportErrorTimeout": "The PDF took too long to download. Try again, or download it and choose the file.",
+  "@libraryImportErrorTimeout": {
+    "description": "URL import error. max 100 chars."
+  },
+  "libraryImportErrorOffline": "You’re offline. Connect to add a paper.",
+  "@libraryImportErrorOffline": {
+    "description": "Import blocked while offline. max 60 chars."
+  },
+  "libraryImportErrorGeneric": "Couldn’t import this paper. Try again.",
+  "@libraryImportErrorGeneric": {
+    "description": "Fallback import error. max 60 chars."
+  },
+  "libraryRename": "Rename",
+  "@libraryRename": {
+    "description": "Paper context menu item. max 18 chars."
+  },
+  "libraryRenameTitle": "Rename paper",
+  "@libraryRenameTitle": {
+    "description": "Rename dialog title. max 32 chars."
+  },
+  "libraryRenameLabel": "Title",
+  "@libraryRenameLabel": {
+    "description": "Rename dialog field label. max 18 chars."
+  },
+  "libraryRenameSave": "Save",
+  "@libraryRenameSave": {
+    "description": "Rename dialog confirm. max 18 chars."
+  },
+  "libraryRenameErrorEmpty": "Give the paper a title.",
+  "@libraryRenameErrorEmpty": {
+    "description": "Rename field error. max 40 chars."
+  },
+  "libraryRenamed": "Renamed.",
+  "@libraryRenamed": {
+    "description": "Snackbar after rename. max 32 chars."
+  },
+  "libraryDelete": "Delete",
+  "@libraryDelete": {
+    "description": "Paper context menu item. max 18 chars."
+  },
+  "libraryDeleted": "Paper deleted.",
+  "@libraryDeleted": {
+    "description": "Snackbar after delete (with Undo action). max 32 chars."
+  },
+  "libraryDeletedMany": "{count, plural, =1{1 paper deleted.} other{{count} papers deleted.}}",
+  "@libraryDeletedMany": {
+    "description": "Snackbar after multi-delete (with Undo). max 32 chars.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3",
+        "description": "Papers deleted"
+      }
+    }
+  },
+  "libraryDeleteUndone": "Paper restored.",
+  "@libraryDeleteUndone": {
+    "description": "Snackbar after Undo. max 32 chars."
+  },
+  "libraryDeleteConfirmTitle": "Delete this paper?",
+  "@libraryDeleteConfirmTitle": {
+    "description": "Delete dialog title (only used when undo is not possible, e.g. offline-unsynced). max 32 chars."
+  },
+  "libraryDeleteConfirmBody": "Its highlights and notes will be deleted too. You can’t undo this.",
+  "@libraryDeleteConfirmBody": {
+    "description": "Delete dialog body. max 100 chars."
+  },
+  "libraryDownload": "Download for offline",
+  "@libraryDownload": {
+    "description": "Context menu / button to cache PDF locally. max 24 chars."
+  },
+  "libraryDownloadQueued": "Waiting to download",
+  "@libraryDownloadQueued": {
+    "description": "Download state chip / tooltip. max 24 chars."
+  },
+  "libraryDownloading": "Downloading… {percent}%",
+  "@libraryDownloading": {
+    "description": "Download progress label. max 24 chars.",
+    "placeholders": {
+      "percent": {
+        "type": "int",
+        "example": "42",
+        "description": "0-100"
+      }
+    }
+  },
+  "libraryDownloaded": "Available offline",
+  "@libraryDownloaded": {
+    "description": "Download state chip / tooltip. max 24 chars."
+  },
+  "libraryDownloadFailed": "Download failed",
+  "@libraryDownloadFailed": {
+    "description": "Download state chip. max 24 chars."
+  },
+  "libraryDownloadRetry": "Try download again",
+  "@libraryDownloadRetry": {
+    "description": "Action on failed download. max 24 chars."
+  },
+  "libraryDownloadCancel": "Cancel download",
+  "@libraryDownloadCancel": {
+    "description": "Action during download. max 24 chars."
+  },
+  "libraryRemoveDownload": "Remove download",
+  "@libraryRemoveDownload": {
+    "description": "Context menu: delete local PDF copy only. max 24 chars."
+  },
+  "libraryRemoveDownloadDone": "Removed from this device. The paper stays in your library.",
+  "@libraryRemoveDownloadDone": {
+    "description": "Snackbar after remove download. max 80 chars."
+  },
+  "libraryNotDownloadedOffline": "Not downloaded. Connect to open this paper.",
+  "@libraryNotDownloadedOffline": {
+    "description": "Tapping an undownloaded paper while offline. max 60 chars."
+  },
+  "libraryOfflineFilter": "Offline only",
+  "@libraryOfflineFilter": {
+    "description": "Filter chip: show downloaded papers. max 18 chars."
+  },
+  "librarySortNewest": "Newest first",
+  "@librarySortNewest": {
+    "description": "Sort menu item. max 24 chars."
+  },
+  "librarySortTitle": "Title A–Z",
+  "@librarySortTitle": {
+    "description": "Sort menu item. max 24 chars."
+  },
+  "librarySortLastOpened": "Last opened",
+  "@librarySortLastOpened": {
+    "description": "Sort menu item. max 24 chars."
+  },
+  "libraryAddedOn": "Added {date}",
+  "@libraryAddedOn": {
+    "description": "Paper card meta line. max 32 chars.",
+    "placeholders": {
+      "date": {
+        "type": "DateTime",
+        "format": "yMMMd",
+        "description": "Date added"
+      }
+    }
+  },
+  "libraryPageCount": "{count, plural, =1{1 page} other{{count} pages}}",
+  "@libraryPageCount": {
+    "description": "Paper card meta. max 18 chars.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12",
+        "description": "Page count"
+      }
+    }
+  },
+  "libraryHighlightCount": "{count, plural, =0{No highlights} =1{1 highlight} other{{count} highlights}}",
+  "@libraryHighlightCount": {
+    "description": "Paper card meta. max 24 chars.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "5",
+        "description": "Highlight count"
+      }
+    }
+  },
+  "libraryPaperCount": "{count, plural, =0{No papers} =1{1 paper} other{{count} papers}}",
+  "@libraryPaperCount": {
+    "description": "Library header count. max 18 chars.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "8",
+        "description": "Paper count"
+      }
+    }
+  },
+  "libraryUntitled": "Untitled paper",
+  "@libraryUntitled": {
+    "description": "Fallback title when PDF has no title. max 24 chars."
+  },
+  "readerBack": "Back to library",
+  "@readerBack": {
+    "description": "Back button tooltip. max 24 chars."
+  },
+  "readerPageOf": "Page {current} of {total}",
+  "@readerPageOf": {
+    "description": "Page indicator. max 24 chars.",
+    "placeholders": {
+      "current": {
+        "type": "int",
+        "example": "3",
+        "description": "1-based page"
+      },
+      "total": {
+        "type": "int",
+        "example": "12",
+        "description": "Total pages"
+      }
+    }
+  },
+  "readerPageShort": "{current} / {total}",
+  "@readerPageShort": {
+    "description": "Compact page indicator on narrow layouts. max 12 chars.",
+    "placeholders": {
+      "current": {
+        "type": "int",
+        "example": "3",
+        "description": "1-based page"
+      },
+      "total": {
+        "type": "int",
+        "example": "12",
+        "description": "Total pages"
+      }
+    }
+  },
+  "readerGoToPage": "Go to page",
+  "@readerGoToPage": {
+    "description": "Page jump dialog title / tooltip. max 18 chars."
+  },
+  "readerGoToPageHint": "1–{total}",
+  "@readerGoToPageHint": {
+    "description": "Page jump field hint. max 12 chars.",
+    "placeholders": {
+      "total": {
+        "type": "int",
+        "example": "12",
+        "description": "Total pages"
+      }
+    }
+  },
+  "readerGoToPageError": "Enter a page from 1 to {total}.",
+  "@readerGoToPageError": {
+    "description": "Page jump field error. max 40 chars.",
+    "placeholders": {
+      "total": {
+        "type": "int",
+        "example": "12",
+        "description": "Total pages"
+      }
+    }
+  },
+  "readerZoomIn": "Zoom in",
+  "@readerZoomIn": {
+    "description": "Toolbar tooltip. max 18 chars."
+  },
+  "readerZoomOut": "Zoom out",
+  "@readerZoomOut": {
+    "description": "Toolbar tooltip. max 18 chars."
+  },
+  "readerZoomLevel": "{percent}%",
+  "@readerZoomLevel": {
+    "description": "Zoom level indicator. max 6 chars.",
+    "placeholders": {
+      "percent": {
+        "type": "int",
+        "example": "125",
+        "description": "Zoom percent"
+      }
+    }
+  },
+  "readerFitWidth": "Fit width",
+  "@readerFitWidth": {
+    "description": "Zoom menu item / tooltip. max 18 chars."
+  },
+  "readerFitPage": "Fit page",
+  "@readerFitPage": {
+    "description": "Zoom menu item / tooltip. max 18 chars."
+  },
+  "readerSearch": "Find in paper",
+  "@readerSearch": {
+    "description": "Toolbar tooltip. max 24 chars."
+  },
+  "readerSearchHint": "Find in this paper",
+  "@readerSearchHint": {
+    "description": "In-paper search field placeholder. max 32 chars."
+  },
+  "readerSearchResults": "{current} of {total}",
+  "@readerSearchResults": {
+    "description": "In-paper search result counter. max 12 chars.",
+    "placeholders": {
+      "current": {
+        "type": "int",
+        "example": "2",
+        "description": "1-based match"
+      },
+      "total": {
+        "type": "int",
+        "example": "9",
+        "description": "Match count"
+      }
+    }
+  },
+  "readerSearchNoResults": "No matches",
+  "@readerSearchNoResults": {
+    "description": "In-paper search counter, zero. max 18 chars."
+  },
+  "readerHighlightTool": "Highlight",
+  "@readerHighlightTool": {
+    "description": "Toolbar tooltip / tool label. max 18 chars."
+  },
+  "readerFigureTool": "Highlight figure",
+  "@readerFigureTool": {
+    "description": "Toolbar tooltip: draw a box around a figure. max 24 chars."
+  },
+  "readerStylusTool": "Pen",
+  "@readerStylusTool": {
+    "description": "Toolbar tooltip / tool label: stylus mode. max 18 chars."
+  },
+  "readerEraserTool": "Eraser",
+  "@readerEraserTool": {
+    "description": "Toolbar tooltip / tool label. max 18 chars."
+  },
+  "readerSelectTool": "Select",
+  "@readerSelectTool": {
+    "description": "Toolbar tooltip: default text-select mode. max 18 chars."
+  },
+  "readerStylusModeOn": "Pen mode on. Your pen draws, your finger scrolls.",
+  "@readerStylusModeOn": {
+    "description": "Snackbar when stylus mode turns on. max 60 chars."
+  },
+  "readerStylusModeOff": "Pen mode off.",
+  "@readerStylusModeOff": {
+    "description": "Snackbar when stylus mode turns off. max 32 chars."
+  },
+  "readerColorYellow": "Yellow",
+  "@readerColorYellow": {
+    "description": "Highlight color name (tooltip + semantics). max 12 chars."
+  },
+  "readerColorGreen": "Green",
+  "@readerColorGreen": {
+    "description": "Highlight color name. max 12 chars."
+  },
+  "readerColorBlue": "Blue",
+  "@readerColorBlue": {
+    "description": "Highlight color name. max 12 chars."
+  },
+  "readerColorPink": "Pink",
+  "@readerColorPink": {
+    "description": "Highlight color name. max 12 chars."
+  },
+  "readerColorPurple": "Purple",
+  "@readerColorPurple": {
+    "description": "Highlight color name. max 12 chars."
+  },
+  "readerColorOrange": "Orange",
+  "@readerColorOrange": {
+    "description": "Highlight color name. max 12 chars."
+  },
+  "readerSelectionHighlight": "Highlight",
+  "@readerSelectionHighlight": {
+    "description": "Selection menu action. max 18 chars."
+  },
+  "readerSelectionExplain": "Explain",
+  "@readerSelectionExplain": {
+    "description": "Selection menu action: AI explanation. max 18 chars."
+  },
+  "readerSelectionAddNote": "Add note",
+  "@readerSelectionAddNote": {
+    "description": "Selection menu action. max 18 chars."
+  },
+  "readerSelectionCopy": "Copy",
+  "@readerSelectionCopy": {
+    "description": "Selection menu action. max 18 chars."
+  },
+  "readerSelectionCopied": "Copied.",
+  "@readerSelectionCopied": {
+    "description": "Snackbar after copy. max 24 chars."
+  },
+  "readerHighlightEditNote": "Edit note",
+  "@readerHighlightEditNote": {
+    "description": "Highlight menu action. max 18 chars."
+  },
+  "readerHighlightChangeColor": "Change color",
+  "@readerHighlightChangeColor": {
+    "description": "Highlight menu action. max 18 chars."
+  },
+  "readerHighlightDelete": "Delete highlight",
+  "@readerHighlightDelete": {
+    "description": "Highlight menu action. max 24 chars."
+  },
+  "readerHighlightDeleted": "Highlight deleted.",
+  "@readerHighlightDeleted": {
+    "description": "Snackbar with Undo. max 32 chars."
+  },
+  "readerFigureHint": "Drag a box around the figure.",
+  "@readerFigureHint": {
+    "description": "Hint banner when figure tool is active. max 40 chars."
+  },
+  "readerSplitView": "Show side panel",
+  "@readerSplitView": {
+    "description": "Toolbar tooltip: open split view. max 24 chars."
+  },
+  "readerHideSplitView": "Hide side panel",
+  "@readerHideSplitView": {
+    "description": "Toolbar tooltip: close split view. max 24 chars."
+  },
+  "readerFullscreen": "Full screen",
+  "@readerFullscreen": {
+    "description": "Toolbar tooltip. max 18 chars."
+  },
+  "readerExitFullscreen": "Exit full screen",
+  "@readerExitFullscreen": {
+    "description": "Toolbar tooltip. max 24 chars."
+  },
+  "readerOpening": "Opening the paper…",
+  "@readerOpening": {
+    "description": "Reader loading state. max 32 chars."
+  },
+  "readerLoadError": "Couldn’t open this paper.",
+  "@readerLoadError": {
+    "description": "Reader error headline. max 40 chars."
+  },
+  "readerLoadErrorBody": "The file may be damaged or no longer available.",
+  "@readerLoadErrorBody": {
+    "description": "Reader error body. max 80 chars."
+  },
+  "readerPasswordProtected": "This PDF is password protected. Paper can’t open it yet.",
+  "@readerPasswordProtected": {
+    "description": "Reader error for encrypted PDF. max 80 chars."
+  },
+  "readerOutline": "Contents",
+  "@readerOutline": {
+    "description": "Toolbar tooltip / panel title: PDF outline. max 18 chars."
+  },
+  "readerNoOutline": "This paper has no table of contents.",
+  "@readerNoOutline": {
+    "description": "Outline empty state. max 60 chars."
+  },
+  "citationLookingUp": "Looking up reference…",
+  "@citationLookingUp": {
+    "description": "Citation popover loading. max 32 chars."
+  },
+  "citationNotFound": "Couldn’t find this reference.",
+  "@citationNotFound": {
+    "description": "Citation popover empty. max 40 chars."
+  },
+  "citationOpenSource": "Open source",
+  "@citationOpenSource": {
+    "description": "Citation popover button: open DOI/URL in browser. max 18 chars."
+  },
+  "citationCopy": "Copy citation",
+  "@citationCopy": {
+    "description": "Citation popover button. max 18 chars."
+  },
+  "citationCopied": "Citation copied.",
+  "@citationCopied": {
+    "description": "Snackbar. max 24 chars."
+  },
+  "citationAddToLibrary": "Add to library",
+  "@citationAddToLibrary": {
+    "description": "Citation popover button: import open-access PDF. max 18 chars."
+  },
+  "citationAdding": "Adding…",
+  "@citationAdding": {
+    "description": "Citation add button busy state. max 18 chars."
+  },
+  "citationAdded": "Added to your library.",
+  "@citationAdded": {
+    "description": "Snackbar after citation add. max 40 chars."
+  },
+  "citationInLibrary": "In your library",
+  "@citationInLibrary": {
+    "description": "Citation popover state chip. max 18 chars."
+  },
+  "citationNoOpenAccess": "No open-access PDF found.",
+  "@citationNoOpenAccess": {
+    "description": "Citation add failure. max 40 chars."
+  },
+  "citationAddError": "Couldn’t add this paper. Try again.",
+  "@citationAddError": {
+    "description": "Citation add error. max 40 chars."
+  },
+  "citationJumpToReference": "Go to reference",
+  "@citationJumpToReference": {
+    "description": "Citation popover button: jump to bibliography entry. max 18 chars."
+  },
+  "citationOfflineNote": "Reference details need a connection.",
+  "@citationOfflineNote": {
+    "description": "Citation popover while offline. max 40 chars."
+  },
+  "citationAuthorsEtAl": "{firstAuthor} et al.",
+  "@citationAuthorsEtAl": {
+    "description": "Compact author line. max 32 chars.",
+    "placeholders": {
+      "firstAuthor": {
+        "type": "String",
+        "example": "Vaswani",
+        "description": "First author surname"
+      }
+    }
+  },
+  "citationYear": "({year})",
+  "@citationYear": {
+    "description": "Year suffix in citation line. max 8 chars.",
+    "placeholders": {
+      "year": {
+        "type": "int",
+        "example": "2017",
+        "description": "Publication year"
+      }
+    }
+  },
+  "panelNotesTab": "Notes",
+  "@panelNotesTab": {
+    "description": "Side panel tab label. max 12 chars."
+  },
+  "panelGlossaryTab": "Glossary",
+  "@panelGlossaryTab": {
+    "description": "Side panel tab label. max 12 chars."
+  },
+  "panelExplanationTab": "Explanation",
+  "@panelExplanationTab": {
+    "description": "Side panel tab label. max 12 chars."
+  },
+  "panelClose": "Close panel",
+  "@panelClose": {
+    "description": "Side panel close tooltip. max 18 chars."
+  },
+  "panelResize": "Resize panel",
+  "@panelResize": {
+    "description": "Split-view divider tooltip. max 18 chars."
+  },
+  "panelNotesEmptyTitle": "No notes yet",
+  "@panelNotesEmptyTitle": {
+    "description": "Notes tab empty headline. max 32 chars."
+  },
+  "panelNotesEmptyBody": "Highlight a passage and add a note. Your notes for this paper show up here.",
+  "@panelNotesEmptyBody": {
+    "description": "Notes tab empty body. max 100 chars."
+  },
+  "panelNotesNew": "New note",
+  "@panelNotesNew": {
+    "description": "Notes tab button. max 18 chars."
+  },
+  "panelNoteHint": "Write a note…",
+  "@panelNoteHint": {
+    "description": "Note editor placeholder. max 24 chars."
+  },
+  "panelNoteSaved": "Saved",
+  "@panelNoteSaved": {
+    "description": "Note editor autosave status. max 12 chars."
+  },
+  "panelNoteSaving": "Saving…",
+  "@panelNoteSaving": {
+    "description": "Note editor autosave status. max 12 chars."
+  },
+  "panelNoteSavedOffline": "Saved on this device",
+  "@panelNoteSavedOffline": {
+    "description": "Note autosave status while offline. max 24 chars."
+  },
+  "panelNoteDelete": "Delete note",
+  "@panelNoteDelete": {
+    "description": "Note menu action. max 18 chars."
+  },
+  "panelNoteDeleted": "Note deleted.",
+  "@panelNoteDeleted": {
+    "description": "Snackbar with Undo. max 24 chars."
+  },
+  "panelNoteOnPage": "Page {page}",
+  "@panelNoteOnPage": {
+    "description": "Note card anchor label. max 12 chars.",
+    "placeholders": {
+      "page": {
+        "type": "int",
+        "example": "4",
+        "description": "1-based page"
+      }
+    }
+  },
+  "panelGlossaryEmptyTitle": "Your glossary is empty",
+  "@panelGlossaryEmptyTitle": {
+    "description": "Glossary tab empty headline. max 32 chars."
+  },
+  "panelGlossaryEmptyBody": "Select a term and tap Explain. Every term you look up is saved here.",
+  "@panelGlossaryEmptyBody": {
+    "description": "Glossary tab empty body. max 100 chars."
+  },
+  "panelGlossarySearchHint": "Search your glossary…",
+  "@panelGlossarySearchHint": {
+    "description": "Glossary search placeholder. max 32 chars."
+  },
+  "panelGlossaryThisPaper": "This paper",
+  "@panelGlossaryThisPaper": {
+    "description": "Glossary filter chip. max 18 chars."
+  },
+  "panelGlossaryAllPapers": "All papers",
+  "@panelGlossaryAllPapers": {
+    "description": "Glossary filter chip. max 18 chars."
+  },
+  "panelGlossaryTermCount": "{count, plural, =0{No terms} =1{1 term} other{{count} terms}}",
+  "@panelGlossaryTermCount": {
+    "description": "Glossary header count. max 18 chars.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "14",
+        "description": "Term count"
+      }
+    }
+  },
+  "panelExplanationEmptyTitle": "Nothing explained yet",
+  "@panelExplanationEmptyTitle": {
+    "description": "Explanation tab empty headline. max 32 chars."
+  },
+  "panelExplanationEmptyBody": "Select a term or sentence and tap Explain to get a plain-English explanation.",
+  "@panelExplanationEmptyBody": {
+    "description": "Explanation tab empty body. max 100 chars."
+  },
+  "panelExplanationLoading": "Writing the explanation…",
+  "@panelExplanationLoading": {
+    "description": "Explanation tab loading. max 32 chars."
+  },
+  "panelExplanationAnalogy": "In everyday terms",
+  "@panelExplanationAnalogy": {
+    "description": "Explanation section header: analogy. max 24 chars."
+  },
+  "panelExplanationFormal": "Precise definition",
+  "@panelExplanationFormal": {
+    "description": "Explanation section header: formal definition. max 24 chars."
+  },
+  "panelExplanationVisual": "Visual",
+  "@panelExplanationVisual": {
+    "description": "Explanation section header: visual aid. max 18 chars."
+  },
+  "panelExplanationVisualLoading": "Drawing the scene…",
+  "@panelExplanationVisualLoading": {
+    "description": "Visual aid loading. max 32 chars."
+  },
+  "panelExplanationVisualError": "Couldn’t draw this scene.",
+  "@panelExplanationVisualError": {
+    "description": "Visual aid error. max 40 chars."
+  },
+  "panelReexplain": "Re-explain for this paper",
+  "@panelReexplain": {
+    "description": "Button: regenerate explanation using paper context. max 32 chars."
+  },
+  "panelReexplaining": "Re-explaining for this paper…",
+  "@panelReexplaining": {
+    "description": "Loading state for re-explain. max 40 chars."
+  },
+  "panelSaveToGlossary": "Save to glossary",
+  "@panelSaveToGlossary": {
+    "description": "Explanation button. max 24 chars."
+  },
+  "panelSavedToGlossary": "In your glossary",
+  "@panelSavedToGlossary": {
+    "description": "Explanation saved state. max 24 chars."
+  },
+  "aiOfflineTitle": "You’re offline",
+  "@aiOfflineTitle": {
+    "description": "AI slot offline headline. max 32 chars."
+  },
+  "aiOfflineBody": "Explanations, glossary lookups, and visuals need a connection. Your highlights and notes still work.",
+  "@aiOfflineBody": {
+    "description": "AI slot offline body. max 120 chars."
+  },
+  "aiOfflineCached": "Showing the saved explanation. Connect to re-explain.",
+  "@aiOfflineCached": {
+    "description": "Banner when an offline cached explanation is shown. max 80 chars."
+  },
+  "aiErrorTitle": "Couldn’t get an explanation",
+  "@aiErrorTitle": {
+    "description": "AI error headline. max 40 chars."
+  },
+  "aiErrorBody": "Something went wrong on our side. Try again in a moment.",
+  "@aiErrorBody": {
+    "description": "AI error body. max 80 chars."
+  },
+  "aiQuotaTitle": "You’ve reached today’s limit",
+  "@aiQuotaTitle": {
+    "description": "AI quota headline. max 40 chars."
+  },
+  "aiQuotaBody": "You can ask for more explanations tomorrow. Your saved ones are still here.",
+  "@aiQuotaBody": {
+    "description": "AI quota body. max 100 chars."
+  },
+  "aiQuotaResetAt": "Resets at {time}",
+  "@aiQuotaResetAt": {
+    "description": "AI quota reset time. max 24 chars.",
+    "placeholders": {
+      "time": {
+        "type": "DateTime",
+        "format": "jm",
+        "description": "Reset time"
+      }
+    }
+  },
+  "aiTimeout": "This is taking longer than usual. Try again.",
+  "@aiTimeout": {
+    "description": "AI timeout message. max 60 chars."
+  },
+  "aiSelectionTooLong": "That selection is too long. Pick a term or one sentence.",
+  "@aiSelectionTooLong": {
+    "description": "Explain blocked: selection length. max 80 chars."
+  },
+  "aiRetry": "Try again",
+  "@aiRetry": {
+    "description": "AI error retry button. max 18 chars."
+  },
+  "aiGenerating": "Generating explanation…",
+  "@aiGenerating": {
+    "description": "Generic AI loading. max 32 chars."
+  },
+  "aiPoweredNote": "Explanations are written by AI and can be wrong. Check key details in the paper.",
+  "@aiPoweredNote": {
+    "description": "Small print under explanations. max 100 chars."
+  },
+  "offlineBanner": "You’re offline. Changes save on this device and sync later.",
+  "@offlineBanner": {
+    "description": "Persistent top banner while offline. max 70 chars."
+  },
+  "offlineBannerShort": "Offline",
+  "@offlineBannerShort": {
+    "description": "Compact status chip while offline. max 12 chars."
+  },
+  "offlineBackOnline": "Back online. Syncing your changes…",
+  "@offlineBackOnline": {
+    "description": "Snackbar on reconnect. max 40 chars."
+  },
+  "offlineFeatureUnavailable": "Needs a connection",
+  "@offlineFeatureUnavailable": {
+    "description": "Tooltip on disabled online-only controls. max 24 chars."
+  },
+  "offlineLibraryEmptyTitle": "No papers on this device",
+  "@offlineLibraryEmptyTitle": {
+    "description": "Library empty state when offline filter is on / offline. max 32 chars."
+  },
+  "offlineLibraryEmptyBody": "Download papers while online to read them anywhere.",
+  "@offlineLibraryEmptyBody": {
+    "description": "Offline library empty body. max 80 chars."
+  },
+  "offlineStorageUsed": "{size} used on this device",
+  "@offlineStorageUsed": {
+    "description": "Settings: offline storage used. max 32 chars.",
+    "placeholders": {
+      "size": {
+        "type": "String",
+        "example": "312 MB",
+        "description": "Formatted size"
+      }
+    }
+  },
+  "syncSynced": "All changes synced",
+  "@syncSynced": {
+    "description": "Sync status chip / tooltip. max 24 chars."
+  },
+  "syncSyncing": "Syncing…",
+  "@syncSyncing": {
+    "description": "Sync status chip. max 18 chars."
+  },
+  "syncPending": "{count, plural, =0{Nothing to sync} =1{1 change waiting to sync} other{{count} changes waiting to sync}}",
+  "@syncPending": {
+    "description": "Sync status tooltip / settings row. max 40 chars.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3",
+        "description": "Queued local changes"
+      }
+    }
+  },
+  "syncPendingShort": "{count, plural, =1{1 pending} other{{count} pending}}",
+  "@syncPendingShort": {
+    "description": "Compact sync badge. max 12 chars.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3",
+        "description": "Queued local changes"
+      }
+    }
+  },
+  "syncLastSynced": "Last synced {time}",
+  "@syncLastSynced": {
+    "description": "Sync status detail. max 40 chars.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "2 min ago",
+        "description": "Relative or formatted time, e.g. '2 min ago'"
+      }
+    }
+  },
+  "syncLastSyncedAt": "Last synced {date} at {time}",
+  "@syncLastSyncedAt": {
+    "description": "Sync status detail with absolute time. max 48 chars.",
+    "placeholders": {
+      "date": {
+        "type": "DateTime",
+        "format": "yMMMd",
+        "description": "Sync date"
+      },
+      "time": {
+        "type": "DateTime",
+        "format": "jm",
+        "description": "Sync time"
+      }
+    }
+  },
+  "syncJustNow": "just now",
+  "@syncJustNow": {
+    "description": "Value for syncLastSynced time when under a minute. max 12 chars."
+  },
+  "syncNever": "Not synced yet",
+  "@syncNever": {
+    "description": "Sync status before first sync. max 24 chars."
+  },
+  "syncError": "Couldn’t sync. We’ll try again soon.",
+  "@syncError": {
+    "description": "Sync status error. max 48 chars."
+  },
+  "syncErrorAuth": "Sign in again to sync your changes.",
+  "@syncErrorAuth": {
+    "description": "Sync blocked: session expired. max 48 chars."
+  },
+  "syncNow": "Sync now",
+  "@syncNow": {
+    "description": "Button / menu action. max 18 chars."
+  },
+  "syncConflictTitle": "How sync handles edits",
+  "@syncConflictTitle": {
+    "description": "Help dialog / settings section title. max 32 chars."
+  },
+  "syncConflictBody": "If you change the same highlight or note on two devices, the most recent change wins. Edits to different items are all kept.",
+  "@syncConflictBody": {
+    "description": "Last-write-wins explanation in settings/help. max 160 chars."
+  },
+  "syncConflictReplaced": "A newer version from another device replaced this note.",
+  "@syncConflictReplaced": {
+    "description": "Snackbar when remote LWW overwrote a local edit. max 70 chars."
+  },
+  "errorGeneric": "Something went wrong. Please try again.",
+  "@errorGeneric": {
+    "description": "Fallback error. max 60 chars."
+  },
+  "errorNetwork": "Couldn’t connect. Check your connection and try again.",
+  "@errorNetwork": {
+    "description": "Network error. max 70 chars."
+  },
+  "errorFileTooLarge": "That file is over {maxMb} MB. Try a smaller PDF.",
+  "@errorFileTooLarge": {
+    "description": "File size error. max 60 chars.",
+    "placeholders": {
+      "maxMb": {
+        "type": "int",
+        "example": "20",
+        "description": "Size limit in MB"
+      }
+    }
+  },
+  "errorUnsupportedFile": "That file isn’t a PDF. Choose a PDF file and try again.",
+  "@errorUnsupportedFile": {
+    "description": "Unsupported type error. max 70 chars."
+  },
+  "errorEmptyFile": "That file is empty. Choose another PDF.",
+  "@errorEmptyFile": {
+    "description": "Zero-byte file error. max 60 chars."
+  },
+  "errorAuthExpired": "Your session expired. Sign in again to continue.",
+  "@errorAuthExpired": {
+    "description": "Auth expired error. max 60 chars."
+  },
+  "errorAuthExpiredAction": "Sign in",
+  "@errorAuthExpiredAction": {
+    "description": "Action on auth-expired snackbar/dialog. max 18 chars."
+  },
+  "errorNotFound": "This paper is no longer in your library.",
+  "@errorNotFound": {
+    "description": "Paper deleted elsewhere / 404. max 60 chars."
+  },
+  "errorStorageFull": "Not enough space on this device. Remove some downloads and try again.",
+  "@errorStorageFull": {
+    "description": "Disk full error. max 80 chars."
+  },
+  "errorServer": "Paper is having trouble right now. Try again in a few minutes.",
+  "@errorServer": {
+    "description": "5xx error. max 80 chars."
+  },
+  "settingsTitle": "Settings",
+  "@settingsTitle": {
+    "description": "Settings screen title / nav label. max 18 chars."
+  },
+  "settingsAccount": "Account",
+  "@settingsAccount": {
+    "description": "Section header. max 24 chars."
+  },
+  "settingsSignedInAs": "Signed in as {email}",
+  "@settingsSignedInAs": {
+    "description": "Account row. max 60 chars (excluding variable text).",
+    "placeholders": {
+      "email": {
+        "type": "String",
+        "example": "ada@uni.edu",
+        "description": "User email"
+      }
+    }
+  },
+  "settingsAppearance": "Appearance",
+  "@settingsAppearance": {
+    "description": "Section header. max 24 chars."
+  },
+  "settingsTheme": "Theme",
+  "@settingsTheme": {
+    "description": "Row label. max 24 chars."
+  },
+  "settingsThemeSystem": "Match system",
+  "@settingsThemeSystem": {
+    "description": "Theme option. max 18 chars."
+  },
+  "settingsThemeLight": "Light",
+  "@settingsThemeLight": {
+    "description": "Theme option. max 18 chars."
+  },
+  "settingsThemeDark": "Dark",
+  "@settingsThemeDark": {
+    "description": "Theme option. max 18 chars."
+  },
+  "settingsReader": "Reader",
+  "@settingsReader": {
+    "description": "Section header. max 24 chars."
+  },
+  "settingsDefaultHighlightColor": "Default highlight color",
+  "@settingsDefaultHighlightColor": {
+    "description": "Row label. max 32 chars."
+  },
+  "settingsScrollDirection": "Page scrolling",
+  "@settingsScrollDirection": {
+    "description": "Row label. max 24 chars."
+  },
+  "settingsScrollVertical": "Vertical",
+  "@settingsScrollVertical": {
+    "description": "Option. max 18 chars."
+  },
+  "settingsScrollHorizontal": "Horizontal",
+  "@settingsScrollHorizontal": {
+    "description": "Option. max 18 chars."
+  },
+  "settingsStylusOnly": "Pen draws, finger scrolls",
+  "@settingsStylusOnly": {
+    "description": "Switch label (tablet). max 32 chars."
+  },
+  "settingsStylusOnlyHelp": "When on, only your pen makes highlights and marks.",
+  "@settingsStylusOnlyHelp": {
+    "description": "Switch helper. max 70 chars."
+  },
+  "settingsOffline": "Offline and storage",
+  "@settingsOffline": {
+    "description": "Section header. max 24 chars."
+  },
+  "settingsAutoDownload": "Download new papers automatically",
+  "@settingsAutoDownload": {
+    "description": "Switch label. max 40 chars."
+  },
+  "settingsDownloadOnWifiOnly": "Download on Wi-Fi only",
+  "@settingsDownloadOnWifiOnly": {
+    "description": "Switch label (Android). max 32 chars."
+  },
+  "settingsClearDownloads": "Remove all downloads",
+  "@settingsClearDownloads": {
+    "description": "Destructive row. max 24 chars."
+  },
+  "settingsClearDownloadsConfirm": "Remove all downloaded PDFs from this device? Your library, highlights, and notes stay.",
+  "@settingsClearDownloadsConfirm": {
+    "description": "Confirm dialog body. max 120 chars."
+  },
+  "settingsSync": "Sync",
+  "@settingsSync": {
+    "description": "Section header. max 24 chars."
+  },
+  "settingsShortcuts": "Keyboard shortcuts",
+  "@settingsShortcuts": {
+    "description": "Row label (desktop). max 24 chars."
+  },
+  "settingsAbout": "About",
+  "@settingsAbout": {
+    "description": "Section header. max 24 chars."
+  },
+  "settingsVersion": "Version {version}",
+  "@settingsVersion": {
+    "description": "About row. max 32 chars.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "1.0.0 (12)",
+        "description": "App version"
+      }
+    }
+  },
+  "settingsHelp": "Help and feedback",
+  "@settingsHelp": {
+    "description": "Row label. max 24 chars."
+  },
+  "settingsPrivacy": "Privacy Policy",
+  "@settingsPrivacy": {
+    "description": "Row label. max 24 chars."
+  },
+  "settingsTerms": "Terms of Service",
+  "@settingsTerms": {
+    "description": "Row label. max 24 chars."
+  },
+  "settingsLicenses": "Open-source licenses",
+  "@settingsLicenses": {
+    "description": "Row label. max 24 chars."
+  },
+  "settingsDeleteAccount": "Delete account",
+  "@settingsDeleteAccount": {
+    "description": "Destructive row, opens paper.college in browser. max 24 chars."
+  },
+  "shortcutsTitle": "Keyboard shortcuts",
+  "@shortcutsTitle": {
+    "description": "Shortcuts sheet title. max 24 chars."
+  },
+  "shortcutsOpenPaper": "Add a paper",
+  "@shortcutsOpenPaper": {
+    "description": "Shortcut description. max 32 chars."
+  },
+  "shortcutsSearchLibrary": "Search library",
+  "@shortcutsSearchLibrary": {
+    "description": "Shortcut description. max 32 chars."
+  },
+  "shortcutsFindInPaper": "Find in paper",
+  "@shortcutsFindInPaper": {
+    "description": "Shortcut description. max 32 chars."
+  },
+  "shortcutsNextPage": "Next page",
+  "@shortcutsNextPage": {
+    "description": "Shortcut description. max 32 chars."
+  },
+  "shortcutsPrevPage": "Previous page",
+  "@shortcutsPrevPage": {
+    "description": "Shortcut description. max 32 chars."
+  },
+  "shortcutsFirstPage": "First page",
+  "@shortcutsFirstPage": {
+    "description": "Shortcut description. max 32 chars."
+  },
+  "shortcutsLastPage": "Last page",
+  "@shortcutsLastPage": {
+    "description": "Shortcut description. max 32 chars."
+  },
+  "shortcutsGoToPage": "Go to page",
+  "@shortcutsGoToPage": {
+    "description": "Shortcut description. max 32 chars."
+  },
+  "shortcutsZoomIn": "Zoom in",
+  "@shortcutsZoomIn": {
+    "description": "Shortcut description. max 32 chars."
+  },
+  "shortcutsZoomOut": "Zoom out",
+  "@shortcutsZoomOut": {
+    "description": "Shortcut description. max 32 chars."
+  },
+  "shortcutsZoomReset": "Reset zoom",
+  "@shortcutsZoomReset": {
+    "description": "Shortcut description. max 32 chars."
+  },
+  "shortcutsHighlight": "Highlight selection",
+  "@shortcutsHighlight": {
+    "description": "Shortcut description. max 32 chars."
+  },
+  "shortcutsExplain": "Explain selection",
+  "@shortcutsExplain": {
+    "description": "Shortcut description. max 32 chars."
+  },
+  "shortcutsAddNote": "Add note to selection",
+  "@shortcutsAddNote": {
+    "description": "Shortcut description. max 32 chars."
+  },
+  "shortcutsTogglePanel": "Show or hide side panel",
+  "@shortcutsTogglePanel": {
+    "description": "Shortcut description. max 32 chars."
+  },
+  "shortcutsNotesTab": "Open Notes",
+  "@shortcutsNotesTab": {
+    "description": "Shortcut description. max 32 chars."
+  },
+  "shortcutsGlossaryTab": "Open Glossary",
+  "@shortcutsGlossaryTab": {
+    "description": "Shortcut description. max 32 chars."
+  },
+  "shortcutsExplanationTab": "Open Explanation",
+  "@shortcutsExplanationTab": {
+    "description": "Shortcut description. max 32 chars."
+  },
+  "shortcutsUndo": "Undo",
+  "@shortcutsUndo": {
+    "description": "Shortcut description. max 32 chars."
+  },
+  "shortcutsRedo": "Redo",
+  "@shortcutsRedo": {
+    "description": "Shortcut description. max 32 chars."
+  },
+  "shortcutsFullscreen": "Toggle full screen",
+  "@shortcutsFullscreen": {
+    "description": "Shortcut description. max 32 chars."
+  },
+  "shortcutsCloseOrBack": "Close or go back",
+  "@shortcutsCloseOrBack": {
+    "description": "Shortcut description. max 32 chars."
+  },
+  "shortcutsShowShortcuts": "Show keyboard shortcuts",
+  "@shortcutsShowShortcuts": {
+    "description": "Shortcut description. max 32 chars."
+  },
+  "shortcutsSettings": "Open settings",
+  "@shortcutsSettings": {
+    "description": "Shortcut description. max 32 chars."
+  },
+  "a11yAppLogo": "Paper logo",
+  "@a11yAppLogo": {
+    "description": "Semantics label for logo image. max 32 chars."
+  },
+  "a11yPaperCard": "{title}. {pages}. {status}",
+  "@a11yPaperCard": {
+    "description": "Semantics label for library card; pass formatted pieces. max 160 chars (excluding variable text).",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Attention Is All You Need",
+        "description": "Paper title"
+      },
+      "pages": {
+        "type": "String",
+        "example": "12 pages",
+        "description": "Formatted page count"
+      },
+      "status": {
+        "type": "String",
+        "example": "Available offline",
+        "description": "Download/sync status"
+      }
+    }
+  },
+  "a11yPaperMenu": "More options for {title}",
+  "@a11yPaperMenu": {
+    "description": "Semantics label for card overflow button. max 100 chars (excluding variable text).",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Attention Is All You Need",
+        "description": "Paper title"
+      }
+    }
+  },
+  "a11yHighlight": "{color} highlight: {text}",
+  "@a11yHighlight": {
+    "description": "Semantics label for a highlight; truncate text. max 160 chars (excluding variable text).",
+    "placeholders": {
+      "color": {
+        "type": "String",
+        "example": "Yellow",
+        "description": "Color name from readerColor*"
+      },
+      "text": {
+        "type": "String",
+        "example": "self-attention",
+        "description": "Highlighted text"
+      }
+    }
+  },
+  "a11yFigureHighlight": "{color} figure highlight on page {page}",
+  "@a11yFigureHighlight": {
+    "description": "Semantics label for a figure highlight. max 80 chars.",
+    "placeholders": {
+      "color": {
+        "type": "String",
+        "example": "Blue",
+        "description": "Color name"
+      },
+      "page": {
+        "type": "int",
+        "example": "4",
+        "description": "1-based page"
+      }
+    }
+  },
+  "a11yInkStroke": "Pen mark on page {page}",
+  "@a11yInkStroke": {
+    "description": "Semantics label for stylus ink. max 40 chars.",
+    "placeholders": {
+      "page": {
+        "type": "int",
+        "example": "4",
+        "description": "1-based page"
+      }
+    }
+  },
+  "a11yHighlightHasNote": "Has a note",
+  "@a11yHighlightHasNote": {
+    "description": "Appended semantics hint for highlights with a note. max 24 chars."
+  },
+  "a11yColorSwatch": "{color}, highlight color",
+  "@a11yColorSwatch": {
+    "description": "Semantics label for color swatch. max 40 chars.",
+    "placeholders": {
+      "color": {
+        "type": "String",
+        "example": "Yellow",
+        "description": "Color name"
+      }
+    }
+  },
+  "a11yColorSelected": "Selected",
+  "@a11yColorSelected": {
+    "description": "Semantics value for selected swatch / tab. max 18 chars."
+  },
+  "a11yPdfPage": "Page {page} of {total}",
+  "@a11yPdfPage": {
+    "description": "Semantics label for a rendered PDF page. max 32 chars.",
+    "placeholders": {
+      "page": {
+        "type": "int",
+        "example": "3",
+        "description": "1-based page"
+      },
+      "total": {
+        "type": "int",
+        "example": "12",
+        "description": "Total pages"
+      }
+    }
+  },
+  "a11yCitationMarker": "Citation {label}. Double tap for details.",
+  "@a11yCitationMarker": {
+    "description": "Semantics label for inline citation marker. max 60 chars.",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "[12]",
+        "description": "Citation label"
+      }
+    }
+  },
+  "a11ySyncStatus": "Sync status: {status}",
+  "@a11ySyncStatus": {
+    "description": "Semantics label for sync chip. max 60 chars.",
+    "placeholders": {
+      "status": {
+        "type": "String",
+        "example": "All changes synced",
+        "description": "Text from sync*"
+      }
+    }
+  },
+  "a11yLoading": "Loading",
+  "@a11yLoading": {
+    "description": "Generic progress indicator semantics. max 18 chars."
+  },
+  "a11yPanelDivider": "Panel divider. Drag to resize.",
+  "@a11yPanelDivider": {
+    "description": "Semantics label for split-view handle. max 40 chars."
+  },
+  "a11yOpenMenu": "Open menu",
+  "@a11yOpenMenu": {
+    "description": "Overflow menu button. max 18 chars."
+  },
+  "a11yCloseDialog": "Close",
+  "@a11yCloseDialog": {
+    "description": "Dialog close button. max 18 chars."
+  },
+  "a11yClearText": "Clear text",
+  "@a11yClearText": {
+    "description": "Text field clear button. max 18 chars."
+  },
+  "a11ySearchResultsCount": "{count, plural, =0{No results} =1{1 result} other{{count} results}}",
+  "@a11ySearchResultsCount": {
+    "description": "Live-region announcement after search. max 24 chars.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "4",
+        "description": "Result count"
+      }
+    }
+  },
+  "commonCancel": "Cancel",
+  "@commonCancel": {
+    "description": "Generic button / action label. max 18 chars."
+  },
+  "commonRetry": "Try again",
+  "@commonRetry": {
+    "description": "Generic button / action label. max 18 chars."
+  },
+  "commonUndo": "Undo",
+  "@commonUndo": {
+    "description": "Generic button / action label. max 18 chars."
+  },
+  "commonOk": "OK",
+  "@commonOk": {
+    "description": "Generic button / action label. max 18 chars."
+  },
+  "commonDone": "Done",
+  "@commonDone": {
+    "description": "Generic button / action label. max 18 chars."
+  },
+  "commonSave": "Save",
+  "@commonSave": {
+    "description": "Generic button / action label. max 18 chars."
+  },
+  "commonDelete": "Delete",
+  "@commonDelete": {
+    "description": "Generic button / action label. max 18 chars."
+  },
+  "commonClose": "Close",
+  "@commonClose": {
+    "description": "Generic button / action label. max 18 chars."
+  },
+  "commonBack": "Back",
+  "@commonBack": {
+    "description": "Generic button / action label. max 18 chars."
+  },
+  "commonNext": "Next",
+  "@commonNext": {
+    "description": "Generic button / action label. max 18 chars."
+  },
+  "commonContinue": "Continue",
+  "@commonContinue": {
+    "description": "Generic button / action label. max 18 chars."
+  },
+  "commonDismiss": "Dismiss",
+  "@commonDismiss": {
+    "description": "Generic button / action label. max 18 chars."
+  },
+  "commonOpen": "Open",
+  "@commonOpen": {
+    "description": "Generic button / action label. max 18 chars."
+  },
+  "commonRemove": "Remove",
+  "@commonRemove": {
+    "description": "Generic button / action label. max 18 chars."
+  },
+  "commonRename": "Rename",
+  "@commonRename": {
+    "description": "Generic button / action label. max 18 chars."
+  },
+  "commonCopy": "Copy",
+  "@commonCopy": {
+    "description": "Generic button / action label. max 18 chars."
+  },
+  "commonEdit": "Edit",
+  "@commonEdit": {
+    "description": "Generic button / action label. max 18 chars."
+  },
+  "commonMore": "More",
+  "@commonMore": {
+    "description": "Generic button / action label. max 18 chars."
+  },
+  "commonSearch": "Search",
+  "@commonSearch": {
+    "description": "Generic button / action label. max 18 chars."
+  },
+  "commonSignIn": "Sign in",
+  "@commonSignIn": {
+    "description": "Generic button / action label. max 18 chars."
+  },
+  "commonLearnMore": "Learn more",
+  "@commonLearnMore": {
+    "description": "Generic button / action label. max 18 chars."
+  },
+  "commonLoading": "Loading…",
+  "@commonLoading": {
+    "description": "Generic button / action label. max 24 chars."
+  },
+  "commonYes": "Yes",
+  "@commonYes": {
+    "description": "Generic button / action label. max 18 chars."
+  },
+  "commonNo": "No",
+  "@commonNo": {
+    "description": "Generic button / action label. max 18 chars."
+  }
+}
