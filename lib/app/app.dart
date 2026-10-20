@@ -5,6 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../auth/auth_providers.dart';
+import '../core/build_flags.dart';
 import '../domain/domain.dart';
 import '../l10n/app_localizations.dart';
 import '../sync/sync_providers.dart';
@@ -91,7 +92,8 @@ class _SyncLifecycleState extends ConsumerState<SyncLifecycle> {
   }
 
   void _apply(AuthState? auth) {
-    if (auth == null) return;
+    // Offline-only builds never sync.
+    if (auth == null || ref.read(offlineOnlyProvider)) return;
     if (auth.isSignedIn) {
       final service = ref.read(syncServiceProvider);
       if (identical(service, _running)) return;

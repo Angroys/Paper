@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/build_flags.dart';
 import '../../../core/core_providers.dart';
 import '../../../data/data_providers.dart';
 import '../../../l10n/app_localizations.dart';
@@ -52,6 +53,8 @@ class _CitationPopoverState extends ConsumerState<CitationPopover> {
     final t = Theme.of(context).textTheme;
     final target = widget.target;
     final online = ref.watch(isOnlineProvider).value ?? true;
+    // Offline-only builds: no "Import" (it fetches the paper by URL).
+    final canImport = !ref.watch(offlineOnlyProvider);
     final ctrl = ref.read(readerControllerProvider(widget.paperId).notifier);
     final url = target.url;
 
@@ -143,7 +146,7 @@ class _CitationPopoverState extends ConsumerState<CitationPopover> {
             spacing: PaperSpacing.sm,
             runSpacing: PaperSpacing.xs,
             children: <Widget>[
-              if (_import != _ImportState.imported)
+              if (canImport && _import != _ImportState.imported)
                 FilledButton(
                   onPressed: _import == _ImportState.importing
                       ? null

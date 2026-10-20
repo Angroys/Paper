@@ -10,6 +10,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../app/app_commands.dart';
 import '../../app/app_shell.dart';
 import '../../app/routes.dart';
+import '../../core/build_flags.dart';
 import '../../core/core_providers.dart';
 import '../../data/data_providers.dart';
 import '../../domain/domain.dart';
@@ -94,7 +95,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         case LibraryCommandKind.importFile:
           unawaited(_importFile());
         case LibraryCommandKind.importUrl:
-          unawaited(_importUrl());
+          // No import by link in offline-only builds.
+          if (!_offlineOnly) unawaited(_importUrl());
         case null:
           break;
       }
@@ -110,6 +112,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   }
 
   bool get _online => ref.read(isOnlineProvider).value ?? true;
+
+  bool get _offlineOnly => ref.read(offlineOnlyProvider);
 
   void _onSearchChanged(String value) {
     setState(() {}); // clear button
@@ -292,6 +296,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     final view = ref.watch(libraryViewProvider);
     final activity = ref.watch(libraryActivityProvider);
     final online = ref.watch(isOnlineProvider).value ?? true;
+    // Offline-only builds: file import only, no download / sync states.
+    final offlineOnly = ref.watch(offlineOnlyProvider);
+    final VoidCallback? onImportUrl = offlineOnly
+        ? null
+        : () => unawaited(_importUrl());
     final async = ref.watch(libraryPapersProvider((view.query, view.sort)));
 
     return LayoutBuilder(
@@ -321,7 +330,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           importMenu: _importMenu,
           online: online,
           onImportFile: () => unawaited(_importFile()),
-          onImportUrl: () => unawaited(_importUrl()),
+          onImportUrl: onImportUrl,
           list: list,
         );
 
@@ -352,7 +361,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             content = _EmptyLibrary(
               online: online,
               onImportFile: () => unawaited(_importFile()),
-              onImportUrl: () => unawaited(_importUrl()),
+              onImportUrl: onImportUrl,
             );
           } else if (all.isEmpty) {
             content = _NoResults(query: view.query, onClear: _clearSearch);
@@ -369,6 +378,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               list: list,
               columns: columns,
               online: online,
+              localOnly: offlineOnly,
               activity: activity,
               actions: _actions,
             );
@@ -396,7 +406,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               header,
-              _FilterRow(view: view, list: list),
+              _FilterRow(view: view, list: list, localOnly: offlineOnly),
               for (final job in activity.imports)
                 Padding(
                   padding: const EdgeInsets.only(bottom: PaperSpacing.sm),
@@ -433,7 +443,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               ? FloatingActionButton(
                   key: LibraryScreen.importButtonKey,
                   tooltip: l10n.importButton,
-                  onPressed: () => unawaited(_showImportSheet(online)),
+                  onPressed: () => unawaited(
+                    offlineOnly ? _importFile() : _showImportSheet(online),
+                  ),
                   child: const Icon(Symbols.add_rounded),
                 )
               : null,
@@ -508,7 +520,9 @@ class _Header extends StatelessWidget {
   final MenuController importMenu;
   final bool online;
   final VoidCallback onImportFile;
-  final VoidCallback onImportUrl;
+
+  /// Null in offline-only builds: the Import button picks a file directly.
+  final VoidCallback? onImportUrl;
   final bool list;
 
   @override
@@ -561,40 +575,48 @@ class _Header extends StatelessWidget {
                   : null),
       ),
     );
-    final importButton = MenuAnchor(
-      controller: importMenu,
-      menuChildren: <Widget>[
-        MenuItemButton(
-          leadingIcon: const Icon(Symbols.description_rounded, size: 20),
-          onPressed: onImportFile,
-          child: Text(l10n.importFromFile),
-        ),
-        MenuItemButton(
-          leadingIcon: const Icon(Symbols.link_rounded, size: 20),
-          onPressed: online ? onImportUrl : null,
-          child: online
-              ? Text(l10n.importFromUrl)
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Text(l10n.importFromUrl),
-                    Text(
-                      l10n.importOfflineUrl,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-        ),
-      ],
-      builder: (context, controller, _) => FilledButton.icon(
-        key: LibraryScreen.importButtonKey,
-        onPressed: () =>
-            controller.isOpen ? controller.close() : controller.open(),
-        icon: const Icon(Symbols.add_rounded, size: 20),
-        label: Text(l10n.importButton),
-      ),
-    );
+    final importUrl = onImportUrl;
+    final Widget importButton = importUrl == null
+        ? FilledButton.icon(
+            key: LibraryScreen.importButtonKey,
+            onPressed: onImportFile,
+            icon: const Icon(Symbols.add_rounded, size: 20),
+            label: Text(l10n.importButton),
+          )
+        : MenuAnchor(
+            controller: importMenu,
+            menuChildren: <Widget>[
+              MenuItemButton(
+                leadingIcon: const Icon(Symbols.description_rounded, size: 20),
+                onPressed: onImportFile,
+                child: Text(l10n.importFromFile),
+              ),
+              MenuItemButton(
+                leadingIcon: const Icon(Symbols.link_rounded, size: 20),
+                onPressed: online ? importUrl : null,
+                child: online
+                    ? Text(l10n.importFromUrl)
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Text(l10n.importFromUrl),
+                          Text(
+                            l10n.importOfflineUrl,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+              ),
+            ],
+            builder: (context, controller, _) => FilledButton.icon(
+              key: LibraryScreen.importButtonKey,
+              onPressed: () =>
+                  controller.isOpen ? controller.close() : controller.open(),
+              icon: const Icon(Symbols.add_rounded, size: 20),
+              label: Text(l10n.importButton),
+            ),
+          );
 
     if (compact) {
       return Padding(
@@ -629,10 +651,17 @@ class _Header extends StatelessWidget {
 }
 
 class _FilterRow extends ConsumerWidget {
-  const _FilterRow({required this.view, required this.list});
+  const _FilterRow({
+    required this.view,
+    required this.list,
+    this.localOnly = false,
+  });
 
   final LibraryViewState view;
   final bool list;
+
+  /// Offline-only builds: no "Downloaded" filter (every paper is local).
+  final bool localOnly;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -652,21 +681,23 @@ class _FilterRow extends ConsumerWidget {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: <Widget>[
-                  for (final f in LibraryFilter.values) ...<Widget>[
-                    FilterChip(
-                      key: ValueKey<String>('filter-${f.name}'),
-                      selected: view.filter == f,
-                      showCheckmark: true,
-                      label: Text(switch (f) {
-                        LibraryFilter.all => l10n.libraryFilterAll,
-                        LibraryFilter.downloaded =>
-                          l10n.libraryFilterDownloaded,
-                        LibraryFilter.unread => l10n.libraryFilterUnread,
-                      }),
-                      onSelected: (_) => ctrl.setFilter(f),
-                    ),
-                    const SizedBox(width: PaperSpacing.sm),
-                  ],
+                  for (final f in LibraryFilter.values)
+                    if (!localOnly ||
+                        f != LibraryFilter.downloaded) ...<Widget>[
+                      FilterChip(
+                        key: ValueKey<String>('filter-${f.name}'),
+                        selected: view.filter == f,
+                        showCheckmark: true,
+                        label: Text(switch (f) {
+                          LibraryFilter.all => l10n.libraryFilterAll,
+                          LibraryFilter.downloaded =>
+                            l10n.libraryFilterDownloaded,
+                          LibraryFilter.unread => l10n.libraryFilterUnread,
+                        }),
+                        onSelected: (_) => ctrl.setFilter(f),
+                      ),
+                      const SizedBox(width: PaperSpacing.sm),
+                    ],
                 ],
               ),
             ),
@@ -726,24 +757,30 @@ class _PaperCollection extends StatelessWidget {
     required this.online,
     required this.activity,
     required this.actions,
+    this.localOnly = false,
   });
 
   final List<Paper> papers;
   final bool list;
   final int columns;
   final bool online;
+
+  /// Offline-only builds: no download / sync badges.
+  final bool localOnly;
   final LibraryActivity activity;
   final PaperActions actions;
 
   @override
   Widget build(BuildContext context) {
     final c = context.paper;
-    PaperDownloadBadge badge(Paper p) => downloadBadgeFor(
-      p,
-      online: online,
-      progress: activity.downloads[p.id],
-      failed: activity.failedDownloads.contains(p.id),
-    );
+    PaperDownloadBadge? badge(Paper p) => localOnly
+        ? null
+        : downloadBadgeFor(
+            p,
+            online: online,
+            progress: activity.downloads[p.id],
+            failed: activity.failedDownloads.contains(p.id),
+          );
     if (list) {
       final pointer = Theme.of(context).platform != TargetPlatform.android;
       return DecoratedBox(
@@ -807,13 +844,16 @@ class _EmptyLibrary extends StatelessWidget {
 
   final bool online;
   final VoidCallback onImportFile;
-  final VoidCallback onImportUrl;
+
+  /// Null in offline-only builds (file import only).
+  final VoidCallback? onImportUrl;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final c = context.paper;
     final t = Theme.of(context).textTheme;
+    final importUrl = onImportUrl;
     final desktop = <TargetPlatform>{
       TargetPlatform.windows,
       TargetPlatform.macOS,
@@ -835,7 +875,9 @@ class _EmptyLibrary extends StatelessWidget {
               ),
               const SizedBox(height: PaperSpacing.sm),
               Text(
-                l10n.libraryEmptyBody,
+                importUrl == null
+                    ? l10n.libraryEmptyBodyFileOnly
+                    : l10n.libraryEmptyBody,
                 style: t.bodyLarge?.copyWith(color: c.textSecondary),
                 textAlign: TextAlign.center,
               ),
@@ -849,13 +891,14 @@ class _EmptyLibrary extends StatelessWidget {
                     onPressed: onImportFile,
                     child: Text(l10n.importFromFile),
                   ),
-                  OutlinedButton(
-                    onPressed: online ? onImportUrl : null,
-                    child: Text(l10n.importFromUrl),
-                  ),
+                  if (importUrl != null)
+                    OutlinedButton(
+                      onPressed: online ? importUrl : null,
+                      child: Text(l10n.importFromUrl),
+                    ),
                 ],
               ),
-              if (!online) ...<Widget>[
+              if (!online && importUrl != null) ...<Widget>[
                 const SizedBox(height: PaperSpacing.sm),
                 Text(
                   l10n.importOfflineUrl,

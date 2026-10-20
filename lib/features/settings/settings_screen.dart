@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/app_settings.dart';
 import '../../app/app_shell.dart';
+import '../../core/build_flags.dart';
 import '../../core/core_providers.dart';
 import '../../core/env.dart';
 import '../../data/data_providers.dart';
@@ -23,6 +24,17 @@ import '../sync/sync_sheet.dart';
 import 'sign_out_dialog.dart';
 
 enum SettingsSection { account, appearance, reader, storage, sync, about }
+
+/// Sections shown, in order. Offline-only builds have no account or sync.
+List<SettingsSection> settingsSectionsFor({required bool offlineOnly}) =>
+    offlineOnly
+    ? const <SettingsSection>[
+        SettingsSection.appearance,
+        SettingsSection.reader,
+        SettingsSection.storage,
+        SettingsSection.about,
+      ]
+    : SettingsSection.values;
 
 /// Downloaded papers (Settings › Storage).
 final downloadedPapersProvider = StreamProvider.autoDispose<List<Paper>>(
@@ -47,7 +59,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  SettingsSection _selected = SettingsSection.account;
+  SettingsSection? _picked;
 
   String _label(AppLocalizations l10n, SettingsSection s) => switch (s) {
     SettingsSection.account => l10n.settingsSectionAccount,
@@ -80,6 +92,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final c = context.paper;
+    final sections = settingsSectionsFor(
+      offlineOnly: ref.watch(offlineOnlyProvider),
+    );
+    final picked = _picked;
+    final selected = picked != null && sections.contains(picked)
+        ? picked
+        : sections.first;
     return LayoutBuilder(
       builder: (context, constraints) {
         final wc = PaperWindowClass.of(constraints.maxWidth);
@@ -107,7 +126,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             padding: const EdgeInsets.only(bottom: PaperSpacing.xxl),
             children: <Widget>[
               title,
-              for (final s in SettingsSection.values)
+              for (final s in sections)
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: margin),
                   child: _SectionGroup(
@@ -132,13 +151,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     child: ListView(
                       padding: EdgeInsets.symmetric(horizontal: margin / 2),
                       children: <Widget>[
-                        for (final s in SettingsSection.values)
+                        for (final s in sections)
                           Padding(
                             padding: const EdgeInsets.only(bottom: 2),
                             child: ListTile(
                               key: ValueKey<String>('settings-nav-${s.name}'),
                               dense: true,
-                              selected: s == _selected,
+                              selected: s == selected,
                               selectedTileColor: c.primarySoft,
                               selectedColor: c.onPrimarySoft,
                               shape: RoundedRectangleBorder(
@@ -149,7 +168,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               trailing: s == SettingsSection.sync
                                   ? const SyncBadge()
                                   : null,
-                              onTap: () => setState(() => _selected = s),
+                              onTap: () => setState(() => _picked = s),
                             ),
                           ),
                       ],
@@ -168,8 +187,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           ),
                           children: <Widget>[
                             _SectionGroup(
-                              title: _label(l10n, _selected),
-                              child: _section(_selected),
+                              title: _label(l10n, selected),
+                              child: _section(selected),
                             ),
                           ],
                         ),
@@ -266,18 +285,7 @@ class _AccountSection extends ConsumerWidget {
           trailing: const Icon(Symbols.open_in_new_rounded, size: 18),
           onTap: () => unawaited(_openWeb('/settings')),
         ),
-        ListTile(
-          key: const ValueKey<String>('settings-export-notes'),
-          title: Text(l10n.settingsExportNotes),
-          leading: const Icon(Symbols.content_copy_rounded, size: 20),
-          onTap: () async {
-            final text = await ref
-                .read(noteRepositoryProvider)
-                .exportAllAsText();
-            await Clipboard.setData(ClipboardData(text: text));
-            if (context.mounted) _snack(context, l10n.settingsNotesCopied);
-          },
-        ),
+        const _ExportNotesTile(),
         if (user != null)
           ListTile(
             key: const ValueKey<String>('settings-sign-out'),
@@ -286,6 +294,26 @@ class _AccountSection extends ConsumerWidget {
             onTap: () => signOutTapped(context, ref),
           ),
       ],
+    );
+  }
+}
+
+/// Copies every note to the clipboard as text.
+class _ExportNotesTile extends ConsumerWidget {
+  const _ExportNotesTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    return ListTile(
+      key: const ValueKey<String>('settings-export-notes'),
+      title: Text(l10n.settingsExportNotes),
+      leading: const Icon(Symbols.content_copy_rounded, size: 20),
+      onTap: () async {
+        final text = await ref.read(noteRepositoryProvider).exportAllAsText();
+        await Clipboard.setData(ClipboardData(text: text));
+        if (context.mounted) _snack(context, l10n.settingsNotesCopied);
+      },
     );
   }
 }
@@ -501,6 +529,18 @@ String _formatBytes(int bytes) {
 class _StorageSection extends ConsumerWidget {
   const _StorageSection();
 
+  Widget _clearCacheButton(BuildContext context) => OutlinedButton(
+    key: const ValueKey<String>('settings-clear-cache'),
+    onPressed: () {
+      // Thumbnails and decoded images; never user data.
+      PaintingBinding.instance.imageCache
+        ..clear()
+        ..clearLiveImages();
+      _snack(context, AppLocalizations.of(context).storageCacheCleared);
+    },
+    child: Text(AppLocalizations.of(context).storageClearCache),
+  );
+
   Future<void> _removeAll(
     BuildContext context,
     WidgetRef ref,
@@ -537,6 +577,21 @@ class _StorageSection extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final c = context.paper;
     final t = Theme.of(context).textTheme;
+    // Offline-only builds: every paper is the only copy on this device, so
+    // there are no downloads to manage. Export notes moves here from the
+    // (hidden) Account section.
+    if (ref.watch(offlineOnlyProvider)) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const _ExportNotesTile(),
+          Padding(
+            padding: const EdgeInsets.all(PaperSpacing.lg),
+            child: Wrap(children: <Widget>[_clearCacheButton(context)]),
+          ),
+        ],
+      );
+    }
     final papers = ref.watch(downloadedPapersProvider).value ?? const <Paper>[];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -594,17 +649,7 @@ class _StorageSection extends ConsumerWidget {
                 style: OutlinedButton.styleFrom(foregroundColor: c.error),
                 child: Text(l10n.storageRemoveAll),
               ),
-              OutlinedButton(
-                key: const ValueKey<String>('settings-clear-cache'),
-                onPressed: () {
-                  // Thumbnails and decoded images; never user data.
-                  PaintingBinding.instance.imageCache
-                    ..clear()
-                    ..clearLiveImages();
-                  _snack(context, l10n.storageCacheCleared);
-                },
-                child: Text(l10n.storageClearCache),
-              ),
+              _clearCacheButton(context),
             ],
           ),
         ),

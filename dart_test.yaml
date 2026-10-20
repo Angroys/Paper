@@ -1,0 +1,4 @@
+tags:
+  # test/offline: the offline-only build (PAPER_OFFLINE_ONLY). CI also runs
+  # `flutter test --tags offline --dart-define=PAPER_OFFLINE_ONLY=true`.
+  offline:

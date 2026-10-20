@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../core/build_flags.dart';
 import '../../domain/domain.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/paper_tokens.dart';
@@ -76,6 +77,14 @@ final readerPanelSlotsProvider = Provider<ReaderPanelSlots>(
   (ref) => const ReaderPanelSlots(),
 );
 
+/// Tabs shown in the tab bar, in order. Offline-only builds drop the AI
+/// tabs (Glossary, Explanation): only Notes and Highlights remain.
+final readerPanelTabsProvider = Provider<List<ReaderPanelTab>>(
+  (ref) => ref.watch(offlineOnlyProvider)
+      ? const <ReaderPanelTab>[ReaderPanelTab.notes, ReaderPanelTab.highlights]
+      : ReaderPanelTab.values,
+);
+
 /// Localised tab label.
 String panelTabLabel(AppLocalizations l10n, ReaderPanelTab tab) =>
     switch (tab) {
@@ -115,6 +124,7 @@ class ReaderSidePanel extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           PanelTabBar(
+            tabs: ref.watch(readerPanelTabsProvider),
             tab: tab,
             onTabChanged: onTabChanged,
             onClose: panel.onClose,
@@ -148,12 +158,16 @@ class PanelTabBar extends StatelessWidget {
     required this.onTabChanged,
     required this.onClose,
     this.newResultTabs = const <ReaderPanelTab>{},
+    this.tabs = ReaderPanelTab.values,
   });
 
   final ReaderPanelTab tab;
   final ValueChanged<ReaderPanelTab> onTabChanged;
   final VoidCallback onClose;
   final Set<ReaderPanelTab> newResultTabs;
+
+  /// Tabs to show, in order (`readerPanelTabsProvider`).
+  final List<ReaderPanelTab> tabs;
 
   @override
   Widget build(BuildContext context) {
@@ -173,7 +187,7 @@ class PanelTabBar extends StatelessWidget {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: <Widget>[
-                    for (final t2 in ReaderPanelTab.values)
+                    for (final t2 in tabs)
                       _Tab(
                         key: ValueKey<String>('panel-tab-${t2.name}'),
                         label: panelTabLabel(l10n, t2),

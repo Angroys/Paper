@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/build_flags.dart';
 import '../../domain/domain.dart';
+import '../panel/reader_side_panel.dart' show readerPanelTabsProvider;
 import 'reader_controller.dart';
 
 // Reader keyboard shortcuts (layout-system.md §9) as Intents + Actions.
@@ -113,8 +115,13 @@ bool textInputHasFocus() {
 bool isApplePlatform(TargetPlatform p) =>
     p == TargetPlatform.macOS || p == TargetPlatform.iOS;
 
-/// The reader shortcut table for [platform].
-Map<ShortcutActivator, Intent> readerShortcuts(TargetPlatform platform) {
+/// The reader shortcut table for [platform]. `Mod+Alt+1…` select
+/// [panelTabs] in order; [explain] maps `E` (off in offline-only builds).
+Map<ShortcutActivator, Intent> readerShortcuts(
+  TargetPlatform platform, {
+  List<ReaderPanelTab> panelTabs = ReaderPanelTab.values,
+  bool explain = true,
+}) {
   final mac = isApplePlatform(platform);
   SingleActivator mod(
     LogicalKeyboardKey key, {
@@ -142,8 +149,9 @@ Map<ShortcutActivator, Intent> readerShortcuts(TargetPlatform platform) {
     ),
     const SingleActivator(LogicalKeyboardKey.keyH):
         const HighlightSelectionIntent(),
-    const SingleActivator(LogicalKeyboardKey.keyE):
-        const ExplainSelectionIntent(),
+    if (explain)
+      const SingleActivator(LogicalKeyboardKey.keyE):
+          const ExplainSelectionIntent(),
     const SingleActivator(LogicalKeyboardKey.keyN): const AddNoteIntent(),
     for (var i = 0; i < 6; i++)
       SingleActivator(digits[i]): HighlightColorIntent(
@@ -222,8 +230,8 @@ Map<ShortcutActivator, Intent> readerShortcuts(TargetPlatform platform) {
     },
     // Side panel.
     mod(LogicalKeyboardKey.backslash): const TogglePanelIntent(),
-    for (var i = 0; i < ReaderPanelTab.values.length; i++)
-      mod(digits[i], alt: true): PanelTabIntent(ReaderPanelTab.values[i]),
+    for (var i = 0; i < panelTabs.length; i++)
+      mod(digits[i], alt: true): PanelTabIntent(panelTabs[i]),
     // Escape + close.
     const SingleActivator(LogicalKeyboardKey.escape):
         const ReaderEscapeIntent(),
@@ -299,7 +307,11 @@ class ReaderShortcuts extends ConsumerWidget {
     bool singleKey() => singleKeyShortcuts;
 
     return Shortcuts(
-      shortcuts: readerShortcuts(Theme.of(context).platform),
+      shortcuts: readerShortcuts(
+        Theme.of(context).platform,
+        panelTabs: ref.watch(readerPanelTabsProvider),
+        explain: !ref.watch(offlineOnlyProvider),
+      ),
       child: Actions(
         actions: <Type, Action<Intent>>{
           ReaderToolIntent: _ReaderAction<ReaderToolIntent>(

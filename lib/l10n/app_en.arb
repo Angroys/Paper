@@ -785,6 +785,10 @@
   "@libraryEmptyBody": {
     "description": "Library empty state body; buttons are importFromFile / importFromUrl. Max 100 chars."
   },
+  "libraryEmptyBodyFileOnly": "Pick a PDF from your device. It opens right away.",
+  "@libraryEmptyBodyFileOnly": {
+    "description": "Library empty state body in offline-only builds (no import by link); button is importFromFile. Max 100 chars."
+  },
   "libraryEmptyDropHint": "You can also drop a PDF here.",
   "@libraryEmptyDropHint": {
     "description": "Desktop empty-state hint. Max 40 chars."

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../auth/auth_providers.dart';
+import '../core/build_flags.dart';
 import '../domain/domain.dart';
 import '../features/auth/sign_in_screen.dart';
 import '../features/library/library_screen.dart';
@@ -34,6 +35,9 @@ String? authRedirect(AuthState auth, String location) {
 
 final routerProvider = Provider<GoRouter>((ref) {
   final auth = ref.watch(authRepositoryProvider);
+  // Offline-only builds have no sign-in route at all (the local user is
+  // always signed in, so the redirect never asks for it).
+  final offline = ref.watch(offlineOnlyProvider);
   final refresh = _StreamListenable(auth.watchAuthState());
   final router = GoRouter(
     initialLocation: AppRoutes.library,
@@ -42,12 +46,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         authRedirect(auth.currentState, state.matchedLocation),
     routes: <RouteBase>[
       GoRoute(path: '/', redirect: (_, _) => AppRoutes.library),
-      GoRoute(
-        path: AppRoutes.signIn,
-        builder: (context, state) => SignInScreen(
-          sessionExpired: state.uri.queryParameters['expired'] == '1',
+      if (!offline)
+        GoRoute(
+          path: AppRoutes.signIn,
+          builder: (context, state) => SignInScreen(
+            sessionExpired: state.uri.queryParameters['expired'] == '1',
+          ),
         ),
-      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShell(
           selectedIndex: shell.currentIndex,

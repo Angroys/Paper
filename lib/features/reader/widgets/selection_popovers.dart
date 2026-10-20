@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../core/build_flags.dart';
 import '../../../core/core_providers.dart';
 import '../../../domain/domain.dart';
 import '../../../l10n/app_localizations.dart';
@@ -34,6 +35,8 @@ class SelectionPopover extends ConsumerWidget {
       readerControllerProvider(paperId).select((s) => s.hasTextLayer),
     );
     final online = ref.watch(isOnlineProvider).value ?? true;
+    // Offline-only builds have no AI: no Explain action at all.
+    final ai = !ref.watch(offlineOnlyProvider);
     return PopoverBar(
       children: <Widget>[
         HighlightSwatches(
@@ -42,23 +45,26 @@ class SelectionPopover extends ConsumerWidget {
           onPick: (c) => unawaited(ctrl.highlightSelection(c)),
         ),
         const PopoverDivider(),
-        PopoverAction(
-          icon: Symbols.auto_awesome_rounded,
-          label: l10n.selectionExplain,
-          emphasized: true,
-          tooltip: online ? null : l10n.selectionExplainOffline,
-          trailing: online
-              ? null
-              : Padding(
-                  padding: const EdgeInsets.only(left: 4),
-                  child: Icon(
-                    Symbols.cloud_off_rounded,
-                    size: 14,
-                    color: context.paper.textMuted,
+        if (ai)
+          PopoverAction(
+            icon: Symbols.auto_awesome_rounded,
+            label: l10n.selectionExplain,
+            emphasized: true,
+            tooltip: online ? null : l10n.selectionExplainOffline,
+            trailing: online
+                ? null
+                : Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: Icon(
+                      Symbols.cloud_off_rounded,
+                      size: 14,
+                      color: context.paper.textMuted,
+                    ),
                   ),
-                ),
-          onPressed: hasText ? () => unawaited(ctrl.explainSelection()) : null,
-        ),
+            onPressed: hasText
+                ? () => unawaited(ctrl.explainSelection())
+                : null,
+          ),
         PopoverAction(
           icon: Symbols.sticky_note_2_rounded,
           label: l10n.selectionNote,
@@ -106,6 +112,7 @@ class HighlightPicker extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final ctrl = ref.read(readerControllerProvider(paperId).notifier);
+    final ai = !ref.watch(offlineOnlyProvider);
     return PopoverBar(
       children: <Widget>[
         HighlightSwatches(
@@ -118,12 +125,13 @@ class HighlightPicker extends ConsumerWidget {
           label: l10n.selectionNote,
           onPressed: () => ctrl.noteForHighlight(highlight),
         ),
-        PopoverAction(
-          icon: Symbols.auto_awesome_rounded,
-          label: l10n.selectionExplain,
-          emphasized: true,
-          onPressed: () => ctrl.explainHighlight(highlight),
-        ),
+        if (ai)
+          PopoverAction(
+            icon: Symbols.auto_awesome_rounded,
+            label: l10n.selectionExplain,
+            emphasized: true,
+            onPressed: () => ctrl.explainHighlight(highlight),
+          ),
         PopoverAction(
           icon: Symbols.delete_rounded,
           label: l10n.highlightDelete,

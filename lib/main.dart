@@ -4,15 +4,18 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show SupabaseClient;
 
 import 'app/app.dart';
 import 'app/app_settings.dart';
 import 'core/app_links_deep_link_service.dart';
+import 'core/build_flags.dart';
 import 'core/core_providers.dart';
 import 'core/desktop_window.dart';
 import 'core/env.dart';
 import 'core/licenses.dart';
+import 'core/supabase_bootstrap.dart';
+import 'data/data_providers.dart';
 import 'features/panel/panel_slots.dart';
 import 'features/panel/reader_side_panel.dart';
 
@@ -29,13 +32,19 @@ Future<void> main(List<String> args) async {
   final env = Env.fromEnvironment();
   await initDesktopWindow();
 
-  final supabaseReady = _initSupabase(env);
+  // Offline-only builds (PAPER_OFFLINE_ONLY) never initialise Supabase;
+  // the const branch drops the call from that build entirely.
+  final Future<SupabaseClient?> supabaseReady = kOfflineOnly
+      ? Future<SupabaseClient?>.value()
+      : startSupabase(env);
   final prefs = await _loadPreferences();
-  // Session restore is local; wait for it, but never past the splash cap.
-  await Future.any(<Future<Object?>>[
-    supabaseReady,
-    Future<void>.delayed(_splashCap),
-  ]);
+  if (!kOfflineOnly) {
+    // Session restore is local; wait for it, but never past the splash cap.
+    await Future.any(<Future<Object?>>[
+      supabaseReady,
+      Future<void>.delayed(_splashCap),
+    ]);
+  }
 
   runApp(
     ProviderScope(
@@ -46,8 +55,15 @@ Future<void> main(List<String> args) async {
           AppLinksDeepLinkService(launchArgs: args),
         ),
         sharedPreferencesProvider.overrideWithValue(prefs),
-        // Notes / Glossary / Explanation bodies of the reader side panel.
-        readerPanelSlotsProvider.overrideWithValue(appReaderPanelSlots),
+        // Offline-only builds keep the library on disk too.
+        persistentStorageProvider.overrideWithValue(
+          env.isConfigured || kOfflineOnly,
+        ),
+        // Notes / Glossary / Explanation bodies of the reader side panel
+        // (Notes only in offline-only builds).
+        readerPanelSlotsProvider.overrideWithValue(
+          kOfflineOnly ? offlineReaderPanelSlots : appReaderPanelSlots,
+        ),
       ],
       child: const PaperApp(),
     ),
@@ -66,36 +82,6 @@ Future<SharedPreferences?> _loadPreferences() async {
     return await SharedPreferences.getInstance();
   } on Object catch (e) {
     debugPrint('Paper: preferences unavailable: $e');
-    return null;
-  }
-}
-
-/// Initialises Supabase when configured; otherwise the app runs in
-/// "not configured" mode. Never throws.
-Future<SupabaseClient?> _initSupabase(Env env) async {
-  if (!env.isConfigured) {
-    debugPrint(
-      'Paper: SUPABASE_URL / SUPABASE_ANON_KEY not set; '
-      'running in not-configured mode.',
-    );
-    return null;
-  }
-  try {
-    await Supabase.initialize(
-      url: env.supabaseUrl,
-      // The anon key is Supabase's publishable key.
-      publishableKey: env.supabaseAnonKey,
-      authOptions: const FlutterAuthClientOptions(
-        authFlowType: AuthFlowType.pkce,
-        // DeepLinkListener owns paper://auth-callback (cold and warm);
-        // supabase_flutter's own app_links observer would race it and
-        // exchange the PKCE code twice.
-        detectSessionInUri: false,
-      ),
-    );
-    return Supabase.instance.client;
-  } on Object catch (e, st) {
-    debugPrint('Paper: Supabase init failed: $e\n$st');
     return null;
   }
 }

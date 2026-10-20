@@ -10,3 +10,10 @@ final ReaderPanelSlots appReaderPanelSlots = ReaderPanelSlots(
   glossary: (context, panel) => GlossaryTab(panel: panel),
   explanation: (context, panel) => ExplanationTab(panel: panel),
 );
+
+/// Offline-only builds (`PAPER_OFFLINE_ONLY`): Notes only. The Glossary and
+/// Explanation tabs are hidden (`readerPanelTabsProvider`), and their
+/// bodies are not even referenced here.
+final ReaderPanelSlots offlineReaderPanelSlots = ReaderPanelSlots(
+  notes: (context, panel) => NotesTab(panel: panel),
+);

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../core/build_flags.dart';
 import '../core/core_providers.dart';
 import '../core/window_class.dart';
 import '../features/sync/sync_badge.dart';
@@ -48,7 +49,9 @@ class _AppShellState extends ConsumerState<AppShell> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final configured = ref.watch(envProvider).isConfigured;
+    final offline = ref.watch(offlineOnlyProvider);
+    // Offline-only builds are meant to run without Supabase config.
+    final configured = offline || ref.watch(envProvider).isConfigured;
     final destinations = <_Destination>[
       _Destination(Symbols.library_books_rounded, l10n.navLibrary),
       _Destination(Symbols.settings_rounded, l10n.navSettings),
@@ -103,18 +106,26 @@ class _AppShellState extends ConsumerState<AppShell> {
                   leading: extended
                       ? _SidebarHeader(title: l10n.appName)
                       : null,
-                  // SyncBadge: rail bottom (icon) / sidebar row (long).
+                  // SyncBadge: rail bottom (icon) / sidebar row (long);
+                  // none in offline-only builds.
                   trailingAtBottom: true,
-                  trailing: Padding(
-                    padding: const EdgeInsets.only(bottom: PaperSpacing.md),
-                    child: extended
-                        ? SizedBox(
-                            width:
-                                windowClass.navigationWidth - PaperSpacing.lg,
-                            child: const SyncBadge(form: SyncBadgeForm.long),
-                          )
-                        : const SyncBadge(),
-                  ),
+                  trailing: offline
+                      ? null
+                      : Padding(
+                          padding: const EdgeInsets.only(
+                            bottom: PaperSpacing.md,
+                          ),
+                          child: extended
+                              ? SizedBox(
+                                  width:
+                                      windowClass.navigationWidth -
+                                      PaperSpacing.lg,
+                                  child: const SyncBadge(
+                                    form: SyncBadgeForm.long,
+                                  ),
+                                )
+                              : const SyncBadge(),
+                        ),
                   destinations: <NavigationRailDestination>[
                     for (final d in destinations)
                       NavigationRailDestination(
@@ -200,13 +211,14 @@ class _NotConfiguredStrip extends StatelessWidget {
 
 /// Compact-only SyncBadge for a screen's top bar trailing slot (the bottom
 /// bar has no room for it). Renders nothing on medium+ where the rail /
-/// sidebar carries the badge.
-class ShellSyncBadge extends StatelessWidget {
+/// sidebar carries the badge, and in offline-only builds.
+class ShellSyncBadge extends ConsumerWidget {
   const ShellSyncBadge({super.key});
 
   @override
-  Widget build(BuildContext context) =>
-      PaperWindowClass.ofContext(context) == PaperWindowClass.compact
+  Widget build(BuildContext context, WidgetRef ref) =>
+      !ref.watch(offlineOnlyProvider) &&
+          PaperWindowClass.ofContext(context) == PaperWindowClass.compact
       ? const SyncBadge()
       : const SizedBox.shrink();
 }

@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
 import '../auth/auth_providers.dart';
+import '../core/build_flags.dart';
 import '../core/core_providers.dart';
 import '../core/paper_api_client.dart';
 import '../domain/domain.dart';
@@ -31,11 +32,17 @@ import 'remote/unconfigured_remote_data_source.dart';
 //     remoteDataSourceProvider.overrideWithValue(FakeRemote()),
 //   ], child: ...)
 
-/// The SQLite database. Configured builds use `paper.sqlite` in the app
-/// support dir; unconfigured builds (tests, bare `flutter run`) get a
-/// throwaway in-memory DB.
+/// Whether the DB and PDFs live on disk. Defaults to "configured";
+/// `main()` also turns it on for offline-only builds. Unconfigured builds
+/// (tests, bare `flutter run`) use throwaway storage.
+final persistentStorageProvider = Provider<bool>(
+  (ref) => ref.watch(envProvider).isConfigured,
+);
+
+/// The SQLite database: `paper.sqlite` in the app support dir when
+/// [persistentStorageProvider], else a throwaway in-memory DB.
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
-  final db = ref.watch(envProvider).isConfigured
+  final db = ref.watch(persistentStorageProvider)
       ? openAppDatabase()
       : AppDatabase(NativeDatabase.memory());
   ref.onDispose(db.close);
@@ -44,7 +51,7 @@ final appDatabaseProvider = Provider<AppDatabase>((ref) {
 
 /// Downloaded PDFs + figure crops on disk.
 final fileStoreProvider = Provider<FileStore>((ref) {
-  if (ref.watch(envProvider).isConfigured) {
+  if (ref.watch(persistentStorageProvider)) {
     return FileStore(getApplicationSupportDirectory);
   }
   return FileStore(
@@ -73,6 +80,7 @@ final httpClientProvider = Provider<http.Client>((ref) {
 /// paper.college API client (`@supabase/ssr` cookie auth); null when the
 /// build is not configured.
 final paperApiClientProvider = Provider<PaperApiClient?>((ref) {
+  if (ref.watch(offlineOnlyProvider)) return null;
   final env = ref.watch(envProvider);
   if (!env.isConfigured) return null;
   return PaperApiClient(
@@ -85,6 +93,9 @@ final paperApiClientProvider = Provider<PaperApiClient?>((ref) {
 
 /// Supabase tables + storage (+ URL import through the API).
 final remoteDataSourceProvider = Provider<RemoteDataSource>((ref) {
+  if (ref.watch(offlineOnlyProvider)) {
+    return const UnconfiguredRemoteDataSource();
+  }
   final client = ref.watch(supabaseClientProvider);
   final api = ref.watch(paperApiClientProvider);
   if (client == null || api == null) {
@@ -105,7 +116,10 @@ final paperRepositoryProvider = Provider<PaperRepository>(
     store: ref.watch(localStoreProvider),
     remote: ref.watch(remoteDataSourceProvider),
     currentUserId: () => _currentUserId(ref),
-    pull: () => ref.read(syncEngineProvider).pull(),
+    // Offline-only builds never pull (no sync engine is built).
+    pull: ref.watch(offlineOnlyProvider)
+        ? null
+        : () => ref.read(syncEngineProvider).pull(),
   ),
 );
 

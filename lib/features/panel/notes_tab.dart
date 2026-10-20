@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../core/build_flags.dart';
 import '../../core/format.dart';
 import '../../data/data_providers.dart';
 import '../../domain/domain.dart';
@@ -411,7 +412,11 @@ class _NoteCardState extends ConsumerState<NoteCard> {
       (h?.color ?? HighlightColor.defaultColor).name,
     );
 
-    final Widget status = switch (note.syncState) {
+    // Offline-only builds: no sync wording, just "Saved" / "Edited …".
+    final syncState = ref.watch(offlineOnlyProvider)
+        ? SyncState.synced
+        : note.syncState;
+    final Widget status = switch (syncState) {
       SyncState.localOnly => Tooltip(
         message: l10n.syncLocalOnlyExplainer,
         child: _Footer(

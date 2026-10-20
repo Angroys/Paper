@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/build_flags.dart';
 import '../sync/sync_providers.dart';
 import 'app_commands.dart';
 import 'router.dart';
@@ -42,7 +43,11 @@ class SyncNowIntent extends Intent {
 }
 
 /// The app-level shortcut table for [platform] (Cmd on Apple, else Ctrl).
-Map<ShortcutActivator, Intent> appShortcuts(TargetPlatform platform) {
+/// [offlineOnly] drops import-by-link and sync-now.
+Map<ShortcutActivator, Intent> appShortcuts(
+  TargetPlatform platform, {
+  bool offlineOnly = false,
+}) {
   final mac =
       platform == TargetPlatform.macOS || platform == TargetPlatform.iOS;
   SingleActivator mod(LogicalKeyboardKey key, {bool shift = false}) =>
@@ -55,11 +60,13 @@ Map<ShortcutActivator, Intent> appShortcuts(TargetPlatform platform) {
       anywhere: true,
     ),
     mod(LogicalKeyboardKey.keyO): const ImportPaperIntent(fromUrl: false),
-    mod(LogicalKeyboardKey.keyO, shift: true): const ImportPaperIntent(
-      fromUrl: true,
-    ),
+    if (!offlineOnly)
+      mod(LogicalKeyboardKey.keyO, shift: true): const ImportPaperIntent(
+        fromUrl: true,
+      ),
     mod(LogicalKeyboardKey.comma): const OpenSettingsIntent(),
-    mod(LogicalKeyboardKey.keyS, shift: true): const SyncNowIntent(),
+    if (!offlineOnly)
+      mod(LogicalKeyboardKey.keyS, shift: true): const SyncNowIntent(),
   };
 }
 
@@ -104,7 +111,10 @@ class AppShortcuts extends ConsumerWidget {
     }
 
     return Shortcuts(
-      shortcuts: appShortcuts(Theme.of(context).platform),
+      shortcuts: appShortcuts(
+        Theme.of(context).platform,
+        offlineOnly: ref.watch(offlineOnlyProvider),
+      ),
       child: Actions(
         actions: <Type, Action<Intent>>{
           FocusLibrarySearchIntent: _CallbackAction<FocusLibrarySearchIntent>(

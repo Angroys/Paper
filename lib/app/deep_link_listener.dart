@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../auth/auth_providers.dart';
+import '../core/build_flags.dart';
 import '../core/core_providers.dart';
 import '../domain/domain.dart';
 import 'router.dart';
@@ -38,6 +39,11 @@ class _DeepLinkListenerState extends ConsumerState<DeepLinkListener> {
   void _handle(Uri uri) {
     switch (DeepLinkTarget.parse(uri)) {
       case AuthCallbackLink(:final uri):
+        // Inert in offline-only builds (no sign-in).
+        if (ref.read(offlineOnlyProvider)) {
+          debugPrint('deep links: offline-only build, ignored $uri');
+          return;
+        }
         unawaited(ref.read(authRepositoryProvider).handleAuthCallback(uri));
       case OpenPaperLink(:final paperId):
         ref.read(routerProvider).go(AppRoutes.reader(paperId));

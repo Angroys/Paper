@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../domain/domain.dart';
+import 'build_flags.dart';
 import 'env.dart';
 import 'network_connectivity_service.dart';
 
@@ -19,9 +20,11 @@ final supabaseReadyProvider = FutureProvider<SupabaseClient?>((ref) => null);
 
 /// The Supabase client, or null while not configured / not initialised.
 /// Repository providers watch this and rebuild when it becomes available.
-final supabaseClientProvider = Provider<SupabaseClient?>(
-  (ref) => ref.watch(supabaseReadyProvider).value,
-);
+final supabaseClientProvider = Provider<SupabaseClient?>((ref) {
+  // Offline-only builds never initialise Supabase.
+  if (ref.watch(offlineOnlyProvider)) return null;
+  return ref.watch(supabaseReadyProvider).value;
+});
 
 /// Incoming `paper://` links. `main()` overrides this with
 /// `AppLinksDeepLinkService`; the default never emits.
@@ -34,7 +37,10 @@ final deepLinkServiceProvider = Provider<DeepLinkService>(
 /// (tests) are always online.
 final connectivityServiceProvider = Provider<ConnectivityService>((ref) {
   final env = ref.watch(envProvider);
-  if (!env.isConfigured) return const AlwaysOnlineConnectivityService();
+  // Offline-only builds have nothing to reach: no ping, no listener.
+  if (ref.watch(offlineOnlyProvider) || !env.isConfigured) {
+    return const AlwaysOnlineConnectivityService();
+  }
   final service = NetworkConnectivityService.create(
     pingUri: Uri.parse(env.supabaseUrl).replace(path: '/auth/v1/health'),
   );

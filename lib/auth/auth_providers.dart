@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/build_flags.dart';
 import '../core/core_providers.dart';
 import '../core/paper_api_client.dart';
 import '../data/data_providers.dart';
 import '../domain/domain.dart';
 import '../sync/sync_providers.dart';
+import 'local_auth_repository.dart';
 import 'supabase_auth_repository.dart';
 import 'unconfigured_auth_repository.dart';
 import 'windows_protocol_registration.dart';
@@ -15,6 +17,8 @@ import 'windows_protocol_registration.dart';
 /// [UnconfiguredAuthRepository]. On Windows the `paper://` handler is
 /// (re-)registered under HKCU the first time this is read.
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
+  // Offline-only builds: a local user, no sign-in screen.
+  if (ref.watch(offlineOnlyProvider)) return const LocalAuthRepository();
   final client = ref.watch(supabaseClientProvider);
   if (client == null) return const UnconfiguredAuthRepository();
   unawaited(registerWindowsProtocolHandler());
@@ -48,10 +52,11 @@ final freshSessionJsonProvider = Provider<FreshSessionJson>((ref) {
 /// (`NoteRepository.countLocalOnlyNotes`).
 final signOutProvider = Provider<Future<void> Function()>((ref) {
   return () async {
-    await ref.read(syncEngineProvider).stop();
+    final offline = ref.read(offlineOnlyProvider);
+    if (!offline) await ref.read(syncEngineProvider).stop();
     await ref.read(authRepositoryProvider).signOut();
     await ref.read(appDatabaseProvider).clearAll();
     await ref.read(fileStoreProvider).clear();
-    ref.invalidate(syncEngineProvider);
+    if (!offline) ref.invalidate(syncEngineProvider);
   };
 });

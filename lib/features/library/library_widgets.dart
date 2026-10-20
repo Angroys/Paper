@@ -199,9 +199,10 @@ class PaperSyncChip extends StatelessWidget {
   }
 }
 
-String paperMeta(BuildContext context, Paper paper) {
+/// [localOnly] (offline-only builds) never mentions uploads.
+String paperMeta(BuildContext context, Paper paper, {bool localOnly = false}) {
   final l10n = AppLocalizations.of(context);
-  if (paper.syncState == SyncState.pendingCreate) {
+  if (!localOnly && paper.syncState == SyncState.pendingCreate) {
     return l10n.paperPendingUpload;
   }
   return l10n.paperMetaAdded(paper.uploadedAt.toLocal());
@@ -215,11 +216,15 @@ class PaperMenuButton extends StatelessWidget {
     required this.paper,
     required this.actions,
     required this.downloaded,
+    this.downloadActions = true,
   });
 
   final Paper paper;
   final PaperActions actions;
   final bool downloaded;
+
+  /// Download / Remove download items (off in offline-only builds).
+  final bool downloadActions;
 
   @override
   Widget build(BuildContext context) {
@@ -240,12 +245,12 @@ class PaperMenuButton extends StatelessWidget {
       itemBuilder: (context) => <PopupMenuEntry<String>>[
         PopupMenuItem(value: 'open', child: Text(l10n.paperMenuOpen)),
         PopupMenuItem(value: 'rename', child: Text(l10n.paperMenuRename)),
-        if (downloaded)
+        if (downloadActions && downloaded)
           PopupMenuItem(
             value: 'remove',
             child: Text(l10n.paperMenuRemoveDownload),
           )
-        else if (!paper.isLinkless)
+        else if (downloadActions && !paper.isLinkless)
           PopupMenuItem(value: 'download', child: Text(l10n.paperMenuDownload)),
         const PopupMenuDivider(),
         PopupMenuItem(
@@ -311,7 +316,10 @@ class PaperCard extends StatelessWidget {
 
   final Paper paper;
   final PaperActions actions;
-  final PaperDownloadBadge badge;
+
+  /// Null in offline-only builds: every paper is local, so there is no
+  /// download / sync state to show.
+  final PaperDownloadBadge? badge;
   final double? progress;
 
   @override
@@ -319,9 +327,12 @@ class PaperCard extends StatelessWidget {
     final c = context.paper;
     final t = Theme.of(context).textTheme;
     final l10n = AppLocalizations.of(context);
+    final badge = this.badge;
+    final localOnly = badge == null;
     return Semantics(
-      label:
-          '${paper.title}, ${downloadBadgeLabel(l10n, badge, progress: progress)}',
+      label: badge == null
+          ? paper.title
+          : '${paper.title}, ${downloadBadgeLabel(l10n, badge, progress: progress)}',
       button: true,
       child: Material(
         color: c.surface,
@@ -354,15 +365,16 @@ class PaperCard extends StatelessWidget {
                           dimmed:
                               badge == PaperDownloadBadge.unavailableOffline,
                         ),
-                        Positioned(
-                          right: 0,
-                          bottom: 0,
-                          child: DownloadStateBadge(
-                            state: badge,
-                            progress: progress,
-                            onTap: () => actions.badgeTap(paper, badge),
+                        if (badge != null)
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: DownloadStateBadge(
+                              state: badge,
+                              progress: progress,
+                              onTap: () => actions.badgeTap(paper, badge),
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),
@@ -385,13 +397,13 @@ class PaperCard extends StatelessWidget {
                   children: <Widget>[
                     Expanded(
                       child: Text(
-                        paperMeta(context, paper),
+                        paperMeta(context, paper, localOnly: localOnly),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: t.bodySmall?.copyWith(color: c.textMuted),
                       ),
                     ),
-                    PaperSyncChip(paper: paper),
+                    if (!localOnly) PaperSyncChip(paper: paper),
                     SizedBox(
                       width: 32,
                       height: 32,
@@ -400,6 +412,7 @@ class PaperCard extends StatelessWidget {
                         actions: actions,
                         downloaded:
                             paper.downloadState == DownloadState.downloaded,
+                        downloadActions: !localOnly,
                       ),
                     ),
                   ],
@@ -425,7 +438,10 @@ class PaperRow extends StatelessWidget {
 
   final Paper paper;
   final PaperActions actions;
-  final PaperDownloadBadge badge;
+
+  /// Null in offline-only builds: every paper is local, so there is no
+  /// download / sync state to show.
+  final PaperDownloadBadge? badge;
   final double? progress;
 
   @override
@@ -433,6 +449,8 @@ class PaperRow extends StatelessWidget {
     final c = context.paper;
     final t = Theme.of(context).textTheme;
     final opened = paper.lastOpenedAt;
+    final badge = this.badge;
+    final localOnly = badge == null;
     return InkWell(
       onTap: () => actions.open(paper),
       child: Padding(
@@ -460,7 +478,7 @@ class PaperRow extends StatelessWidget {
                     style: t.labelLarge?.copyWith(fontSize: 14),
                   ),
                   Text(
-                    paperMeta(context, paper),
+                    paperMeta(context, paper, localOnly: localOnly),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: t.bodySmall?.copyWith(color: c.textMuted),
@@ -468,14 +486,16 @@ class PaperRow extends StatelessWidget {
                 ],
               ),
             ),
-            PaperSyncChip(paper: paper),
-            const SizedBox(width: PaperSpacing.sm),
-            DownloadStateBadge(
-              state: badge,
-              progress: progress,
-              disc: false,
-              onTap: () => actions.badgeTap(paper, badge),
-            ),
+            if (badge != null) ...<Widget>[
+              PaperSyncChip(paper: paper),
+              const SizedBox(width: PaperSpacing.sm),
+              DownloadStateBadge(
+                state: badge,
+                progress: progress,
+                disc: false,
+                onTap: () => actions.badgeTap(paper, badge),
+              ),
+            ],
             SizedBox(
               width: 72,
               child: Text(
@@ -488,6 +508,7 @@ class PaperRow extends StatelessWidget {
               paper: paper,
               actions: actions,
               downloaded: paper.downloadState == DownloadState.downloaded,
+              downloadActions: !localOnly,
             ),
           ],
         ),

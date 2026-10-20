@@ -4,9 +4,11 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../auth/auth_providers.dart';
+import '../core/build_flags.dart';
 import '../core/core_providers.dart';
 import '../data/data_providers.dart';
 import '../domain/domain.dart';
+import 'disabled_sync_service.dart';
 import 'sync_engine.dart';
 
 /// Fires on app resume (sync trigger).
@@ -38,8 +40,11 @@ final syncEngineProvider = Provider<SyncEngine>((ref) {
 });
 
 /// Outbox sync, as the domain interface.
+/// Offline-only builds get [DisabledSyncService]; the engine is never built.
 final syncServiceProvider = Provider<SyncService>(
-  (ref) => ref.watch(syncEngineProvider),
+  (ref) => ref.watch(offlineOnlyProvider)
+      ? const DisabledSyncService()
+      : ref.watch(syncEngineProvider),
 );
 
 /// SyncBadge / SyncSheet state.
