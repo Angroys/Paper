@@ -45,7 +45,7 @@ Suggestion: add `extension PaperThemeX on BuildContext { PaperColors get paper =
 
 ### What is in the Dart file
 
-`PaperColors` (a ThemeExtension with light and dark), `PaperHighlightColor` (an enum of 6 hues), `PaperHighlightColors` (a ThemeExtension for alphas and blend mode: `whitePaper` / `darkPaper`), `PaperReaderMark` (AI marks: term, citation, appendix, mention), `PaperSpacing`, `PaperRadii`, `PaperElevation`, `PaperIconSize`, `PaperHitTarget`, `PaperLayer`, `PaperMotion`, `PaperBreakpoints`, `PaperWindowClass`, `PaperTypography`, `PaperFadePageTransitionsBuilder` and `PaperTheme`.
+`PaperColors` (a ThemeExtension with light and dark), `PaperHighlightColor` (an enum of 6 hues), `PaperHighlightColors` (a ThemeExtension for alphas and blend mode: `whitePaper` / `darkPaper`), `PaperReaderMark` (AI marks: term, citation, appendix, mention), `PaperSpacing`, `PaperRadii`, `PaperElevation`, `PaperIconSize`, `PaperHitTarget`, `PaperLayer`, `PaperMotion`, `PaperBreakpoints`, `PaperWindowClass`, `PaperSidePanelMode`, `PaperChrome`, `PaperTypography`, `PaperFadePageTransitionsBuilder` and `PaperTheme`.
 
 ## 2. Fonts: bundle Geist (no runtime fetching)
 
@@ -121,7 +121,21 @@ LicenseRegistry.addLicense(() async* {
 
 All contrast ratios are listed in the JSON next to each token.
 
-**Breakpoints** (logical width): compact < 600, medium 600–839 (tablet portrait), expanded 840–1199 (tablet landscape: split view, 360dp panel), large 1200–1599 (laptop: 400dp panel), extraLarge ≥ 1600 (440dp panel).
+**Breakpoints** (logical width, `PaperWindowClass`). `design/specs/layout-system.md` uses these same names and ranges. Component specs: `design/specs/components.md`.
+
+| Class | Width | Nav (`navigationWidth`) | Columns / margin / gutter | Side panel (`sidePanelMode`, default / min / max) | Reader toolbar |
+| --- | --- | --- | --- | --- | --- |
+| `compact` | < 600 | bottom bar (0) | 4 / 16 / 8 | bottom sheet, full width (snap 40% / 90%) | 56 |
+| `medium` | 600–839 | rail 72 | 8 / 24 / 16 | overlay 360 / 320 / 85% | 64 |
+| `expanded` | 840–1199 | rail 72 | 12 / 24 / 24 | split 360 / 300 / 50% | 64 touch · 48 pointer |
+| `large` | 1200–1599 | sidebar 240 | 12 / 32 / 24 | split 380 / 300 / 50% | 64 touch · 48 pointer |
+| `extraLarge` | ≥ 1600 | sidebar 256 | 12 / 40 / 24 (content max 1440) | split 420 / 320 / 45% | 64 touch · 48 pointer |
+
+- **PDF viewport minimum 480dp** (720dp on `extraLarge`). `windowClass.sidePanelMaxWidth(windowWidth)` returns the smaller of the fraction cap and `windowWidth − pdfMin`; `splitFallsBackToOverlay(windowWidth)` is true when that max drops under the class minimum, so show the panel as an overlay instead.
+- Class changes commit only 8dp past a boundary (`PaperBreakpoints.hysteresis`).
+- `PaperChrome`: `readerToolbarHeight(windowClass, pointer:)`, split handle (1dp divider, 24×48 grabber, hit 24 touch / 16 pointer, key step 16 / 64, snap closed 48dp below min via `PaperBreakpoints.sidePanelCloseSnap`), macOS title row 52 with a 78×52 traffic-light reserve, Windows title bar 40 (48 merged) with 46×32 caption buttons in a 138 reserve, window min 480×560, default 1280×800.
+- `PaperTheme` also themes `ListTile` (SettingsTile) and `Switch` (on: primary track; off: surfaceVariant track with a 1.5dp outline border).
+- `PaperSpacing.gutter/margin/columns(windowClass)` give the layout grid. `gutter` is the space between columns; use `margin` for the outer page inset.
 
 **Motion:** instant 80ms, fast 150ms, base 200ms, slow 300ms, page 300ms (fade only), emphasis 420ms, hover delay 40ms. Curves: standard `Cubic(0.4,0,0.2,1)`, decelerate `Cubic(0,0,0.2,1)`, accelerate `Cubic(0.4,0,1,1)`. Use `PaperMotion.of(context, d)` to respect the OS reduced-motion setting.
 

@@ -629,13 +629,29 @@ abstract final class PaperSpacing {
 
   static const double panePadding = 16;
 
-  /// Outer page gutter for a window class.
+  /// Space between grid columns for a window class.
   static double gutter(PaperWindowClass windowClass) => switch (windowClass) {
+    PaperWindowClass.compact => 8,
+    PaperWindowClass.medium => 16,
+    PaperWindowClass.expanded => 24,
+    PaperWindowClass.large => 24,
+    PaperWindowClass.extraLarge => 24,
+  };
+
+  /// Outer page margin (left/right) for a window class.
+  static double margin(PaperWindowClass windowClass) => switch (windowClass) {
     PaperWindowClass.compact => 16,
     PaperWindowClass.medium => 24,
     PaperWindowClass.expanded => 24,
     PaperWindowClass.large => 32,
-    PaperWindowClass.extraLarge => 32,
+    PaperWindowClass.extraLarge => 40,
+  };
+
+  /// Layout grid column count for a window class.
+  static int columns(PaperWindowClass windowClass) => switch (windowClass) {
+    PaperWindowClass.compact => 4,
+    PaperWindowClass.medium => 8,
+    _ => 12,
   };
 }
 
@@ -803,15 +819,81 @@ abstract final class PaperBreakpoints {
   static const double large = 1200;
   static const double extraLarge = 1600;
 
-  static const double sidePanelExpanded = 360;
-  static const double sidePanelLarge = 400;
-  static const double sidePanelExtraLarge = 440;
-  static const double sidePanelMin = 320;
-  static const double sidePanelMax = 560;
-  static const double navRailWidth = 80;
-  static const double navRailExtendedWidth = 256;
+  /// A class change commits only once the width is this far past a boundary.
+  static const double hysteresis = 8;
+
+  // ReaderSidePanel default / min widths and max fraction of window width.
+  static const double sidePanelMedium = 360; // overlay
+  static const double sidePanelMediumMin = 320;
+  static const double sidePanelMediumMaxFraction = 0.85;
+  static const double sidePanelExpanded = 360; // split
+  static const double sidePanelExpandedMin = 300;
+  static const double sidePanelExpandedMaxFraction = 0.50;
+  static const double sidePanelLarge = 380; // split
+  static const double sidePanelLargeMin = 300;
+  static const double sidePanelLargeMaxFraction = 0.50;
+  static const double sidePanelExtraLarge = 420; // split
+  static const double sidePanelExtraLargeMin = 320;
+  static const double sidePanelExtraLargeMaxFraction = 0.45;
+
+  /// Dragging the split handle this far below min snaps the panel closed.
+  static const double sidePanelCloseSnap = 48;
+
+  /// The PDF viewport never gets narrower than this in split mode; otherwise
+  /// the panel falls back to overlay.
+  static const double pdfViewportMin = 480;
+  static const double pdfViewportMinExtraLarge = 720;
+
+  static const double navRailWidth = 72;
+  static const double sidebarWidth = 240; // large
+  static const double sidebarWidthExtraLarge = 256;
+  static const double contentMaxWidth = 1440; // library/settings, extraLarge
   static const double readingMeasureMax = 720;
 }
+
+/// Fixed chrome sizes (reader toolbar, split handle, desktop title bars).
+abstract final class PaperChrome {
+  static const double readerToolbarCompact = 56;
+  static const double readerToolbarTouch = 64;
+  static const double readerToolbarPointer = 48;
+
+  static const double splitDividerWidth = 1;
+  static const double splitGrabberWidth = 24;
+  static const double splitGrabberHeight = 48;
+  static const double splitHitWidthTouch = 24;
+  static const double splitHitWidthPointer = 16;
+  static const double splitKeyStep = 16;
+  static const double splitKeyStepLarge = 64;
+
+  static const double macosTitleBarHeight = 52;
+  static const double macosTrafficLightReserveWidth = 78;
+  static const double macosTrafficLightInsetX = 20;
+  static const double macosTrafficLightInsetY = 18;
+  static const double macosReaderBackX = 86;
+  static const double windowsTitleBarHeight = 40;
+  static const double windowsTitleBarMergedHeight = 48;
+  static const double windowsCaptionButtonWidth = 46;
+  static const double windowsCaptionButtonHeight = 32;
+  static const double windowsCaptionReserve = 138;
+
+  static const Size windowMin = Size(480, 560);
+  static const Size windowDefault = Size(1280, 800);
+
+  /// Reader toolbar height for a window class and the last input kind.
+  static double readerToolbarHeight(
+    PaperWindowClass windowClass, {
+    required bool pointer,
+  }) {
+    if (windowClass == PaperWindowClass.compact) return readerToolbarCompact;
+    if (pointer && windowClass.index >= PaperWindowClass.expanded.index) {
+      return readerToolbarPointer;
+    }
+    return readerToolbarTouch;
+  }
+}
+
+/// How the ReaderSidePanel is presented.
+enum PaperSidePanelMode { bottomSheet, overlay, split }
 
 /// Material 3-aligned window classes.
 enum PaperWindowClass {
@@ -843,15 +925,79 @@ enum PaperWindowClass {
       of(MediaQuery.sizeOf(context).width);
 
   bool get hasSplitView => index >= PaperWindowClass.expanded.index;
-  bool get usesNavigationRail => index >= PaperWindowClass.medium.index;
 
-  /// Docked side-panel width, or null when the panel is a sheet/overlay.
+  /// Collapsed 72dp rail (medium, expanded).
+  bool get usesNavigationRail =>
+      this == PaperWindowClass.medium || this == PaperWindowClass.expanded;
+
+  /// Extended sidebar (large 240dp, extraLarge 256dp).
+  bool get usesSidebar => index >= PaperWindowClass.large.index;
+
+  /// Width of the shell navigation (0 for the bottom bar).
+  double get navigationWidth => switch (this) {
+    PaperWindowClass.compact => 0,
+    PaperWindowClass.medium ||
+    PaperWindowClass.expanded => PaperBreakpoints.navRailWidth,
+    PaperWindowClass.large => PaperBreakpoints.sidebarWidth,
+    PaperWindowClass.extraLarge => PaperBreakpoints.sidebarWidthExtraLarge,
+  };
+
+  /// Preferred panel mode before the PDF-min-width check.
+  PaperSidePanelMode get sidePanelMode => switch (this) {
+    PaperWindowClass.compact => PaperSidePanelMode.bottomSheet,
+    PaperWindowClass.medium => PaperSidePanelMode.overlay,
+    _ => PaperSidePanelMode.split,
+  };
+
+  /// Default side-panel width, or null for the compact bottom sheet.
   double? get sidePanelWidth => switch (this) {
-    PaperWindowClass.compact || PaperWindowClass.medium => null,
+    PaperWindowClass.compact => null,
+    PaperWindowClass.medium => PaperBreakpoints.sidePanelMedium,
     PaperWindowClass.expanded => PaperBreakpoints.sidePanelExpanded,
     PaperWindowClass.large => PaperBreakpoints.sidePanelLarge,
     PaperWindowClass.extraLarge => PaperBreakpoints.sidePanelExtraLarge,
   };
+
+  /// Minimum side-panel width, or null for the compact bottom sheet.
+  double? get sidePanelMinWidth => switch (this) {
+    PaperWindowClass.compact => null,
+    PaperWindowClass.medium => PaperBreakpoints.sidePanelMediumMin,
+    PaperWindowClass.expanded => PaperBreakpoints.sidePanelExpandedMin,
+    PaperWindowClass.large => PaperBreakpoints.sidePanelLargeMin,
+    PaperWindowClass.extraLarge => PaperBreakpoints.sidePanelExtraLargeMin,
+  };
+
+  /// Maximum side-panel width as a fraction of the window width.
+  double? get sidePanelMaxFraction => switch (this) {
+    PaperWindowClass.compact => null,
+    PaperWindowClass.medium => PaperBreakpoints.sidePanelMediumMaxFraction,
+    PaperWindowClass.expanded => PaperBreakpoints.sidePanelExpandedMaxFraction,
+    PaperWindowClass.large => PaperBreakpoints.sidePanelLargeMaxFraction,
+    PaperWindowClass.extraLarge =>
+      PaperBreakpoints.sidePanelExtraLargeMaxFraction,
+  };
+
+  /// Largest panel width allowed in a window of [windowWidth]. In split mode
+  /// it also keeps the PDF viewport at or above its minimum width.
+  double? sidePanelMaxWidth(double windowWidth) {
+    final fraction = sidePanelMaxFraction;
+    if (fraction == null) return null;
+    final byFraction = windowWidth * fraction;
+    if (sidePanelMode != PaperSidePanelMode.split) return byFraction;
+    final pdfMin = this == PaperWindowClass.extraLarge
+        ? PaperBreakpoints.pdfViewportMinExtraLarge
+        : PaperBreakpoints.pdfViewportMin;
+    final byPdf = windowWidth - pdfMin;
+    return byFraction < byPdf ? byFraction : byPdf;
+  }
+
+  /// True when a split panel would squeeze the PDF below its minimum, so the
+  /// panel must be shown as an overlay at this window width.
+  bool splitFallsBackToOverlay(double windowWidth) {
+    if (sidePanelMode != PaperSidePanelMode.split) return false;
+    final max = sidePanelMaxWidth(windowWidth)!;
+    return max < sidePanelMinWidth!;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1281,7 +1427,7 @@ abstract final class PaperTheme {
         backgroundColor: c.surface,
         elevation: 0,
         minWidth: PaperBreakpoints.navRailWidth,
-        minExtendedWidth: PaperBreakpoints.navRailExtendedWidth,
+        minExtendedWidth: PaperBreakpoints.sidebarWidth,
         useIndicator: true,
         indicatorColor: c.primarySoft,
         indicatorShape: const RoundedRectangleBorder(
@@ -1370,6 +1516,41 @@ abstract final class PaperTheme {
         color: c.divider,
         thickness: PaperElevation.borderWidth,
         space: PaperElevation.borderWidth,
+      ),
+      // SettingsTile (design/specs/components.md §6).
+      listTileTheme: ListTileThemeData(
+        contentPadding: const EdgeInsets.symmetric(horizontal: PaperSpacing.lg),
+        minTileHeight: desktop ? 44 : 52,
+        iconColor: c.textSecondary,
+        textColor: c.textPrimary,
+        titleTextStyle: text.labelLarge?.copyWith(color: c.textPrimary),
+        subtitleTextStyle: text.bodyMedium?.copyWith(
+          fontSize: 13,
+          color: c.textMuted,
+        ),
+        selectedColor: c.onPrimarySoft,
+        selectedTileColor: c.primarySoft,
+        shape: const RoundedRectangleBorder(borderRadius: PaperRadii.borderMd),
+      ),
+      // On: primary track + onPrimary thumb. Off: surfaceVariant track,
+      // 1.5dp outline border and outline thumb (>=3:1 against the surface).
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected) ? c.onPrimary : c.outline,
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (s) =>
+              s.contains(WidgetState.selected) ? c.primary : c.surfaceVariant,
+        ),
+        trackOutlineColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected) ? c.primary : c.outline,
+        ),
+        trackOutlineWidth: const WidgetStatePropertyAll<double>(
+          PaperElevation.borderStrong,
+        ),
+        overlayColor: WidgetStatePropertyAll<Color>(
+          c.textPrimary.withValues(alpha: 0.08),
+        ),
       ),
       scrollbarTheme: ScrollbarThemeData(
         thumbVisibility: WidgetStatePropertyAll<bool>(desktop),

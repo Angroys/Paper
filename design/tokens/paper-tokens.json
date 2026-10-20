@@ -60,11 +60,13 @@
       "scrim":             { "$value": "#17171738", "$description": "Modal scrim (web --focus-lock-tint rgba(23,23,23,0.22))" },
       "inverseSurface":    { "$value": "#262626", "$description": "Snackbar/tooltip bg" },
       "onInverseSurface":  { "$value": "#fafafa", "contrast": "14.5:1" },
+      "inversePrimary":    { "$value": "#a5b4fc", "$description": "Action text on inverseSurface (snackbar Undo). Mirrors paper_tokens.dart", "contrast": "7.59:1 on #262626" },
       "success":           { "$value": "#15803d", "$description": "green-700 (web successText)", "contrast": "5.02:1 on white" },
       "successSurface":    { "$value": "#f0fdf4" },
       "warning":           { "$value": "#b45309", "$description": "amber-700", "contrast": "5.02:1 on white" },
       "warningSurface":    { "$value": "#fffbeb" },
       "error":             { "$value": "#b91c1c", "$description": "red-700 (web errorText)", "contrast": "6.47:1 on white" },
+      "onError":           { "$value": "#ffffff", "$description": "Text/icons on an error fill. Mirrors paper_tokens.dart" },
       "errorSurface":      { "$value": "#fef2f2", "$description": "red-50 (web errorSurface)" },
       "errorBorder":       { "$value": "#fecaca", "$description": "red-200 (web errorBorder)" },
       "onErrorSurface":    { "$value": "#b91c1c" },
@@ -113,11 +115,13 @@
       "scrim":             { "$value": "#0a0a0a8c", "$description": "web dark --focus-lock-tint rgba(10,10,10,0.55)" },
       "inverseSurface":    { "$value": "#e5e5e5" },
       "onInverseSurface":  { "$value": "#171717", "contrast": "14.23:1" },
+      "inversePrimary":    { "$value": "#4f46e5", "$description": "Action text on inverseSurface (snackbar Undo). Mirrors paper_tokens.dart", "contrast": "4.99:1 on #e5e5e5" },
       "success":           { "$value": "#4ade80", "$description": "green-400", "contrast": "10.29:1 on surface" },
       "successSurface":    { "$value": "#052e16" },
       "warning":           { "$value": "#fbbf24", "$description": "amber-400", "contrast": "10.74:1 on surface" },
       "warningSurface":    { "$value": "#451a03" },
       "error":             { "$value": "#f87171", "$description": "red-400", "contrast": "6.48:1 on surface" },
+      "onError":           { "$value": "#450a0a", "$description": "Text/icons on an error fill. Mirrors paper_tokens.dart" },
       "errorSurface":      { "$value": "#450a0a", "$description": "red-950" },
       "errorBorder":       { "$value": "#7f1d1d", "$description": "red-900" },
       "onErrorSurface":    { "$value": "#fca5a5", "$description": "red-300" },
@@ -217,7 +221,10 @@
   "spacing": {
     "$description": "4dp grid (web design/tokens meta.spacing unitPx 4).",
     "none": 0, "xxs": 2, "xs": 4, "sm": 8, "md": 12, "lg": 16, "xl": 24, "xxl": 32, "xxxl": 48, "huge": 64,
-    "gutter": { "compact": 16, "medium": 24, "expanded": 24, "large": 32, "extraLarge": 32 },
+    "gutter": { "compact": 8, "medium": 16, "expanded": 24, "large": 24, "extraLarge": 24 },
+    "margin": { "compact": 16, "medium": 24, "expanded": 24, "large": 32, "extraLarge": 40 },
+    "columns": { "compact": 4, "medium": 8, "expanded": 12, "large": 12, "extraLarge": 12 },
+    "contentMaxWidth": { "extraLarge": 1440, "note": "Library/Settings content is centred at max 1440 on extraLarge; the reader is never capped." },
     "panePadding": 16,
     "notes": "xxs (2) is only for hairline insets (focus ring offset, mark padding)."
   },
@@ -238,12 +245,23 @@
 
   "breakpoints": {
     "$description": "Window width in logical dp (MediaQuery.sizeOf(context).width). Material 3 window-size-class aligned. Min-width, mobile-first.",
-    "compact":    { "min": 0,    "max": 599,  "target": "Split-screen / narrow window / small tablet portrait", "layout": "Single pane; bottom NavigationBar; side panel as modal sheet" },
-    "medium":     { "min": 600,  "max": 839,  "target": "Tablet portrait", "layout": "NavigationRail (collapsed); side panel as overlay sheet" },
-    "expanded":   { "min": 840,  "max": 1199, "target": "Tablet landscape / small laptop window", "layout": "NavigationRail; reader + side panel split (panel 360dp)" },
-    "large":      { "min": 1200, "max": 1599, "target": "Laptop", "layout": "Extended rail/sidebar 256dp; split view (panel 400dp)" },
-    "extraLarge": { "min": 1600, "max": null, "target": "Large desktop", "layout": "Sidebar + reader + panel (panel 440dp); reader content max-width centered" },
-    "sidePanelWidth": { "expanded": 360, "large": 400, "extraLarge": 440, "min": 320, "max": 560 }
+    "$specNames": "design/specs/layout-system.md uses the same ranges as PaperWindowClass: compact <600, medium 600-839, expanded 840-1199, large 1200-1599, extraLarge >=1600.",
+    "compact":    { "min": 0,    "max": 599,  "target": "Split-screen / narrow window / phone", "layout": "Single pane; bottom NavigationBar; side panel as modal bottom sheet (snap 40% / 90%)" },
+    "medium":     { "min": 600,  "max": 839,  "target": "Tablet portrait", "layout": "NavigationRail 72dp; side panel as overlay side sheet (360dp, scrim, PDF does not resize)" },
+    "expanded":   { "min": 840,  "max": 1199, "target": "Tablet landscape / small laptop window", "layout": "NavigationRail 72dp; reader + resizable split panel (360dp)" },
+    "large":      { "min": 1200, "max": 1599, "target": "Laptop", "layout": "Sidebar 240dp (collapsible to rail); split panel 380dp" },
+    "extraLarge": { "min": 1600, "max": null, "target": "Large desktop", "layout": "Sidebar 256dp; split panel 420dp; library/settings content max 1440 centred" },
+    "hysteresisDp": 8,
+    "sidePanel": {
+      "$description": "ReaderSidePanel per window class. maxFraction is of the window width. A split that would leave the PDF narrower than pdfViewportMin falls back to overlay. compact = bottom sheet (full width, no width tokens).",
+      "medium":     { "mode": "overlay", "default": 360, "min": 320, "maxFraction": 0.85 },
+      "expanded":   { "mode": "split",   "default": 360, "min": 300, "maxFraction": 0.50 },
+      "large":      { "mode": "split",   "default": 380, "min": 300, "maxFraction": 0.50 },
+      "extraLarge": { "mode": "split",   "default": 420, "min": 320, "maxFraction": 0.45 },
+      "closeSnapBelowMin": 48
+    },
+    "pdfViewportMin": 480,
+    "pdfViewportMinExtraLarge": 720
   },
 
   "motion": {
@@ -304,8 +322,16 @@
     "dialog":   { "radius": "xl", "maxWidth": 560, "padding": 24 },
     "popover":  { "radius": "xl", "maxWidth": 360, "padding": "12 14 12 18", "accentBarWidth": 3 },
     "tooltip":  { "radius": "sm", "paddingH": 8, "paddingV": 4, "waitMs": 500 },
-    "navRail":  { "width": 80, "extendedWidth": 256 },
+    "navRail":  { "width": 72 },
+    "sidebar":  { "width": { "large": 240, "extraLarge": 256 } },
     "appBar":   { "height": { "touch": 56, "pointer": 48 } },
+    "readerToolbar": { "height": { "compact": 56, "touch": 64, "pointer": 48 }, "note": "touch = medium+ with touch/stylus input; pointer = expanded+ with mouse/trackpad last input. Height changes only on window-class change, never mid-gesture." },
+    "splitDragHandle": { "dividerWidth": 1, "grabberWidth": 24, "grabberHeight": 48, "hitWidth": { "touch": 24, "pointer": 16 }, "keyStep": 16, "keyStepLarge": 64 },
+    "windowChrome": {
+      "macosTitleBarHeight": 52, "macosTrafficLightReserve": { "width": 78, "height": 52 }, "macosTrafficLightInset": { "x": 20, "y": 18 }, "macosReaderBackX": 86,
+      "windowsTitleBarHeight": 40, "windowsTitleBarMergedHeight": 48, "windowsCaptionButton": { "width": 46, "height": 32 }, "windowsCaptionReserve": 138,
+      "windowMin": { "width": 480, "height": 560 }, "windowDefault": { "width": 1280, "height": 800 }
+    },
     "scrollbar":{ "thickness": 6, "thicknessHover": 10, "radius": "full" }
   }
 }
