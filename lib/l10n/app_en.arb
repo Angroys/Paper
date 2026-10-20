@@ -1053,6 +1053,10 @@
   "@panelTabExplanation": {
     "description": "Side panel tab. Max 12 chars."
   },
+  "panelTabHighlights": "Highlights",
+  "@panelTabHighlights": {
+    "description": "Side panel tab listing the paper's highlights in reading order (tap to jump). Max 12 chars."
+  },
   "panelClose": "Close panel",
   "@panelClose": {
     "description": "Side panel close tooltip. Max 18 chars."
