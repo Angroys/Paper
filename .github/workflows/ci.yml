@@ -1,0 +1,215 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Optional repository secrets. Empty values are fine: the app then boots in
+  # "not configured" mode. Passed via env (never inlined into run scripts).
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+  PAPER_API_BASE_URL: ${{ secrets.PAPER_API_BASE_URL }}
+
+jobs:
+  analyze-test:
+    name: Analyze & test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install native toolchain (clang for pdfium_dart hook, sqlite3 for drift tests)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang libsqlite3-dev
+
+      - uses: ./.github/actions/setup-paper
+
+      - name: Check formatting (tracked sources only, generated code excluded)
+        run: |
+          git ls-files -z -- 'lib/*.dart' 'test/*.dart' \
+            | xargs -0 --no-run-if-empty dart format --output=none --set-exit-if-changed
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+  build-android:
+    name: Build Android (debug APK)
+    needs: analyze-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install clang (pdfium_dart native-assets hook)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - uses: ./.github/actions/setup-paper
+
+      - name: Artifact label
+        id: meta
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            echo "label=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+          else
+            echo "label=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build APK (debug, unsigned)
+        run: |
+          flutter build apk --debug \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+            --dart-define=PAPER_API_BASE_URL="$PAPER_API_BASE_URL"
+
+      - name: Rename APK
+        env:
+          LABEL: ${{ steps.meta.outputs.label }}
+        run: |
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-debug.apk "dist/paper-android-debug-${LABEL}.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paper-android-debug-apk-${{ steps.meta.outputs.label }}
+          path: dist/paper-android-debug-${{ steps.meta.outputs.label }}.apk
+          if-no-files-found: error
+          retention-days: 14
+
+  build-windows:
+    name: Build Windows (debug)
+    needs: analyze-test
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: ./.github/actions/setup-paper
+
+      - name: Artifact label
+        id: meta
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            echo "label=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+          else
+            echo "label=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build Windows (debug)
+        run: |
+          flutter build windows --debug \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+            --dart-define=PAPER_API_BASE_URL="$PAPER_API_BASE_URL"
+
+      - name: Zip runner output
+        shell: pwsh
+        env:
+          LABEL: ${{ steps.meta.outputs.label }}
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Compress-Archive -Path build/windows/x64/runner/Debug/* `
+            -DestinationPath "dist/paper-windows-debug-$env:LABEL.zip" -Force
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paper-windows-debug-${{ steps.meta.outputs.label }}
+          path: dist/paper-windows-debug-${{ steps.meta.outputs.label }}.zip
+          if-no-files-found: error
+          retention-days: 14
+
+  build-macos:
+    name: Build macOS (debug)
+    needs: analyze-test
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: ./.github/actions/setup-paper
+
+      - name: Artifact label
+        id: meta
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            echo "label=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+          else
+            echo "label=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build macOS (debug)
+        run: |
+          flutter build macos --debug \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+            --dart-define=PAPER_API_BASE_URL="$PAPER_API_BASE_URL"
+
+      - name: Zip app bundle
+        env:
+          LABEL: ${{ steps.meta.outputs.label }}
+        run: |
+          mkdir -p dist
+          ditto -c -k --keepParent build/macos/Build/Products/Debug/Paper.app \
+            "dist/paper-macos-debug-${LABEL}.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paper-macos-debug-${{ steps.meta.outputs.label }}
+          path: dist/paper-macos-debug-${{ steps.meta.outputs.label }}.zip
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Draft GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-android, build-windows, build-macos]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: paper-*
+          path: dist
+          merge-multiple: true
+
+      - name: List release files
+        run: ls -la dist
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          name: Paper ${{ github.ref_name }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            dist/*.apk
+            dist/*.zip
