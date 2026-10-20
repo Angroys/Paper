@@ -23,6 +23,7 @@ class SyncOp {
     this.payload = const <String, Object?>{},
     this.attempts = 0,
     this.lastError,
+    this.failed = false,
   });
 
   factory SyncOp.fromJson(Map<String, Object?> json) => SyncOp(
@@ -38,6 +39,7 @@ class SyncOp {
     deviceId: json['device_id']! as String,
     attempts: toIntOrNull(json['attempts']) ?? 0,
     lastError: json['last_error'] as String?,
+    failed: (json['failed'] as bool?) ?? false,
   );
 
   final String id;
@@ -55,6 +57,10 @@ class SyncOp {
   final int attempts;
   final String? lastError;
 
+  /// The server rejected this op for good (SyncSheet error list: Retry /
+  /// Discard). Transient failures only back off and stay pending.
+  final bool failed;
+
   Map<String, Object?> toJson() => <String, Object?>{
     'id': id,
     'entity': entity.name,
@@ -66,22 +72,25 @@ class SyncOp {
     'device_id': deviceId,
     'attempts': attempts,
     'last_error': lastError,
+    'failed': failed,
   };
 
-  SyncOp copyWith({int? attempts, Object? lastError = unset}) => SyncOp(
-    id: id,
-    entity: entity,
-    entityId: entityId,
-    kind: kind,
-    payload: payload,
-    createdAt: createdAt,
-    localUpdatedAt: localUpdatedAt,
-    deviceId: deviceId,
-    attempts: attempts ?? this.attempts,
-    lastError: identical(lastError, unset)
-        ? this.lastError
-        : lastError as String?,
-  );
+  SyncOp copyWith({int? attempts, Object? lastError = unset, bool? failed}) =>
+      SyncOp(
+        id: id,
+        entity: entity,
+        entityId: entityId,
+        kind: kind,
+        payload: payload,
+        createdAt: createdAt,
+        localUpdatedAt: localUpdatedAt,
+        deviceId: deviceId,
+        attempts: attempts ?? this.attempts,
+        lastError: identical(lastError, unset)
+            ? this.lastError
+            : lastError as String?,
+        failed: failed ?? this.failed,
+      );
 
   @override
   bool operator ==(Object other) =>
@@ -95,7 +104,8 @@ class SyncOp {
       other.localUpdatedAt == localUpdatedAt &&
       other.deviceId == deviceId &&
       other.attempts == attempts &&
-      other.lastError == lastError;
+      other.lastError == lastError &&
+      other.failed == failed;
 
   @override
   int get hashCode => Object.hash(
@@ -108,6 +118,7 @@ class SyncOp {
     deviceId,
     attempts,
     lastError,
+    failed,
   );
 }
 

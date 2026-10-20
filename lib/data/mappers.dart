@@ -188,6 +188,7 @@ SyncOp syncOpFromRow(SyncOpRow r) => SyncOp(
   deviceId: r.deviceId,
   attempts: r.attempts,
   lastError: r.lastError,
+  failed: r.failed,
 );
 
 ReplacedVersion replacedFromRow(ReplacedVersionRow r) => ReplacedVersion(

@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../theme/paper_tokens.dart';
 import '../../../theme/theme_x.dart';
+import '../../sync/sync_badge.dart';
 import '../reader_controller.dart';
 
 String readerToolLabel(AppLocalizations l10n, ReaderTool tool) =>
@@ -437,6 +438,12 @@ class ReaderToolbar extends ConsumerWidget {
                   size: PaperIconSize.md,
                 ),
               ),
+            // Sync status in the reader chrome (sync-status.md).
+            SyncBadge(
+              form: pointer && windowClass.usesSidebar
+                  ? SyncBadgeForm.short
+                  : SyncBadgeForm.icon,
+            ),
             PopupMenuButton<int>(
               tooltip: l10n.readerMore,
               icon: const Icon(

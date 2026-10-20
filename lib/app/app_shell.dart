@@ -4,6 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../core/core_providers.dart';
 import '../core/window_class.dart';
+import '../features/sync/sync_badge.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/paper_tokens.dart';
 import '../theme/theme_x.dart';
@@ -17,6 +18,8 @@ import '../theme/theme_x.dart';
 /// | medium, expanded | collapsed 72dp NavigationRail ([AppShell.railKey]) |
 /// | large, extraLarge | extended 240 / 256dp sidebar ([AppShell.sidebarKey]) |
 ///
+/// The SyncBadge sits at the rail bottom / in the sidebar; on compact the
+/// screens put it in their top bar trailing slot ([ShellSyncBadge]).
 /// The reader is a full-screen route outside this shell.
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({
@@ -100,6 +103,18 @@ class _AppShellState extends ConsumerState<AppShell> {
                   leading: extended
                       ? _SidebarHeader(title: l10n.appName)
                       : null,
+                  // SyncBadge: rail bottom (icon) / sidebar row (long).
+                  trailingAtBottom: true,
+                  trailing: Padding(
+                    padding: const EdgeInsets.only(bottom: PaperSpacing.md),
+                    child: extended
+                        ? SizedBox(
+                            width:
+                                windowClass.navigationWidth - PaperSpacing.lg,
+                            child: const SyncBadge(form: SyncBadgeForm.long),
+                          )
+                        : const SyncBadge(),
+                  ),
                   destinations: <NavigationRailDestination>[
                     for (final d in destinations)
                       NavigationRailDestination(
@@ -181,4 +196,17 @@ class _NotConfiguredStrip extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Compact-only SyncBadge for a screen's top bar trailing slot (the bottom
+/// bar has no room for it). Renders nothing on medium+ where the rail /
+/// sidebar carries the badge.
+class ShellSyncBadge extends StatelessWidget {
+  const ShellSyncBadge({super.key});
+
+  @override
+  Widget build(BuildContext context) =>
+      PaperWindowClass.ofContext(context) == PaperWindowClass.compact
+      ? const SyncBadge()
+      : const SizedBox.shrink();
 }
