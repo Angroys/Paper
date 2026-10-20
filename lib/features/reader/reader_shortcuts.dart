@@ -116,8 +116,11 @@ bool isApplePlatform(TargetPlatform p) =>
 /// The reader shortcut table for [platform].
 Map<ShortcutActivator, Intent> readerShortcuts(TargetPlatform platform) {
   final mac = isApplePlatform(platform);
-  SingleActivator mod(LogicalKeyboardKey key, {bool shift = false, bool alt = false}) =>
-      SingleActivator(key, meta: mac, control: !mac, shift: shift, alt: alt);
+  SingleActivator mod(
+    LogicalKeyboardKey key, {
+    bool shift = false,
+    bool alt = false,
+  }) => SingleActivator(key, meta: mac, control: !mac, shift: shift, alt: alt);
   final digits = <LogicalKeyboardKey>[
     LogicalKeyboardKey.digit1,
     LogicalKeyboardKey.digit2,
@@ -128,60 +131,109 @@ Map<ShortcutActivator, Intent> readerShortcuts(TargetPlatform platform) {
   ];
   return <ShortcutActivator, Intent>{
     // Tools + selection actions (single key).
-    const SingleActivator(LogicalKeyboardKey.keyV): const ReaderToolIntent(ReaderTool.select),
-    const SingleActivator(LogicalKeyboardKey.keyP): const ReaderToolIntent(ReaderTool.pen),
-    const SingleActivator(LogicalKeyboardKey.keyF): const ReaderToolIntent(ReaderTool.figure),
-    const SingleActivator(LogicalKeyboardKey.keyH): const HighlightSelectionIntent(),
-    const SingleActivator(LogicalKeyboardKey.keyE): const ExplainSelectionIntent(),
+    const SingleActivator(LogicalKeyboardKey.keyV): const ReaderToolIntent(
+      ReaderTool.select,
+    ),
+    const SingleActivator(LogicalKeyboardKey.keyP): const ReaderToolIntent(
+      ReaderTool.pen,
+    ),
+    const SingleActivator(LogicalKeyboardKey.keyF): const ReaderToolIntent(
+      ReaderTool.figure,
+    ),
+    const SingleActivator(LogicalKeyboardKey.keyH):
+        const HighlightSelectionIntent(),
+    const SingleActivator(LogicalKeyboardKey.keyE):
+        const ExplainSelectionIntent(),
     const SingleActivator(LogicalKeyboardKey.keyN): const AddNoteIntent(),
     for (var i = 0; i < 6; i++)
-      SingleActivator(digits[i]): HighlightColorIntent(HighlightColor.values[i]),
+      SingleActivator(digits[i]): HighlightColorIntent(
+        HighlightColor.values[i],
+      ),
     mod(LogicalKeyboardKey.keyC): const CopySelectionIntent(),
     // Pages.
-    const SingleActivator(LogicalKeyboardKey.pageDown): const ReaderPageIntent(ReaderPageCommand.next),
-    const SingleActivator(LogicalKeyboardKey.pageUp): const ReaderPageIntent(ReaderPageCommand.previous),
-    const SingleActivator(LogicalKeyboardKey.arrowRight): const ReaderPageIntent(ReaderPageCommand.next),
-    const SingleActivator(LogicalKeyboardKey.arrowLeft): const ReaderPageIntent(ReaderPageCommand.previous),
-    const SingleActivator(LogicalKeyboardKey.home): const ReaderPageIntent(ReaderPageCommand.first),
-    const SingleActivator(LogicalKeyboardKey.end): const ReaderPageIntent(ReaderPageCommand.last),
+    const SingleActivator(LogicalKeyboardKey.pageDown): const ReaderPageIntent(
+      ReaderPageCommand.next,
+    ),
+    const SingleActivator(LogicalKeyboardKey.pageUp): const ReaderPageIntent(
+      ReaderPageCommand.previous,
+    ),
+    const SingleActivator(LogicalKeyboardKey.arrowRight):
+        const ReaderPageIntent(ReaderPageCommand.next),
+    const SingleActivator(LogicalKeyboardKey.arrowLeft): const ReaderPageIntent(
+      ReaderPageCommand.previous,
+    ),
+    const SingleActivator(LogicalKeyboardKey.home): const ReaderPageIntent(
+      ReaderPageCommand.first,
+    ),
+    const SingleActivator(LogicalKeyboardKey.end): const ReaderPageIntent(
+      ReaderPageCommand.last,
+    ),
     if (mac) ...<ShortcutActivator, Intent>{
-      const SingleActivator(LogicalKeyboardKey.arrowUp, meta: true): const ReaderPageIntent(ReaderPageCommand.first),
-      const SingleActivator(LogicalKeyboardKey.arrowDown, meta: true): const ReaderPageIntent(ReaderPageCommand.last),
+      const SingleActivator(LogicalKeyboardKey.arrowUp, meta: true):
+          const ReaderPageIntent(ReaderPageCommand.first),
+      const SingleActivator(LogicalKeyboardKey.arrowDown, meta: true):
+          const ReaderPageIntent(ReaderPageCommand.last),
     },
     // Go to page: Ctrl+G / Cmd+Option+G (Cmd+G is find-next on macOS).
     if (mac)
-      const SingleActivator(LogicalKeyboardKey.keyG, meta: true, alt: true): const GoToPageIntent()
+      const SingleActivator(LogicalKeyboardKey.keyG, meta: true, alt: true):
+          const GoToPageIntent()
     else
-      const SingleActivator(LogicalKeyboardKey.keyG, control: true): const GoToPageIntent(),
+      const SingleActivator(LogicalKeyboardKey.keyG, control: true):
+          const GoToPageIntent(),
     // Zoom.
-    mod(LogicalKeyboardKey.equal): const ReaderZoomIntent(ReaderZoomCommand.zoomIn),
-    mod(LogicalKeyboardKey.equal, shift: true): const ReaderZoomIntent(ReaderZoomCommand.zoomIn),
-    mod(LogicalKeyboardKey.numpadAdd): const ReaderZoomIntent(ReaderZoomCommand.zoomIn),
-    mod(LogicalKeyboardKey.minus): const ReaderZoomIntent(ReaderZoomCommand.zoomOut),
-    mod(LogicalKeyboardKey.numpadSubtract): const ReaderZoomIntent(ReaderZoomCommand.zoomOut),
-    mod(LogicalKeyboardKey.digit0): const ReaderZoomIntent(ReaderZoomCommand.actualSize),
-    mod(LogicalKeyboardKey.digit1): const ReaderZoomIntent(ReaderZoomCommand.fitWidth),
-    mod(LogicalKeyboardKey.digit2): const ReaderZoomIntent(ReaderZoomCommand.fitPage),
+    mod(LogicalKeyboardKey.equal): const ReaderZoomIntent(
+      ReaderZoomCommand.zoomIn,
+    ),
+    mod(LogicalKeyboardKey.equal, shift: true): const ReaderZoomIntent(
+      ReaderZoomCommand.zoomIn,
+    ),
+    mod(LogicalKeyboardKey.numpadAdd): const ReaderZoomIntent(
+      ReaderZoomCommand.zoomIn,
+    ),
+    mod(LogicalKeyboardKey.minus): const ReaderZoomIntent(
+      ReaderZoomCommand.zoomOut,
+    ),
+    mod(LogicalKeyboardKey.numpadSubtract): const ReaderZoomIntent(
+      ReaderZoomCommand.zoomOut,
+    ),
+    mod(LogicalKeyboardKey.digit0): const ReaderZoomIntent(
+      ReaderZoomCommand.actualSize,
+    ),
+    mod(LogicalKeyboardKey.digit1): const ReaderZoomIntent(
+      ReaderZoomCommand.fitWidth,
+    ),
+    mod(LogicalKeyboardKey.digit2): const ReaderZoomIntent(
+      ReaderZoomCommand.fitPage,
+    ),
     // Find.
     mod(LogicalKeyboardKey.keyF): const FindInPaperIntent(),
     if (mac) ...<ShortcutActivator, Intent>{
-      const SingleActivator(LogicalKeyboardKey.keyG, meta: true): const FindMatchIntent(forward: true),
-      const SingleActivator(LogicalKeyboardKey.keyG, meta: true, shift: true): const FindMatchIntent(forward: false),
+      const SingleActivator(LogicalKeyboardKey.keyG, meta: true):
+          const FindMatchIntent(forward: true),
+      const SingleActivator(LogicalKeyboardKey.keyG, meta: true, shift: true):
+          const FindMatchIntent(forward: false),
     } else ...<ShortcutActivator, Intent>{
-      const SingleActivator(LogicalKeyboardKey.f3): const FindMatchIntent(forward: true),
-      const SingleActivator(LogicalKeyboardKey.f3, shift: true): const FindMatchIntent(forward: false),
+      const SingleActivator(LogicalKeyboardKey.f3): const FindMatchIntent(
+        forward: true,
+      ),
+      const SingleActivator(LogicalKeyboardKey.f3, shift: true):
+          const FindMatchIntent(forward: false),
     },
     // Side panel.
     mod(LogicalKeyboardKey.backslash): const TogglePanelIntent(),
     for (var i = 0; i < ReaderPanelTab.values.length; i++)
       mod(digits[i], alt: true): PanelTabIntent(ReaderPanelTab.values[i]),
     // Escape + close.
-    const SingleActivator(LogicalKeyboardKey.escape): const ReaderEscapeIntent(),
+    const SingleActivator(LogicalKeyboardKey.escape):
+        const ReaderEscapeIntent(),
     mod(LogicalKeyboardKey.keyW): const CloseReaderIntent(),
     if (mac)
-      const SingleActivator(LogicalKeyboardKey.bracketLeft, meta: true): const CloseReaderIntent()
+      const SingleActivator(LogicalKeyboardKey.bracketLeft, meta: true):
+          const CloseReaderIntent()
     else
-      const SingleActivator(LogicalKeyboardKey.arrowLeft, alt: true): const CloseReaderIntent(),
+      const SingleActivator(LogicalKeyboardKey.arrowLeft, alt: true):
+          const CloseReaderIntent(),
   };
 }
 
@@ -254,7 +306,9 @@ class ReaderShortcuts extends ConsumerWidget {
             (i) => ctrl().setTool(i.tool),
             singleKey,
           ),
-          HighlightSelectionIntent: _ReaderAction<HighlightSelectionIntent>((_) {
+          HighlightSelectionIntent: _ReaderAction<HighlightSelectionIntent>((
+            _,
+          ) {
             if (state().selection != null) {
               unawaited(ctrl().highlightSelection());
             } else {
@@ -332,11 +386,7 @@ class ReaderShortcuts extends ConsumerWidget {
             singleKey,
           ),
         },
-        child: Focus(
-          focusNode: focusNode,
-          autofocus: true,
-          child: child,
-        ),
+        child: Focus(focusNode: focusNode, autofocus: true, child: child),
       ),
     );
   }

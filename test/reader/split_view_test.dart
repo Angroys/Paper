@@ -39,12 +39,16 @@ Future<ValueNotifier<bool>> pumpSplit(
   setWindowSize(tester, size);
   final notifier = ValueNotifier<bool>(open);
   addTearDown(notifier.dispose);
-  Widget child = Scaffold(body: _Harness(open: notifier, onLayout: onLayout));
+  Widget child = Scaffold(
+    body: _Harness(open: notifier, onLayout: onLayout),
+  );
   if (reduceMotion) {
     child = Builder(
       builder: (context) => MediaQuery(
         data: MediaQuery.of(context).copyWith(disableAnimations: true),
-        child: Scaffold(body: _Harness(open: notifier, onLayout: onLayout)),
+        child: Scaffold(
+          body: _Harness(open: notifier, onLayout: onLayout),
+        ),
       ),
     );
   }
@@ -53,7 +57,8 @@ Future<ValueNotifier<bool>> pumpSplit(
   return notifier;
 }
 
-double readerWidth(WidgetTester tester) => tester.getSize(find.byKey(readerKey)).width;
+double readerWidth(WidgetTester tester) =>
+    tester.getSize(find.byKey(readerKey)).width;
 
 void main() {
   group('resolvePanelLayout', () {
@@ -235,10 +240,7 @@ void main() {
       await tester.pump();
       expect(tester.hasRunningAnimations, isFalse);
       expect(readerWidth(tester), 1280 - 380 - PaperChrome.splitDividerWidth);
-      expect(
-        tester.getRect(find.byKey(panelKey)).left,
-        1280 - 380,
-      );
+      expect(tester.getRect(find.byKey(panelKey)).left, 1280 - 380);
       open.value = false;
       await tester.pump();
       expect(find.byKey(panelKey), findsNothing);

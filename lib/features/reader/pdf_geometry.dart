@@ -137,8 +137,7 @@ List<Rect> mergeOverlappingRects(Iterable<Rect> input) {
       for (var j = i + 1; j < rects.length; j++) {
         final a = rects[i];
         final b = rects[j];
-        final touches =
-            a.left <= b.right + 1e-6 && b.left <= a.right + 1e-6;
+        final touches = a.left <= b.right + 1e-6 && b.left <= a.right + 1e-6;
         if (touches && sameLine(a, b)) {
           rects[i] = a.expandToInclude(b);
           rects.removeAt(j);
@@ -230,14 +229,19 @@ String normalizeSelectedText(String raw) => raw
   final s = start.clamp(0, fullText.length);
   final e = end.clamp(s, fullText.length);
   final rawBefore = fullText.substring(math.max(0, s - maxLen * 2), s);
-  final rawAfter = fullText.substring(e, math.min(fullText.length, e + maxLen * 2));
+  final rawAfter = fullText.substring(
+    e,
+    math.min(fullText.length, e + maxLen * 2),
+  );
   final before = rawBefore.replaceAll(_ws, ' ').trimLeft();
   final after = rawAfter.replaceAll(_ws, ' ').trimRight();
   return (
     before: before.length > maxLen
         ? before.substring(before.length - maxLen).trimLeft()
         : before,
-    after: after.length > maxLen ? after.substring(0, maxLen).trimRight() : after,
+    after: after.length > maxLen
+        ? after.substring(0, maxLen).trimRight()
+        : after,
   );
 }
 
@@ -263,9 +267,6 @@ ReaderTextSelection? selectionFromRange(
     rects: rects,
     contextBefore: ctx.before,
     contextAfter: ctx.after,
-    anchor: ReaderAnchor(
-      pageNumber: page.pageNumber,
-      rect: boundsOf(lines)!,
-    ),
+    anchor: ReaderAnchor(pageNumber: page.pageNumber, rect: boundsOf(lines)!),
   );
 }

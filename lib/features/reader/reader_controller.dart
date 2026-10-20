@@ -214,7 +214,9 @@ class ReaderController extends Notifier<ReaderState> {
       if (stale()) return;
       state = state.copyWith(
         phase: ReaderLoadError(
-          e is PaperException ? _errorKindFor(e) : ReaderErrorKind.downloadFailed,
+          e is PaperException
+              ? _errorKindFor(e)
+              : ReaderErrorKind.downloadFailed,
           e,
         ),
       );
@@ -507,10 +509,8 @@ class ReaderController extends Notifier<ReaderState> {
 
   void togglePanel() => state = state.copyWith(panelOpen: !state.panelOpen);
 
-  void openPanel([ReaderPanelTab? tab]) => state = state.copyWith(
-    panelOpen: true,
-    panelTab: tab ?? state.panelTab,
-  );
+  void openPanel([ReaderPanelTab? tab]) =>
+      state = state.copyWith(panelOpen: true, panelTab: tab ?? state.panelTab);
 
   void closePanel() {
     if (!state.panelOpen) return;
@@ -529,9 +529,8 @@ class ReaderController extends Notifier<ReaderState> {
   void openSearch() =>
       state = state.copyWith(search: state.search.copyWith(open: true));
 
-  void closeSearch() => state = state.copyWith(
-    search: const ReaderSearchState(),
-  );
+  void closeSearch() =>
+      state = state.copyWith(search: const ReaderSearchState());
 
   void setSearchQuery(String query) => state = state.copyWith(
     search: state.search.copyWith(query: query, total: 0, current: 0),
@@ -559,7 +558,9 @@ class ReaderController extends Notifier<ReaderState> {
   void reportSearchResults({required int total, required int current}) {
     final s = state.search;
     if (s.total == total && s.current == current) return;
-    state = state.copyWith(search: s.copyWith(total: total, current: current));
+    state = state.copyWith(
+      search: s.copyWith(total: total, current: current),
+    );
   }
 
   /// Esc: closes the topmost transient (popover -> find bar -> overlay
@@ -827,7 +828,9 @@ class ReaderController extends Notifier<ReaderState> {
 
   void _writePosition(ReadingPosition p) {
     final last = _lastSaved;
-    if (last != null && last.pageNumber == p.pageNumber && last.zoom == p.zoom) {
+    if (last != null &&
+        last.pageNumber == p.pageNumber &&
+        last.zoom == p.zoom) {
       return;
     }
     final repo = _paperRepo;

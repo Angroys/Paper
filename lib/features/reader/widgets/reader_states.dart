@@ -59,9 +59,8 @@ class ReaderLoadingState extends StatelessWidget {
                 liveRegion: true,
                 child: Text(
                   l10n.readerDownloading('$percent%', '100%'),
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: c.textMuted),
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: c.textMuted),
                 ),
               ),
               const SizedBox(height: PaperSpacing.sm),
@@ -121,7 +120,11 @@ class ReaderErrorState extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Icon(Symbols.error_rounded, size: PaperIconSize.xl, color: c.error),
+              Icon(
+                Symbols.error_rounded,
+                size: PaperIconSize.xl,
+                color: c.error,
+              ),
               const SizedBox(height: PaperSpacing.lg),
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 420),
@@ -142,7 +145,10 @@ class ReaderErrorState extends StatelessWidget {
                 children: <Widget>[
                   FilledButton(onPressed: primaryAction, child: Text(primary)),
                   if (kind != ReaderErrorKind.paperDeleted)
-                    OutlinedButton(onPressed: onBack, child: Text(l10n.commonBack)),
+                    OutlinedButton(
+                      onPressed: onBack,
+                      child: Text(l10n.commonBack),
+                    ),
                 ],
               ),
             ],

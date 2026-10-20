@@ -64,9 +64,7 @@ class _PageInteractionOverlayState extends State<PageInteractionOverlay>
   final ValueNotifier<double> _staticAlpha = ValueNotifier<double>(0);
   int _playedSerial = 0;
 
-  static const Duration _flashTotal = Duration(
-    milliseconds: 150 + 420 + 300,
-  );
+  static const Duration _flashTotal = Duration(milliseconds: 150 + 420 + 300);
 
   @override
   void didChangeDependencies() {

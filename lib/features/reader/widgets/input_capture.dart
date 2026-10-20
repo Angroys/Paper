@@ -51,8 +51,11 @@ typedef InputRouter = InputRoute Function(PointerDownEvent event);
 
 /// Called when a captured stroke ends, with its points in viewer-local
 /// coordinates.
-typedef StrokeEnd =
-    void Function(InputRoute route, List<Offset> points, PointerDeviceKind kind);
+typedef StrokeEnd = void Function(
+  InputRoute route,
+  List<Offset> points,
+  PointerDeviceKind kind,
+);
 
 /// Wraps the PDF viewer and claims pointers the active tool owns (pen /
 /// highlighter stroke, eraser, figure rectangle, palm-rejected touches)

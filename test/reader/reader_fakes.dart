@@ -63,9 +63,8 @@ class FakePaperRepository implements PaperRepository {
   Stream<Paper?> watchPaper(String paperId) => Stream<Paper?>.value(paper);
 
   @override
-  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError(
-    'FakePaperRepository.${invocation.memberName}',
-  );
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('FakePaperRepository.${invocation.memberName}');
 }
 
 /// In-memory [HighlightRepository].

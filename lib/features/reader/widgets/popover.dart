@@ -109,14 +109,20 @@ class _PopoverLayout extends SingleChildLayoutDelegate {
   Offset getPositionForChild(Size size, Size child) {
     final x = (anchor.center.dx - child.width / 2).clamp(
       kPopoverGap,
-      (size.width - child.width - kPopoverGap).clamp(kPopoverGap, double.infinity),
+      (size.width - child.width - kPopoverGap).clamp(
+        kPopoverGap,
+        double.infinity,
+      ),
     );
     var y = above
         ? anchor.top - kPopoverGap - child.height
         : anchor.bottom + kPopoverGap;
     y = y.clamp(
       kPopoverGap,
-      (size.height - child.height - kPopoverGap).clamp(kPopoverGap, double.infinity),
+      (size.height - child.height - kPopoverGap).clamp(
+        kPopoverGap,
+        double.infinity,
+      ),
     );
     return Offset(x.toDouble(), y.toDouble());
   }
@@ -214,10 +220,7 @@ class PopoverDivider extends StatelessWidget {
       horizontal: PaperSpacing.xs,
       vertical: PaperSpacing.sm,
     ),
-    child: SizedBox(
-      width: 1,
-      child: ColoredBox(color: context.paper.divider),
-    ),
+    child: SizedBox(width: 1, child: ColoredBox(color: context.paper.divider)),
   );
 }
 

@@ -96,10 +96,10 @@ void main() {
   });
 
   test('densifyStroke inserts points', () {
-    final pts = densifyStroke(
-      const <Offset>[Offset.zero, Offset(1, 0)],
-      step: 0.25,
-    );
+    final pts = densifyStroke(const <Offset>[
+      Offset.zero,
+      Offset(1, 0),
+    ], step: 0.25);
     expect(pts, hasLength(5));
     expect(pts.last, const Offset(1, 0));
   });
@@ -210,14 +210,26 @@ void main() {
     });
 
     test('highlight and figure modes capture finger + mouse drags', () {
-      expect(route(ReaderTool.highlight, PointerDeviceKind.touch), InputRoute.ink);
-      expect(route(ReaderTool.highlight, PointerDeviceKind.mouse), InputRoute.ink);
-      expect(route(ReaderTool.figure, PointerDeviceKind.mouse), InputRoute.figure);
+      expect(
+        route(ReaderTool.highlight, PointerDeviceKind.touch),
+        InputRoute.ink,
+      );
+      expect(
+        route(ReaderTool.highlight, PointerDeviceKind.mouse),
+        InputRoute.ink,
+      );
+      expect(
+        route(ReaderTool.figure, PointerDeviceKind.mouse),
+        InputRoute.figure,
+      );
       expect(
         route(ReaderTool.figure, PointerDeviceKind.trackpad),
         InputRoute.viewer,
       );
-      expect(route(ReaderTool.select, PointerDeviceKind.stylus), InputRoute.viewer);
+      expect(
+        route(ReaderTool.select, PointerDeviceKind.stylus),
+        InputRoute.viewer,
+      );
     });
   });
 }

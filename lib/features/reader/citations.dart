@@ -93,13 +93,16 @@ final RegExp _numericMarker = RegExp(
       r'\s*\d{1,4})?)*)\s*\]',
 );
 final RegExp _parenGroup = RegExp(r'\(([^()\n]{4,240})\)');
-const String _surname = r"(?:(?:van|von|de|del|der|da|di|le|la)\s+)?\p{Lu}[\p{L}'’\-]+";
+const String _surname =
+    r"(?:(?:van|von|de|del|der|da|di|le|la)\s+)?\p{Lu}[\p{L}'’\-]+";
 final RegExp _authorYearItem = RegExp(
   '($_surname(?:\\s+(?:et\\s+al\\.?|(?:and|&)\\s+$_surname))?)'
   r',?\s+((?:1[89]|20)\d{2}[a-z]?)',
   unicode: true,
 );
-final RegExp _yearOnly = RegExp(r'^\s*((?:1[89]|20)\d{2}[a-z]?)(?:\s*[,;]\s*((?:1[89]|20)\d{2}[a-z]?))*\s*$');
+final RegExp _yearOnly = RegExp(
+  r'^\s*((?:1[89]|20)\d{2}[a-z]?)(?:\s*[,;]\s*((?:1[89]|20)\d{2}[a-z]?))*\s*$',
+);
 final RegExp _year = RegExp(r'(?:1[89]|20)\d{2}[a-z]?');
 final RegExp _narrativeAuthor = RegExp(
   '($_surname(?:\\s+(?:et\\s+al\\.?|(?:and|&)\\s+$_surname))?)\\s*\$',
@@ -154,10 +157,7 @@ List<CitationMarker> findCitationMarkers(String text) {
     var start = m.start;
     if (items.isEmpty && _yearOnly.hasMatch(body)) {
       // Narrative form: "Smith et al. (2020)" -> author before the paren.
-      final before = text.substring(
-        (m.start - 80).clamp(0, m.start),
-        m.start,
-      );
+      final before = text.substring((m.start - 80).clamp(0, m.start), m.start);
       final author = _narrativeAuthor.firstMatch(before);
       if (author != null) {
         start = m.start - (before.length - author.start);
@@ -202,7 +202,10 @@ final RegExp _sectionAfterReferences = RegExp(
   r'\n[ \t]*(?:[A-Z][ \t.]+)?(Appendix|APPENDIX|Appendices|APPENDICES|Supplementary Material|SUPPLEMENTARY)\b',
 );
 final RegExp _bracketLabel = RegExp(r'(?:^|\n)[ \t]*\[(\d{1,4})\][ \t]*');
-final RegExp _dotLabel = RegExp(r'(?:^|\n)[ \t]*(\d{1,4})\.[ \t]+(?=\p{Lu})', unicode: true);
+final RegExp _dotLabel = RegExp(
+  r'(?:^|\n)[ \t]*(\d{1,4})\.[ \t]+(?=\p{Lu})',
+  unicode: true,
+);
 final RegExp _authorYearEntryStart = RegExp(
   '\\n[ \\t]*(?=$_surname,\\s+(?:\\p{Lu}\\.|\\p{Lu}[\\p{L}\\-]+))',
   unicode: true,
@@ -210,7 +213,9 @@ final RegExp _authorYearEntryStart = RegExp(
 
 /// Parses the references section from the page texts ([pages] in page
 /// order). Returns an empty list when no references heading is found.
-List<ReferenceEntry> parseReferences(List<({int pageNumber, String text})> pages) {
+List<ReferenceEntry> parseReferences(
+  List<({int pageNumber, String text})> pages,
+) {
   if (pages.isEmpty) return const <ReferenceEntry>[];
   final buffer = StringBuffer();
   final pageStarts = <({int offset, int pageNumber})>[];
@@ -259,10 +264,17 @@ List<ReferenceEntry> parseReferences(List<({int pageNumber, String text})> pages
 
   // Author-year: an entry starts on a line beginning "Surname, I." or
   // "Surname, Given".
-  final starts = <int>[0, ..._authorYearEntryStart.allMatches(section).map((m) => m.start)];
+  final starts = <int>[
+    0,
+    ..._authorYearEntryStart.allMatches(section).map((m) => m.start),
+  ];
   final entries = <ReferenceEntry>[];
   for (var i = 0; i < starts.length; i++) {
-    final e = entry(null, starts[i], i + 1 < starts.length ? starts[i + 1] : section.length);
+    final e = entry(
+      null,
+      starts[i],
+      i + 1 < starts.length ? starts[i + 1] : section.length,
+    );
     if (e.text.isNotEmpty) entries.add(e);
   }
   return entries;
@@ -310,7 +322,9 @@ List<ReferenceEntry> resolveCitation(
           (a, b) => (a.text.toLowerCase().startsWith(surname) ? 0 : 1)
               .compareTo(b.text.toLowerCase().startsWith(surname) ? 0 : 1),
         );
-        if (match.isNotEmpty && !out.contains(match.first)) out.add(match.first);
+        if (match.isNotEmpty && !out.contains(match.first)) {
+          out.add(match.first);
+        }
       }
       return out;
   }

@@ -151,13 +151,19 @@ void main() {
       lookup(mac, LogicalKeyboardKey.keyG, meta: true, alt: true),
       isA<GoToPageIntent>(),
     );
-    expect(lookup(mac, LogicalKeyboardKey.keyG, meta: true), isA<FindMatchIntent>());
+    expect(
+      lookup(mac, LogicalKeyboardKey.keyG, meta: true),
+      isA<FindMatchIntent>(),
+    );
     final win = readerShortcuts(TargetPlatform.windows);
     expect(
       lookup(win, LogicalKeyboardKey.keyG, control: true),
       isA<GoToPageIntent>(),
     );
     expect(lookup(win, LogicalKeyboardKey.f3), isA<FindMatchIntent>());
-    expect(lookup(win, LogicalKeyboardKey.keyH), isA<HighlightSelectionIntent>());
+    expect(
+      lookup(win, LogicalKeyboardKey.keyH),
+      isA<HighlightSelectionIntent>(),
+    );
   });
 }

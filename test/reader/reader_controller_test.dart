@@ -364,7 +364,10 @@ void main() {
         ),
       );
       expect(state().navRequest!.pageNumber, 2);
-      expect(state().navRequest!.rect, const Rect.fromLTWH(0.1, 0.2, 0.3, 0.02));
+      expect(
+        state().navRequest!.rect,
+        const Rect.fromLTWH(0.1, 0.2, 0.3, 0.02),
+      );
       expect(state().returnPage, 10);
       expect(state().flashHighlightId, 'h9');
       ctrl().returnToPreviousPage();

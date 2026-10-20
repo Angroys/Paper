@@ -119,9 +119,7 @@ class _ReaderSplitViewState extends State<ReaderSplitView>
         _slide.value = 1;
         return;
       }
-      unawaited(
-        _slide.animateTo(1, curve: PaperMotion.decelerate),
-      );
+      unawaited(_slide.animateTo(1, curve: PaperMotion.decelerate));
     } else {
       if (layout != null && layout.isSplit && _committedOpen) {
         // Commit, then slide: the viewport widens under the panel first.
@@ -144,8 +142,9 @@ class _ReaderSplitViewState extends State<ReaderSplitView>
     }
   }
 
-  double _currentWidth(PanelLayout layout) =>
-      layout.clampWidth(_panelWidth ?? widget.initialPanelWidth ?? layout.defaultWidth);
+  double _currentWidth(PanelLayout layout) => layout.clampWidth(
+    _panelWidth ?? widget.initialPanelWidth ?? layout.defaultWidth,
+  );
 
   // -------------------------------------------------------------------
   // Split drag (motion #6, §1.5)
@@ -252,8 +251,7 @@ class _ReaderSplitViewState extends State<ReaderSplitView>
   Widget _viewport(double width, double height, {double? committedWidth}) {
     final committed = _committedSize;
     final latest = _latestSize;
-    final resizing =
-        committed != null && latest != null && committed != latest;
+    final resizing = committed != null && latest != null && committed != latest;
     final fromWidth =
         committedWidth ??
         (resizing ? width * committed.width / latest.width : null);
@@ -468,9 +466,11 @@ class _ReaderSplitViewState extends State<ReaderSplitView>
                       key: const ValueKey<String>('panel-sheet-handle'),
                       behavior: HitTestBehavior.opaque,
                       onVerticalDragUpdate: (d) => setState(() {
-                        _sheetFraction = (_sheetFraction -
-                                d.delta.dy / size.height)
-                            .clamp(0.1, 0.9);
+                        _sheetFraction =
+                            (_sheetFraction - d.delta.dy / size.height).clamp(
+                              0.1,
+                              0.9,
+                            );
                       }),
                       onVerticalDragEnd: (d) {
                         final v = d.primaryVelocity ?? 0;
@@ -555,7 +555,9 @@ class _SplitDragHandleState extends State<SplitDragHandle> {
       return KeyEventResult.ignored;
     }
     final shift = HardwareKeyboard.instance.isShiftPressed;
-    final step = shift ? PaperChrome.splitKeyStepLarge : PaperChrome.splitKeyStep;
+    final step = shift
+        ? PaperChrome.splitKeyStepLarge
+        : PaperChrome.splitKeyStep;
     final key = event.logicalKey;
     // The panel is on the right: ← widens it, → narrows it.
     if (key == LogicalKeyboardKey.arrowLeft) {

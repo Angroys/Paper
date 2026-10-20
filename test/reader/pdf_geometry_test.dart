@@ -28,7 +28,11 @@ Highlight hl(
   createdAt: DateTime.utc(2026),
   pageNumber: page,
   color: color,
-  position: HighlightPosition(pageNumber: page, rects: rects, textLayerScale: 1),
+  position: HighlightPosition(
+    pageNumber: page,
+    rects: rects,
+    textLayerScale: 1,
+  ),
 );
 
 const HighlightRect a = HighlightRect(x: 0.1, y: 0.2, width: 0.3, height: 0.02);
@@ -138,7 +142,10 @@ void main() {
     });
 
     test('normalizeSelectedText matches RPR', () {
-      expect(normalizeSelectedText('  self-\n attention  is\tall '), 'selfattention is all');
+      expect(
+        normalizeSelectedText('  self-\n attention  is\tall '),
+        'selfattention is all',
+      );
       expect(normalizeSelectedText('state-of-the-art'), 'state-of-the-art');
     });
 
@@ -151,7 +158,9 @@ void main() {
   });
 
   test('stored rects are clamped to the page and rounded to 4 places', () {
-    final r = rectToHighlightRect(const Rect.fromLTRB(-0.1, 0.123456, 0.5, 1.2));
+    final r = rectToHighlightRect(
+      const Rect.fromLTRB(-0.1, 0.123456, 0.5, 1.2),
+    );
     expect(r.x, 0);
     expect(r.y, 0.1235);
     expect(r.width, 0.5);

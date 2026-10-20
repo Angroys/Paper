@@ -12,10 +12,7 @@ PaperHighlightColor paperHue(HighlightColor c) =>
 /// painter does no work beyond drawing.
 @immutable
 class PageWash {
-  const PageWash({
-    required this.byHue,
-    this.figures = const <Rect>[],
-  });
+  const PageWash({required this.byHue, this.figures = const <Rect>[]});
 
   factory PageWash.of(
     Iterable<Highlight> highlights,
@@ -29,9 +26,7 @@ class PageWash {
     ],
   );
 
-  static const PageWash empty = PageWash(
-    byHue: <HighlightColor, List<Rect>>{},
-  );
+  static const PageWash empty = PageWash(byHue: <HighlightColor, List<Rect>>{});
 
   final Map<HighlightColor, List<Rect>> byHue;
   final List<Rect> figures;

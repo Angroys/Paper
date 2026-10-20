@@ -109,7 +109,11 @@ final class ReaderLoadError extends ReaderLoadPhase {
 /// (used to anchor popovers); null when it is off-screen or stale.
 @immutable
 class ReaderAnchor {
-  const ReaderAnchor({required this.pageNumber, required this.rect, this.local});
+  const ReaderAnchor({
+    required this.pageNumber,
+    required this.rect,
+    this.local,
+  });
 
   final int pageNumber;
   final Rect rect;

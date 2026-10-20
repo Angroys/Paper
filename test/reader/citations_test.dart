@@ -44,7 +44,10 @@ void main() {
     });
 
     test('ordinary parentheses are not citations', () {
-      expect(findCitationMarkers('the loss (see Eq. 3) and (n = 2048)'), isEmpty);
+      expect(
+        findCitationMarkers('the loss (see Eq. 3) and (n = 2048)'),
+        isEmpty,
+      );
     });
   });
 
@@ -59,11 +62,14 @@ void main() {
   group('parseReferences', () {
     test('bracket-labelled list', () {
       final refs = parseReferences(<({int pageNumber, String text})>[
-        (pageNumber: 9, text: 'Conclusion text.\nReferences\n[1] A. Author. Paper one. 2019.\n'),
+        (
+          pageNumber: 9,
+          text:
+              'Conclusion text.\nReferences\n[1] A. Author. Paper one. 2019.\n',
+        ),
         (
           pageNumber: 10,
-          text:
-              '[2] B. Writer. Paper two,\ncontinued. 2020.\n[3] C. Third. Three. 2021.',
+          text: '[2] B. Writer. Paper two,\ncontinued. 2020.\n[3] C. Third. Three. 2021.',
         ),
       ]);
       expect(refs.map((r) => r.label), <String>['1', '2', '3']);
@@ -76,8 +82,7 @@ void main() {
       final refs = parseReferences(<({int pageNumber, String text})>[
         (
           pageNumber: 5,
-          text:
-              'REFERENCES\n1. Alpha, A. First. 2018.\n2. Beta, B. Second.\n2019. Something\n3. Gamma, C. Third.',
+          text: 'REFERENCES\n1. Alpha, A. First. 2018.\n2. Beta, B. Second.\n2019. Something\n3. Gamma, C. Third.',
         ),
       ]);
       expect(refs.map((r) => r.label), <String>['1', '2', '3']);

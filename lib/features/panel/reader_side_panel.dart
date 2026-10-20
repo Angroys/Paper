@@ -35,8 +35,10 @@ class ReaderPanelContext {
   final VoidCallback onClose;
 }
 
-typedef ReaderPanelTabBuilder =
-    Widget Function(BuildContext context, ReaderPanelContext panel);
+typedef ReaderPanelTabBuilder = Widget Function(
+  BuildContext context,
+  ReaderPanelContext panel,
+);
 
 /// Tab-body slots. SCREENS AGENT: provide the Notes, Glossary and
 /// Explanation bodies by overriding [readerPanelSlotsProvider] (or by
@@ -159,7 +161,9 @@ class PanelTabBar extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final t = Theme.of(context).textTheme;
     return DecoratedBox(
-      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: c.border))),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: c.border)),
+      ),
       child: SizedBox(
         height: 48,
         child: Row(
@@ -324,7 +328,10 @@ class _TabBodiesState extends State<_TabBodies>
           else if (t == widget.tab)
             FadeTransition(
               key: ValueKey<ReaderPanelTab>(t),
-              opacity: CurvedAnimation(parent: _fade, curve: PaperMotion.standard),
+              opacity: CurvedAnimation(
+                parent: _fade,
+                curve: PaperMotion.standard,
+              ),
               child: widget.builder(context, t),
             )
           else
@@ -349,7 +356,10 @@ class PanelTabPlaceholder extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final (title, body) = switch (tab) {
       ReaderPanelTab.notes => (l10n.notesEmptyTitle, l10n.notesEmptyBody),
-      ReaderPanelTab.glossary => (l10n.glossaryEmptyTitle, l10n.glossaryEmptyBody),
+      ReaderPanelTab.glossary => (
+        l10n.glossaryEmptyTitle,
+        l10n.glossaryEmptyBody,
+      ),
       ReaderPanelTab.explanation => (
         l10n.explanationEmptyTitle,
         l10n.explanationEmptyBody,
@@ -372,9 +382,8 @@ class PanelTabPlaceholder extends StatelessWidget {
               const SizedBox(height: PaperSpacing.sm),
               Text(
                 body,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: c.textMuted),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: c.textMuted),
                 textAlign: TextAlign.center,
               ),
             ],

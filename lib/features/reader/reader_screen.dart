@@ -317,7 +317,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen>
           content = Column(
             children: <Widget>[
               toolbar,
-              if (searchOpen) RepaintBoundary(child: FindBar(paperId: _paperId)),
+              if (searchOpen)
+                RepaintBoundary(child: FindBar(paperId: _paperId)),
               Expanded(child: split),
             ],
           );
@@ -452,7 +453,11 @@ class _ReaderArea extends ConsumerWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
-                      Icon(Symbols.info_rounded, size: PaperIconSize.sm, color: c.info),
+                      Icon(
+                        Symbols.info_rounded,
+                        size: PaperIconSize.sm,
+                        color: c.info,
+                      ),
                       const SizedBox(width: PaperSpacing.sm),
                       Flexible(child: Text(l10n.readerNoTextLayer)),
                     ],
@@ -544,7 +549,10 @@ class _SimpleBar extends StatelessWidget {
           IconButton(
             tooltip: l10n.readerBack,
             onPressed: onBack,
-            icon: const Icon(Symbols.arrow_back_rounded, size: PaperIconSize.md),
+            icon: const Icon(
+              Symbols.arrow_back_rounded,
+              size: PaperIconSize.md,
+            ),
           ),
           Expanded(
             child: Text(
@@ -559,4 +567,3 @@ class _SimpleBar extends StatelessWidget {
     );
   }
 }
-

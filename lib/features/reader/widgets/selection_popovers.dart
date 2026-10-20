@@ -110,8 +110,7 @@ class HighlightPicker extends ConsumerWidget {
       children: <Widget>[
         HighlightSwatches(
           checked: highlight.color,
-          onPick: (c) =>
-              unawaited(ctrl.changeHighlightColor(highlight.id, c)),
+          onPick: (c) => unawaited(ctrl.changeHighlightColor(highlight.id, c)),
         ),
         const PopoverDivider(),
         PopoverAction(

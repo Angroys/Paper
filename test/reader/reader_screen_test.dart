@@ -130,7 +130,8 @@ void main() {
       extra: <Override>[
         readerPanelSlotsProvider.overrideWithValue(
           ReaderPanelSlots(
-            notes: (context, panel) => Text('notes for page ${panel.currentPage}'),
+            notes: (context, panel) =>
+                Text('notes for page ${panel.currentPage}'),
           ),
         ),
       ],
@@ -207,7 +208,9 @@ void main() {
       find.descendant(of: popover, matching: find.byType(FadeTransition)).first,
     );
     final slide = tester.widget<SlideTransition>(
-      find.descendant(of: popover, matching: find.byType(SlideTransition)).first,
+      find
+          .descendant(of: popover, matching: find.byType(SlideTransition))
+          .first,
     );
     expect(fade.opacity.value, 1.0, reason: 'fade capped at fast');
     expect(slide.position.value, Offset.zero, reason: 'no translate');
@@ -229,7 +232,9 @@ void main() {
                     Rect.fromLTWH(0.1, 0.1, 0.5, 0.02),
                     Rect.fromLTWH(0.1, 0.2, 0.5, 0.02),
                   ],
-                  HighlightColor.blue: <Rect>[Rect.fromLTWH(0.1, 0.3, 0.5, 0.02)],
+                  HighlightColor.blue: <Rect>[
+                    Rect.fromLTWH(0.1, 0.3, 0.5, 0.02),
+                  ],
                 },
               ),
             ),
@@ -247,9 +252,13 @@ void main() {
       paints..everything((method, args) {
         if (method == #saveLayer) {
           final p = args[1]! as Paint;
-          calls.add('layer ${p.blendMode.name} ${p.color.a.toStringAsFixed(2)}');
+          calls.add(
+            'layer ${p.blendMode.name} ${p.color.a.toStringAsFixed(2)}',
+          );
         } else if (method == #drawRRect) {
-          calls.add('rrect ${(args[1]! as Paint).color.toARGB32().toRadixString(16)}');
+          calls.add(
+            'rrect ${(args[1]! as Paint).color.toARGB32().toRadixString(16)}',
+          );
         } else if (method == #restore) {
           calls.add('restore');
         }
@@ -279,7 +288,9 @@ void main() {
       r'SizeTransition|AnimatedCrossFade|Hero\(|Timer\.periodic)',
     );
     final offenders = <String>[];
-    for (final f in Directory('lib/features/reader').listSync(recursive: true)) {
+    for (final f in Directory(
+      'lib/features/reader',
+    ).listSync(recursive: true)) {
       if (f is! File || !f.path.endsWith('.dart')) continue;
       final lines = f.readAsLinesSync();
       for (var i = 0; i < lines.length; i++) {

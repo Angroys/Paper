@@ -57,8 +57,7 @@ bool _strokeCoversChar(
     }
     final bandTop = p.dy - halfWidth;
     final bandBottom = p.dy + halfWidth;
-    final covered =
-        math.min(bandBottom, r.bottom) - math.max(bandTop, r.top);
+    final covered = math.min(bandBottom, r.bottom) - math.max(bandTop, r.top);
     if (covered >= r.height * minCoverage) return true;
   }
   return false;
@@ -119,7 +118,8 @@ enum InputRoute {
 }
 
 bool isStylus(PointerDeviceKind kind) =>
-    kind == PointerDeviceKind.stylus || kind == PointerDeviceKind.invertedStylus;
+    kind == PointerDeviceKind.stylus ||
+    kind == PointerDeviceKind.invertedStylus;
 
 /// Tracks stylus activity for palm rejection: `touch` pointers are ignored
 /// while a stylus is down and for [window] after it lifts. Timestamps are
@@ -167,8 +167,7 @@ InputRoute routePointer({
   if (kind == PointerDeviceKind.touch && rejectTouch) {
     return InputRoute.reject;
   }
-  if (kind == PointerDeviceKind.invertedStylus &&
-      tool != ReaderTool.figure) {
+  if (kind == PointerDeviceKind.invertedStylus && tool != ReaderTool.figure) {
     return InputRoute.erase;
   }
   switch (tool) {

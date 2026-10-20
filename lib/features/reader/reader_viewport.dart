@@ -51,8 +51,10 @@ class ReaderViewportArgs {
 
 /// Builds the PDF viewport. The default is the pdfrx implementation; widget
 /// tests override this provider with a fake (pdfium does not run there).
-typedef ReaderViewportBuilder =
-    Widget Function(BuildContext context, ReaderViewportArgs args);
+typedef ReaderViewportBuilder = Widget Function(
+  BuildContext context,
+  ReaderViewportArgs args,
+);
 
 final readerViewportBuilderProvider = Provider<ReaderViewportBuilder>(
   (ref) =>
@@ -305,7 +307,8 @@ class _PdfReaderViewportState extends ConsumerState<PdfReaderViewport> {
       _ctrl.updateSelectionAnchor(_anchor(a.pageNumber, a.rect));
     }
     final ha = s.selectedHighlightAnchor;
-    if (ha != null) _ctrl.updateHighlightAnchor(_anchor(ha.pageNumber, ha.rect));
+    if (ha != null)
+      _ctrl.updateHighlightAnchor(_anchor(ha.pageNumber, ha.rect));
     final c = s.citation;
     if (c != null) {
       _ctrl.updateCitationAnchor(_anchor(c.anchor.pageNumber, c.anchor.rect));
@@ -490,7 +493,12 @@ class _PdfReaderViewportState extends ConsumerState<PdfReaderViewport> {
           : citationMarkerAt(text.text, index);
       if (text != null && marker != null) {
         unawaited(
-          _showCitation(text, marker, linkPage: dest?.pageNumber, url: link.url),
+          _showCitation(
+            text,
+            marker,
+            linkPage: dest?.pageNumber,
+            url: link.url,
+          ),
         );
         return;
       }
@@ -540,9 +548,8 @@ class _PdfReaderViewportState extends ConsumerState<PdfReaderViewport> {
     if (e is PointerDownEvent && _ctrl.stylusDetected() && !_stylusHintShown) {
       _stylusHintShown = true;
       final l10n = AppLocalizations.of(context);
-      ScaffoldMessenger.maybeOf(
-        context,
-      )?.showSnackBar(SnackBar(content: Text(l10n.readerStylusHint)));
+      ScaffoldMessenger.maybeOf(context)
+          ?.showSnackBar(SnackBar(content: Text(l10n.readerStylusHint)));
     }
   }
 
@@ -652,7 +659,10 @@ class _PdfReaderViewportState extends ConsumerState<PdfReaderViewport> {
           duration: duration,
         );
       case ReaderFitMode.page:
-        await _pdf.goTo(_pdf.calcMatrixForFit(pageNumber: page), duration: duration);
+        await _pdf.goTo(
+          _pdf.calcMatrixForFit(pageNumber: page),
+          duration: duration,
+        );
       case ReaderFitMode.none:
         await _pdf.setZoom(_pdf.centerPosition, zoom, duration: duration);
     }
@@ -883,7 +893,8 @@ class _PdfReaderViewportState extends ConsumerState<PdfReaderViewport> {
         textSelectionParams: PdfTextSelectionParams(
           enabled: textSelectionOn,
           showContextMenuAutomatically: false,
-          onTextSelectionChange: (sel) => unawaited(_onTextSelectionChange(sel)),
+          onTextSelectionChange: (sel) =>
+              unawaited(_onTextSelectionChange(sel)),
           onSelectionHandlePanStart: (_) => _ctrl.setOverlaysHidden(true),
           onSelectionHandlePanEnd: (_) {
             _ctrl.setOverlaysHidden(false);

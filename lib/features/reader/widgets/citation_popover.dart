@@ -126,11 +126,19 @@ class _CitationPopoverState extends ConsumerState<CitationPopover> {
         children.addAll(<Widget>[
           const SizedBox(height: PaperSpacing.sm),
           if (_import == _ImportState.imported)
-            _status(context, Symbols.check_circle_rounded, c.success,
-                l10n.citationImported),
+            _status(
+              context,
+              Symbols.check_circle_rounded,
+              c.success,
+              l10n.citationImported,
+            ),
           if (_import == _ImportState.failed)
-            _status(context, Symbols.error_rounded, c.error,
-                l10n.citationImportFailed),
+            _status(
+              context,
+              Symbols.error_rounded,
+              c.error,
+              l10n.citationImportFailed,
+            ),
           Wrap(
             spacing: PaperSpacing.sm,
             runSpacing: PaperSpacing.xs,
@@ -178,9 +186,8 @@ class _CitationPopoverState extends ConsumerState<CitationPopover> {
                   ),
                   Text(
                     '$page',
-                    style: PaperTypography.pageIndicator(c).copyWith(
-                      color: c.textMuted,
-                    ),
+                    style: PaperTypography.pageIndicator(c)
+                        .copyWith(color: c.textMuted),
                   ),
                 ],
               ),
@@ -209,22 +216,25 @@ class _CitationPopoverState extends ConsumerState<CitationPopover> {
     );
   }
 
-  Widget _status(BuildContext context, IconData icon, Color color, String text) =>
-      Padding(
-        padding: const EdgeInsets.only(bottom: PaperSpacing.xs),
-        child: Row(
-          children: <Widget>[
-            Icon(icon, size: 16, color: color),
-            const SizedBox(width: PaperSpacing.xs),
-            Expanded(
-              child: Text(
-                text,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: color,
-                ),
-              ),
-            ),
-          ],
+  Widget _status(
+    BuildContext context,
+    IconData icon,
+    Color color,
+    String text,
+  ) => Padding(
+    padding: const EdgeInsets.only(bottom: PaperSpacing.xs),
+    child: Row(
+      children: <Widget>[
+        Icon(icon, size: 16, color: color),
+        const SizedBox(width: PaperSpacing.xs),
+        Expanded(
+          child: Text(
+            text,
+            style: Theme.of(context).textTheme.labelMedium
+                ?.copyWith(color: color),
+          ),
         ),
-      );
+      ],
+    ),
+  );
 }

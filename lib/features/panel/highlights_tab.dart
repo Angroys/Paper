@@ -48,9 +48,8 @@ class HighlightsTab extends ConsumerWidget {
           child: Text(
             l10n.readerFirstHighlightHint,
             textAlign: TextAlign.center,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: c.textMuted),
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: c.textMuted),
           ),
         ),
       );
@@ -136,9 +135,8 @@ class _HighlightRow extends StatelessWidget {
                       if (page != null)
                         Text(
                           'p.$page',
-                          style: PaperTypography.pageIndicator(
-                            c,
-                          ).copyWith(color: c.textMuted),
+                          style: PaperTypography.pageIndicator(c)
+                              .copyWith(color: c.textMuted),
                         ),
                       Text(
                         highlight.selectedText,
