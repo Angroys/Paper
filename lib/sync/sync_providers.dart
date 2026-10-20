@@ -21,7 +21,8 @@ final appResumeSignalsProvider = Provider<Stream<void>>((ref) {
 });
 
 /// The outbox sync engine (see lib/sync/sync_engine.dart for the rules).
-/// Started automatically in configured builds.
+/// `SyncLifecycle` (lib/app/app.dart) starts it after sign-in and stops it
+/// on sign-out.
 final syncEngineProvider = Provider<SyncEngine>((ref) {
   final auth = ref.watch(authRepositoryProvider);
   final engine = SyncEngine(
@@ -32,7 +33,6 @@ final syncEngineProvider = Provider<SyncEngine>((ref) {
     currentAuth: () => auth.currentState,
     resumeSignals: ref.watch(appResumeSignalsProvider),
   );
-  if (ref.watch(supabaseClientProvider) != null) unawaited(engine.start());
   ref.onDispose(() => unawaited(engine.dispose()));
   return engine;
 });

@@ -8,7 +8,7 @@ import '../auth/auth_providers.dart';
 import '../domain/domain.dart';
 import '../features/auth/sign_in_screen.dart';
 import '../features/library/library_screen.dart';
-import '../features/reader/reader_screen.dart';
+import '../features/reader/reader_route.dart';
 import '../features/settings/settings_screen.dart';
 import 'app_shell.dart';
 import 'routes.dart';
@@ -44,7 +44,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/', redirect: (_, _) => AppRoutes.library),
       GoRoute(
         path: AppRoutes.signIn,
-        builder: (context, state) => const SignInScreen(),
+        builder: (context, state) => SignInScreen(
+          sessionExpired: state.uri.queryParameters['expired'] == '1',
+        ),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShell(
@@ -75,8 +77,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Full-screen route: the shell nav never coexists with the PDF.
       GoRoute(
         path: AppRoutes.readerPattern,
-        builder: (context, state) =>
-            ReaderScreen(paperId: state.pathParameters['paperId']!),
+        // Fade-through with a colour curtain: the PDF is never under an
+        // opacity layer (motion.md §2.1, P9).
+        pageBuilder: (context, state) => buildReaderPage(state),
       ),
     ],
   );

@@ -386,8 +386,76 @@ class ReaderShortcuts extends ConsumerWidget {
             singleKey,
           ),
         },
-        child: Focus(focusNode: focusNode, autofocus: true, child: child),
+        child: _ReaderFocus(focusNode: focusNode, child: child),
       ),
     );
   }
+}
+
+/// The reader's key-event focus. `autofocus` alone is not enough when the
+/// reader is pushed over the library: the fade-through transition hides the
+/// reader with `Visibility` (which excludes focus) for its first 40%, so
+/// the route's scope ends up as primary focus and key events never reach
+/// these shortcuts. This claims focus after mounting and again when the
+/// route transition completes, whenever nothing inside the route is
+/// focused yet.
+class _ReaderFocus extends StatefulWidget {
+  const _ReaderFocus({required this.child, this.focusNode});
+
+  final Widget child;
+  final FocusNode? focusNode;
+
+  @override
+  State<_ReaderFocus> createState() => _ReaderFocusState();
+}
+
+class _ReaderFocusState extends State<_ReaderFocus> {
+  FocusNode? _own;
+
+  FocusNode get _node => widget.focusNode ?? (_own ??= FocusNode());
+
+  Animation<double>? _routeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _claim());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final animation = ModalRoute.of(context)?.animation;
+    if (identical(animation, _routeAnimation)) return;
+    _routeAnimation?.removeStatusListener(_onRouteStatus);
+    _routeAnimation = animation?..addStatusListener(_onRouteStatus);
+  }
+
+  void _onRouteStatus(AnimationStatus status) {
+    if (status == AnimationStatus.completed) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _claim());
+    }
+  }
+
+  void _claim() {
+    if (!mounted || _node.hasFocus) return;
+    final primary = FocusManager.instance.primaryFocus;
+    // Only take focus from an enclosing scope, never from a real control
+    // (text field, button) the user focused.
+    if (primary == null ||
+        (primary is FocusScopeNode && _node.ancestors.contains(primary))) {
+      _node.requestFocus();
+    }
+  }
+
+  @override
+  void dispose() {
+    _routeAnimation?.removeStatusListener(_onRouteStatus);
+    _own?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      Focus(focusNode: _node, autofocus: true, child: widget.child);
 }

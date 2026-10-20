@@ -2,7 +2,8 @@ import '../models/ai_result.dart';
 import '../models/explanation.dart';
 import '../models/glossary_term.dart';
 
-/// Online-only AI via the paper.college API (bearer = Supabase JWT).
+/// Online-only AI via the paper.college API, authenticated with the
+/// `@supabase/ssr` session cookie (RPR's AI routes accept no bearer token).
 /// Never throws for expected failures: returns [AiUnavailable] (offline /
 /// not configured / rejected) or [AiFailure] (call failed).
 abstract interface class AiService {
