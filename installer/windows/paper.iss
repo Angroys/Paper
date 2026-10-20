@@ -1,7 +1,7 @@
 ; Inno Setup 6 script for the Paper Windows test installer (unsigned).
 ;
 ; Built in CI (.github/workflows/ci.yml, job build-windows):
-;   iscc /DAppVersion=<ver> /DSourceDir=<runner dir> /DOutputDir=<dir> ^
+;   iscc /DAppVersion=<ver> /DSourceDir=<runner dir, Release on tags> /DOutputDir=<dir> ^
 ;        /DOutputBaseFilename=Paper-<ver>-windows-setup paper.iss
 ;
 ; Relative paths below resolve against this script's folder.
@@ -9,8 +9,11 @@
 #ifndef AppVersion
   #define AppVersion "0.0.0-dev"
 #endif
+; SourceDir is required: the Flutter runner folder to package, e.g.
+;   /DSourceDir=<repo>\build\windows\x64\runner\Release  (CI tag builds)
+;   /DSourceDir=<repo>\build\windows\x64\runner\Debug    (CI branch builds)
 #ifndef SourceDir
-  #define SourceDir "..\..\build\windows\x64\runner\Debug"
+  #error SourceDir is not defined. Pass /DSourceDir=<path to build\windows\x64\runner\Release or Debug>.
 #endif
 #ifndef OutputDir
   #define OutputDir "..\..\dist"

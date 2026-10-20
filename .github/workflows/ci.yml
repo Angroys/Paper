@@ -96,10 +96,16 @@ jobs:
           retention-days: 14
 
   build-windows:
-    name: Build Windows (debug, zip + installer)
+    name: Build Windows (zip + installer)
     needs: analyze-test
     runs-on: windows-latest
     timeout-minutes: 45
+    # Tag builds (v*) are release mode: a Debug runner links the debug MSVC
+    # CRT (vcruntime140d.dll etc.) and will not start on PCs without Visual
+    # Studio. Every other push/PR stays debug. Both are unsigned.
+    env:
+      BUILD_MODE: ${{ startsWith(github.ref, 'refs/tags/v') && 'release' || 'debug' }}
+      RUNNER_DIR: build/windows/x64/runner/${{ startsWith(github.ref, 'refs/tags/v') && 'Release' || 'Debug' }}
     defaults:
       run:
         shell: bash
@@ -112,9 +118,9 @@ jobs:
         id: meta
         run: bash scripts/ci/version.sh
 
-      - name: Build Windows (debug)
+      - name: Build Windows (${{ env.BUILD_MODE }})
         run: |
-          flutter build windows --debug \
+          flutter build windows "--${BUILD_MODE}" \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
             --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
             --dart-define=PAPER_API_BASE_URL="$PAPER_API_BASE_URL"
@@ -125,7 +131,7 @@ jobs:
           VER: ${{ steps.meta.outputs.ver }}
         run: |
           New-Item -ItemType Directory -Force -Path dist | Out-Null
-          Compress-Archive -Path build/windows/x64/runner/Debug/* `
+          Compress-Archive -Path "$env:RUNNER_DIR/*" `
             -DestinationPath "dist/Paper-$env:VER-windows.zip" -Force
 
       - name: Install Inno Setup
@@ -145,7 +151,7 @@ jobs:
           $root = (Get-Location).Path
           & $iscc `
             "/DAppVersion=$env:VER" `
-            "/DSourceDir=$root\build\windows\x64\runner\Debug" `
+            "/DSourceDir=$(Join-Path $root $env:RUNNER_DIR)" `
             "/DOutputDir=$root\dist" `
             "/DOutputBaseFilename=Paper-$env:VER-windows-setup" `
             installer\windows\paper.iss
@@ -154,7 +160,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: paper-windows-debug-${{ steps.meta.outputs.ver }}
+          name: paper-windows-${{ env.BUILD_MODE }}-${{ steps.meta.outputs.ver }}
           path: |
             dist/Paper-${{ steps.meta.outputs.ver }}-windows.zip
             dist/Paper-${{ steps.meta.outputs.ver }}-windows-setup.exe
@@ -175,6 +181,8 @@ jobs:
         id: meta
         run: bash scripts/ci/version.sh
 
+      # Debug only. The debug .app is built for the runner's architecture,
+      # i.e. arm64-only on macos-latest (Apple Silicon); no Intel slice.
       - name: Build macOS (debug)
         run: |
           flutter build macos --debug \
