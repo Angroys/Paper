@@ -26,7 +26,7 @@ Students and researchers who read papers and get stuck on terms. They are smart 
 6. **No blame.** "That doesn’t look like a link", not "You entered an invalid URL".
 7. **Translatable.** No idioms, puns or wordplay. Do not build sentences from fragments. Keep whole sentences in one key with placeholders. Plurals always use ICU `{count, plural, =1{…} other{…}}` (add `=0` when zero reads differently).
 8. **Offline is normal, not an error.** Tell people what still works ("Your highlights and notes still work") before what does not.
-9. **AI honesty.** Explanations are written by AI. Never promise accuracy. `aiPoweredNote` stays under explanations.
+9. **AI honesty.** Explanations are written by AI. Never promise accuracy. `aiPoweredNote` stays under explanations. When the AI is down but the device is online, say so (`aiUnavailableTitle`); never say "offline".
 
 ## Character budgets
 
@@ -40,7 +40,7 @@ Every key's `@key.description` gives its slot and maximum length. The limits cou
 | Screen / dialog / empty-state title | 32 |
 | Snackbar | 40–80 (one line on phone width ≈ 40) |
 | Empty-state / dialog body | 100–120 |
-| Help paragraph (sync conflict) | 160 |
+| Help paragraph | 160 (`syncHowItWorksBody`: 280) |
 
 Plan for about 35% growth in translation (German, French). Buttons must wrap or ellipsize. They must never clip. Variable text (titles, emails, queries) does not count toward the budget. The UI truncates it.
 
@@ -63,12 +63,23 @@ Use one word per idea. Do not use the synonyms in the last column.
 | **Sign in / Sign out** | Auth | "Sign in", "Sign out" | log in, login, log out |
 | **Offline** | No connection | "You’re offline" | disconnected, no internet |
 
-## Sync conflict (last-write-wins), user-facing
+## Sync (last-write-wins and device-local data), user-facing
 
-`syncConflictBody`: "If you change the same highlight or note on two devices, the most recent change wins. Edits to different items are all kept." Do not use the words "conflict", "row" or "timestamp" in UI text.
+`syncHowItWorksBody`: "If you change the same item on two devices, the most recent change is kept. The older one is saved under Replaced versions for 30 days, so you can restore it. For now, highlight colors, page notes, and notes on text highlights stay on this device and don’t sync." Do not use the words "conflict", "row", "outbox" or "timestamp" in UI text.
+
+Device-local notes carry `syncLocalOnlyBadge` ("On this device only") with `syncLocalOnlyExplainer`. Sign-out warns with `signOutLocalOnlyBody` when such notes exist. Device-local data never counts as "waiting to sync".
+
+## Spec alignment
+
+Key names come from `design/specs/copy-keys.txt` (the UX slot authority). Every spec key exists in the ARB with the same spelling; the generator fails if one is missing. Keys outside the spec are limited to generic `common*`, `error*`, `a11y*`, `shortcuts*` (layout-system §9 table), `app*`, the Appearance reduce-motion row (`settingsReduceMotion*`, motion.md §3.2), and `aiPoweredNote` (rule 9). Old-to-new key mapping: `design/copy/KEYS.md`.
+
+- Highlight colors: six, in token order Yellow, Green, Blue, Pink, Purple, Orange (`highlightColor*`).
+- Themes: System, Light, Dark only (`themeSystem`, `themeLight`, `themeDark`). No sepia in v1.
+- Layout window-class names (compact, medium, expanded, large, extraLarge) never appear in UI copy.
+- Spelling: US English ("color"), even where the specs write "colour".
 
 ## Variants (pick one; ARB ships the first)
 
-- `appTagline`: **"Read any paper without getting stuck."** / "Research papers, explained as you read." / "Highlight it. Understand it. Keep it."
+- `signInTagline`: **"Read any paper without getting stuck."** / "Research papers, explained as you read." / "Highlight it. Understand it. Keep it."
 - `libraryEmptyTitle`: **"No papers yet"** / "Your library is empty" / "Start with one paper"
-- `aiOfflineTitle`: **"You’re offline"** / "Explanations need a connection" / "Connect to explain"
+- `aiOfflineCardTitle`: **"Waiting for a connection"** / "Explains when you’re online" / "Saved for later"

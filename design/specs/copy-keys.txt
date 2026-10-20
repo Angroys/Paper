@@ -275,6 +275,10 @@ settingsManageAccount
 settingsNeedsConnection
 settingsPanelStyle
 settingsPersistentNotifications
+settingsReduceMotion
+settingsReduceMotionBody
+settingsReduceMotionOn
+settingsReduceMotionSystem
 settingsScrollDirection
 settingsSectionAbout
 settingsSectionAccount
