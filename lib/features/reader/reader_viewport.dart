@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pdfrx/pdfrx.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../app/app_settings.dart';
 import '../../domain/domain.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/motion_extras.dart';
@@ -307,8 +308,9 @@ class _PdfReaderViewportState extends ConsumerState<PdfReaderViewport> {
       _ctrl.updateSelectionAnchor(_anchor(a.pageNumber, a.rect));
     }
     final ha = s.selectedHighlightAnchor;
-    if (ha != null)
+    if (ha != null) {
       _ctrl.updateHighlightAnchor(_anchor(ha.pageNumber, ha.rect));
+    }
     final c = s.citation;
     if (c != null) {
       _ctrl.updateCitationAnchor(_anchor(c.anchor.pageNumber, c.anchor.rect));
@@ -545,7 +547,10 @@ class _PdfReaderViewportState extends ConsumerState<PdfReaderViewport> {
       _palm.stylusHover(e.timeStamp);
       return;
     }
-    if (e is PointerDownEvent && _ctrl.stylusDetected() && !_stylusHintShown) {
+    final autoSwitch = ref.read(readerPrefsProvider).autoSwitchToPen;
+    if (e is PointerDownEvent &&
+        _ctrl.stylusDetected(autoSwitch: autoSwitch) &&
+        !_stylusHintShown) {
       _stylusHintShown = true;
       final l10n = AppLocalizations.of(context);
       ScaffoldMessenger.maybeOf(context)
