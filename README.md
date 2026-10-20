@@ -10,6 +10,11 @@ as the web app when you are back online.
 
 iOS/iPhone and Linux are not v1 targets.
 
+> **The v0.x test releases are offline builds.** They are compiled with
+> `PAPER_OFFLINE_ONLY=true` (see [Offline-only builds](#offline-only-builds)):
+> no sign-in, sync or AI. The online features below are in the code and in
+> PR / `main` builds.
+
 ## Architecture map
 
 | Path | What lives there |
@@ -72,6 +77,7 @@ Configuration is compiled in with `--dart-define` (see `lib/core/env.dart`):
 | `SUPABASE_URL` | for online features | — |
 | `SUPABASE_ANON_KEY` | for online features | — |
 | `PAPER_API_BASE_URL` | no | `https://paper.college` |
+| `PAPER_OFFLINE_ONLY` | no | `false` |
 
 The easiest way to set them is a local env file:
 
@@ -87,6 +93,40 @@ If `SUPABASE_URL` or `SUPABASE_ANON_KEY` is missing, the app runs in
 **"not configured" mode**. It creates no Supabase client, auth stays
 signed out, and every network feature reports that it is unavailable. Tests
 and plain `flutter run` use this mode.
+
+### Offline-only builds
+
+`--dart-define=PAPER_OFFLINE_ONLY=true` builds a fully offline app
+(`kOfflineOnly` in `lib/core/build_flags.dart`). The online code stays in
+the repo; this build just never reaches it:
+
+- **No Supabase at all.** `main()` skips `Supabase.initialize` (a const
+  branch, so it is compiled out). The providers return local stand-ins:
+  `LocalAuthRepository` (always signed in as a local user),
+  `UnconfiguredRemoteDataSource`, `DisabledSyncService`,
+  `UnavailableAiService` and an always-online connectivity stub (no ping).
+  No HTTP client, sync engine or connectivity listener is constructed.
+- **Opens straight into the library.** There is no `/sign-in` route.
+- **Hidden, not "unavailable":** the sync badge, sheet and settings
+  section; the Account section and sign-out; the Glossary and Explanation
+  tabs, Explain buttons, `E` shortcut and visual aids; import by link
+  (menu, empty state, `Mod+Shift+O`); the citation popover's Import button;
+  `Mod+Shift+S`; download badges and Download / Remove download.
+- **`paper://auth-callback` is ignored.** `paper://paper/<id>` still opens
+  a local paper.
+- **Still there:** the library (import from file, search, sort, rename,
+  delete), the pdfium reader, text, figure and stylus highlights, notes,
+  split view with the Notes and Highlights tabs, keyboard shortcuts, and
+  settings (appearance, reader, storage with Export notes, about). The
+  database and PDFs are kept on disk.
+
+```sh
+flutter run --dart-define=PAPER_OFFLINE_ONLY=true
+flutter build apk --debug --dart-define=PAPER_OFFLINE_ONLY=true
+```
+
+Code reads the flag through `offlineOnlyProvider`, so tests can switch it
+without recompiling (`test/offline/`, tagged `offline`).
 
 Supabase dashboard setup (Authentication):
 
@@ -246,6 +286,7 @@ flutter pub get && flutter gen-l10n && dart run build_runner build --delete-conf
 dart format --output=none --set-exit-if-changed $(git ls-files 'lib/*.dart' 'test/*.dart')
 flutter analyze          # must report "No issues found"
 flutter test             # unit + widget tests (sync, repositories, auth deep links, reader, screens)
+flutter test --tags offline --dart-define=PAPER_OFFLINE_ONLY=true   # offline-only build
 flutter build apk --debug
 ```
 
@@ -264,7 +305,7 @@ gen-l10n and build_runner.
 
 | Job | Runner | What it does | Artifact |
 | --- | --- | --- | --- |
-| Analyze & test | ubuntu | format check, `flutter analyze`, `flutter test` | — |
+| Analyze & test | ubuntu | format check, `flutter analyze`, `flutter test`, offline tests with `PAPER_OFFLINE_ONLY=true` | — |
 | Build Android (debug APK) | ubuntu | `flutter build apk --debug` | `paper-android-debug-apk-<ver>` → `Paper-<ver>-android.apk` |
 | Build Windows (zip + installer) | windows | `flutter build windows`, zip, Inno Setup installer | `paper-windows-<mode>-<ver>` → `Paper-<ver>-windows.zip`, `Paper-<ver>-windows-setup.exe` |
 | Build macOS (debug DMG) | macos | `flutter build macos --debug`, `hdiutil` DMG | `paper-macos-debug-<ver>` → `Paper-<ver>-macos.dmg` |
@@ -275,8 +316,13 @@ gen-l10n and build_runner.
 - **Optional repository secrets:** `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
   `PAPER_API_BASE_URL`. They are passed as `--dart-define`. Without them,
   the builds boot in "not configured" mode.
-- **Releases:** pushing a `v*` tag creates a **GitHub prerelease** with
-  auto-generated notes and these assets: `Paper-<ver>-android.apk`,
+- **Offline flag:** `v*` tag builds pass `--dart-define=PAPER_OFFLINE_ONLY=true`
+  on all three platforms, so **v0.x test releases are offline builds**
+  (no sign-in, sync or AI). Pushes to `main` and PRs build the online
+  variant.
+- **Releases:** pushing a `v*` tag creates a **GitHub prerelease** marked
+  "Offline build — no sign-in, sync or AI", with auto-generated notes and
+  these assets: `Paper-<ver>-android.apk`,
   `Paper-<ver>-windows-setup.exe` (Inno Setup), `Paper-<ver>-windows.zip`
   and `Paper-<ver>-macos.dmg`.
 - **Windows build mode:** tag builds are **release mode** (unsigned).
