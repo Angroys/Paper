@@ -2554,5 +2554,31 @@
   "a11yAppNavigation": "App navigation",
   "@a11yAppNavigation": {
     "description": "Screen-reader name of the top navigation bar (Library, Settings, sync). Max 32 chars."
+  },
+  "ratingNotRated": "Not rated",
+  "@ratingNotRated": {
+    "description": "PaperRating value text when the explanation has no rating. Max 16 chars."
+  },
+  "ratingValue": "{value}/5",
+  "@ratingValue": {
+    "description": "PaperRating value text, e.g. 4/5. Max 8 chars (excluding variable text).",
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "highlightDeleteConfirm": "Confirm",
+  "@highlightDeleteConfirm": {
+    "description": "Highlights tab: second tap on Delete confirms. Max 12 chars."
+  },
+  "highlightPageLabel": "Page {page}",
+  "@highlightPageLabel": {
+    "description": "Highlights tab card label: the page of the highlight. Max 12 chars (excluding variable text).",
+    "placeholders": {
+      "page": {
+        "type": "int"
+      }
+    }
   }
 }
