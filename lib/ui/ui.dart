@@ -17,3 +17,4 @@ export 'paper_toast.dart';
 export 'web_breakpoint.dart';
 export 'paper_link.dart';
 export 'paper_list_row.dart';
+export 'paper_rating.dart';
