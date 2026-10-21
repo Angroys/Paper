@@ -8,11 +8,14 @@
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
                       _In_ wchar_t *command_line, _In_ int show_command) {
-  // paper:// links: if Paper is already running, forward the link (e.g. the
-  // OAuth return paper://auth-callback?code=...) to that instance and exit.
-  // On a cold start the link stays in argv and app_links reports it as the
-  // initial link. Protocol registration (HKCU\Software\Classes\paper) is
-  // done by the app at runtime / by the MSIX manifest, see README.
+  // Single instance for paper:// links: if Paper is already running, forward
+  // the link (e.g. the OAuth return paper://auth-callback?code=...) to that
+  // instance over WM_COPYDATA, bring its window to the front and exit, so no
+  // second Paper.exe is left waiting. On a cold start the link stays in argv
+  // and app_links reports it as the initial link. Protocol registration:
+  // the Inno Setup installer (HKA, installer/windows/paper.iss) and the app
+  // itself at startup (HKCU, lib/auth/windows_protocol_registration.dart).
+  // A plain second launch (no link) also just focuses the running window.
   if (SendAppLinkToInstance()) {
     return EXIT_SUCCESS;
   }

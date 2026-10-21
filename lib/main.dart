@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' show SupabaseClient;
 
 import 'app/app.dart';
 import 'app/app_settings.dart';
+import 'auth/windows_protocol_registration.dart';
 import 'core/app_links_deep_link_service.dart';
 import 'core/build_flags.dart';
 import 'core/core_providers.dart';
@@ -30,6 +31,11 @@ Future<void> main(List<String> args) async {
 
   registerFontLicenses();
   final env = Env.fromEnvironment();
+  // Windows: (re-)register paper:// under HKCU at startup so the OAuth
+  // return (paper://auth-callback) opens this exe; a second launch with the
+  // link is forwarded to this instance by windows/runner/main.cpp. No-op
+  // elsewhere. Offline-only builds have no sign-in, so no handler.
+  if (!kOfflineOnly) unawaited(registerWindowsProtocolHandler());
   await initDesktopWindow();
 
   // Offline-only builds (PAPER_OFFLINE_ONLY) never initialise Supabase;
