@@ -797,13 +797,6 @@ abstract final class PaperElevation {
       spreadRadius: -12,
     ),
   ];
-
-  /// Popovers (selection popover = lg). Prefer [shadowLg]; the brightness
-  /// argument is ignored (dark-only) and kept for existing call sites.
-  static List<BoxShadow> shadow2(Brightness b) => shadowLg;
-
-  /// Dialogs / citation popover (= xl). Prefer [shadowXl].
-  static List<BoxShadow> shadow3(Brightness b) => shadowXl;
 }
 
 /// Web icon boxes: h-3 12, h-3.5 14, h-4 16 (default), h-5 20.
