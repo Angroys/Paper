@@ -15,4 +15,5 @@ export 'paper_segmented.dart';
 export 'paper_text_field.dart';
 export 'paper_toast.dart';
 export 'web_breakpoint.dart';
-export 'paper_rating.dart';
+export 'paper_link.dart';
+export 'paper_list_row.dart';
