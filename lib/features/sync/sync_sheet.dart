@@ -13,6 +13,7 @@ import '../../l10n/app_localizations.dart';
 import '../../sync/sync_providers.dart';
 import '../../theme/paper_tokens.dart';
 import '../../theme/theme_x.dart';
+import '../../ui/ui.dart';
 import 'sync_badge.dart';
 
 /// Opens the SyncSheet: an anchored-style dialog (360 wide) on large+
@@ -123,9 +124,8 @@ class SyncSheet extends ConsumerWidget {
             ),
             child: Row(
               children: <Widget>[
-                Icon(
+                PaperIcon(
                   syncPhaseIcon(status.phase),
-                  size: PaperIconSize.md,
                   color: syncPhaseColor(c, status.phase),
                 ),
                 const SizedBox(width: PaperSpacing.sm),

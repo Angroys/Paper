@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:material_symbols_icons/symbols.dart';
 
 import '../../auth/auth_providers.dart';
 import '../../core/format.dart';
@@ -12,6 +11,7 @@ import '../../sync/sync_providers.dart';
 import '../../theme/motion_extras.dart';
 import '../../theme/paper_tokens.dart';
 import '../../theme/theme_x.dart';
+import '../../ui/ui.dart';
 import '../auth/sign_in_prompt.dart';
 import 'sync_sheet.dart';
 
@@ -27,21 +27,20 @@ enum SyncBadgeForm {
   long,
 }
 
-IconData syncPhaseIcon(SyncPhase phase) => switch (phase) {
-  SyncPhase.synced => Symbols.cloud_done_rounded,
-  SyncPhase.syncing => Symbols.sync_rounded,
-  SyncPhase.pending => Symbols.cloud_upload_rounded,
-  SyncPhase.offline => Symbols.cloud_off_rounded,
-  SyncPhase.error => Symbols.warning_rounded,
+/// Web-parity sync glyphs (components.md §19): Lucide cloud / refresh-cw /
+/// cloud-off at stroke 1.5, the web timer for pending, alert-circle for
+/// errors. Each state keeps its own shape (never colour-only).
+PaperIcons syncPhaseIcon(SyncPhase phase) => switch (phase) {
+  SyncPhase.synced => PaperIcons.cloud,
+  SyncPhase.syncing => PaperIcons.refreshCw,
+  SyncPhase.pending => PaperIcons.timer,
+  SyncPhase.offline => PaperIcons.cloudOff,
+  SyncPhase.error => PaperIcons.alertCircle,
 };
 
-Color syncPhaseColor(PaperColors c, SyncPhase phase) => switch (phase) {
-  SyncPhase.synced => c.statusSynced,
-  SyncPhase.syncing => c.statusSyncing,
-  SyncPhase.pending => c.statusSyncPending,
-  SyncPhase.offline => c.statusOffline,
-  SyncPhase.error => c.statusSyncError,
-};
+/// gray-400 for every state, red-400 for errors.
+Color syncPhaseColor(PaperColors c, SyncPhase phase) =>
+    phase == SyncPhase.error ? PaperWeb.red400 : PaperWeb.gray400;
 
 String syncShortText(AppLocalizations l10n, SyncPhase phase) => switch (phase) {
   SyncPhase.synced => l10n.syncStateSynced,
@@ -137,18 +136,20 @@ class _SyncBadgeState extends ConsumerState<SyncBadge> {
     final color = syncPhaseColor(c, phase);
     final count = _count(status, phase);
 
-    Widget glyph = Icon(
+    Widget glyph = PaperIcon(
       syncPhaseIcon(phase),
       key: ValueKey<SyncPhase>(phase),
-      size: widget.form == SyncBadgeForm.short ? 18 : PaperIconSize.md,
+      size: PaperIconSize.sm,
       color: color,
     );
-    if (phase == SyncPhase.syncing) glyph = _Spinner(child: glyph);
+    if (phase == SyncPhase.syncing) glyph = PaperSpinning(child: glyph);
     if (count > 0 && widget.form != SyncBadgeForm.long) {
       glyph = Badge(
         label: Text('$count'),
-        backgroundColor: color,
-        textColor: c.onSecondary,
+        backgroundColor: phase == SyncPhase.error
+            ? PaperWeb.red400
+            : PaperWeb.accent,
+        textColor: PaperWeb.indigo950,
         child: glyph,
       );
     }
@@ -159,12 +160,18 @@ class _SyncBadgeState extends ConsumerState<SyncBadge> {
       child: KeyedSubtree(key: ValueKey<SyncPhase>(phase), child: glyph),
     );
 
+    if (widget.form == SyncBadgeForm.icon) {
+      // Nav bar / reader header: a 32×32 `btn-ghost` icon button.
+      return PaperIconButton(
+        key: const ValueKey<String>('sync-badge'),
+        tooltip: longText,
+        semanticLabel: l10n.syncBadgeSemantics(longText),
+        icon: switched,
+        onPressed: () => unawaited(showSyncSheet(context)),
+      );
+    }
     final Widget child = switch (widget.form) {
-      SyncBadgeForm.icon => SizedBox(
-        width: 40,
-        height: 40,
-        child: Center(child: switched),
-      ),
+      SyncBadgeForm.icon => const SizedBox.shrink(),
       SyncBadgeForm.short => Container(
         height: 28,
         padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -250,17 +257,22 @@ class GuestSignInBadge extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final c = context.paper;
     final t = Theme.of(context).textTheme;
-    final glyph = Icon(
-      Symbols.account_circle_rounded,
-      size: form == SyncBadgeForm.short ? 18 : PaperIconSize.md,
-      color: c.textSecondary,
+    final glyph = PaperIcon(
+      PaperIcons.navProfile,
+      size: PaperIconSize.sm,
+      color: c.textMuted,
     );
+    if (form == SyncBadgeForm.icon) {
+      return PaperIconButton(
+        key: badgeKey,
+        tooltip: l10n.guestSyncTitle,
+        semanticLabel: l10n.guestBadgeSemantics,
+        icon: glyph,
+        onPressed: () => unawaited(openSignIn(context)),
+      );
+    }
     final Widget child = switch (form) {
-      SyncBadgeForm.icon => SizedBox(
-        width: 40,
-        height: 40,
-        child: Center(child: glyph),
-      ),
+      SyncBadgeForm.icon => const SizedBox.shrink(),
       SyncBadgeForm.short => Container(
         height: 28,
         padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -321,44 +333,4 @@ class GuestSignInBadge extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Syncing glyph rotation (motion #24): 1 turn / [kSpinPeriod], linear,
-/// in its own RepaintBoundary (B8); static under reduced motion.
-class _Spinner extends StatefulWidget {
-  const _Spinner({required this.child});
-
-  final Widget child;
-
-  @override
-  State<_Spinner> createState() => _SpinnerState();
-}
-
-class _SpinnerState extends State<_Spinner>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _spin = AnimationController(
-    vsync: this,
-    duration: kSpinPeriod,
-  );
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (MediaQuery.disableAnimationsOf(context)) {
-      _spin.stop();
-    } else if (!_spin.isAnimating) {
-      unawaited(_spin.repeat());
-    }
-  }
-
-  @override
-  void dispose() {
-    _spin.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => RepaintBoundary(
-    child: RotationTransition(turns: _spin, child: widget.child),
-  );
 }

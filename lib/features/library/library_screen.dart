@@ -8,7 +8,6 @@ import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../app/app_commands.dart';
-import '../../app/app_shell.dart';
 import '../../app/routes.dart';
 import '../../auth/auth_providers.dart';
 import '../../core/build_flags.dart';
@@ -633,12 +632,7 @@ class _Header extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Row(
-              children: <Widget>[
-                Expanded(child: title),
-                const ShellSyncBadge(),
-              ],
-            ),
+            Row(children: <Widget>[Expanded(child: title)]),
             const SizedBox(height: PaperSpacing.md),
             field,
           ],

@@ -1,83 +1,128 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:paper/app/app_nav_bar.dart';
 import 'package:paper/app/app_shell.dart';
+import 'package:paper/auth/auth_providers.dart';
+import 'package:paper/core/build_flags.dart';
+import 'package:paper/domain/domain.dart';
+import 'package:paper/features/sync/sync_badge.dart';
 
+import '../features/feature_fakes.dart';
 import '../helpers.dart';
 
-Future<void> _pumpShell(WidgetTester tester, double width) async {
+Future<List<int>> _pumpShell(
+  WidgetTester tester,
+  double width, {
+  int selected = 0,
+  List<Override> overrides = const <Override>[],
+}) async {
+  final taps = <int>[];
   setWindowSize(tester, Size(width, 800));
   await tester.pumpWidget(
     ProviderScope(
+      overrides: overrides,
       child: testApp(
         AppShell(
-          selectedIndex: 0,
-          onDestinationSelected: (_) {},
-          child: const SizedBox.expand(),
+          selectedIndex: selected,
+          onDestinationSelected: taps.add,
+          child: const SizedBox.expand(key: ValueKey<String>('body')),
         ),
       ),
     ),
   );
   await tester.pump();
+  return taps;
 }
 
 void main() {
-  const cases = <(double, Key)>[
-    (480, AppShell.bottomNavKey), // compact (window minimum)
-    (599, AppShell.bottomNavKey), // compact
-    (600, AppShell.railKey), // medium
-    (839, AppShell.railKey), // medium
-    (840, AppShell.railKey), // expanded
-    (1199, AppShell.railKey), // expanded
-    (1200, AppShell.sidebarKey), // large
-    (1600, AppShell.sidebarKey), // extraLarge
-    (2560, AppShell.sidebarKey), // extraLarge
-  ];
-
-  for (final (width, key) in cases) {
-    testWidgets('width $width uses $key', (tester) async {
+  for (final width in <double>[480, 639, 640, 800, 1024, 1280, 2560]) {
+    testWidgets('one 48px top bar at width $width (no rail/sidebar/bottom)', (
+      tester,
+    ) async {
       await _pumpShell(tester, width);
-      for (final k in <Key>[
-        AppShell.bottomNavKey,
-        AppShell.railKey,
-        AppShell.sidebarKey,
-      ]) {
-        expect(find.byKey(k), k == key ? findsOneWidget : findsNothing);
+      expect(find.byType(AppNavBar), findsOneWidget);
+      expect(find.byType(NavigationRail), findsNothing);
+      expect(find.byType(NavigationBar), findsNothing);
+      // 48 + the 1px bottom hairline, at the top; the body (under the
+      // dev-only not-configured strip here) starts below it.
+      expect(
+        tester.getRect(find.byType(AppNavBar)),
+        Rect.fromLTWH(0, 0, width, 49),
+      );
+      expect(
+        tester.getTopLeft(find.byKey(const ValueKey('body'))).dy,
+        greaterThanOrEqualTo(49),
+      );
+      expect(tester.getSize(find.byKey(AppNavBar.libraryKey)).height, 36);
+      // Labels hide below Tailwind `sm` (640): 36×36 icon-only items.
+      final labels = width >= 640;
+      expect(find.text('Library'), labels ? findsOneWidget : findsNothing);
+      if (!labels) {
+        expect(tester.getSize(find.byKey(AppNavBar.libraryKey)).width, 36);
       }
     });
   }
 
-  testWidgets('sidebar is extended at the token width', (tester) async {
-    await _pumpShell(tester, 1300);
-    final rail = tester.widget<NavigationRail>(find.byKey(AppShell.sidebarKey));
-    expect(rail.extended, isTrue);
-    expect(rail.minExtendedWidth, 240);
-
-    await _pumpShell(tester, 1700);
-    final xl = tester.widget<NavigationRail>(find.byKey(AppShell.sidebarKey));
-    expect(xl.minExtendedWidth, 256);
+  testWidgets('destinations and the wordmark call back; selection is in '
+      'semantics', (tester) async {
+    final taps = await _pumpShell(tester, 1280, selected: 1);
+    await tester.tap(find.byKey(AppNavBar.libraryKey));
+    await tester.tap(find.byKey(AppNavBar.settingsKey));
+    await tester.tap(find.byKey(AppNavBar.wordmarkKey));
+    expect(taps, <int>[0, 1, 0]);
+    expect(
+      tester.getSemantics(find.byKey(AppNavBar.settingsKey)),
+      isSemantics(
+        label: 'Settings',
+        isButton: true,
+        isSelected: true,
+        isEnabled: true,
+        hasTapAction: true,
+      ),
+    );
   });
 
-  testWidgets('rail is collapsed with labels', (tester) async {
-    await _pumpShell(tester, 700);
-    final rail = tester.widget<NavigationRail>(find.byKey(AppShell.railKey));
-    expect(rail.extended, isFalse);
-    expect(rail.labelType, NavigationRailLabelType.all);
+  testWidgets('guest: "Sign in" link, no sync badge', (tester) async {
+    await _pumpShell(
+      tester,
+      1280,
+      overrides: [
+        authRepositoryProvider.overrideWithValue(FakeAuthRepository()),
+      ],
+    );
+    expect(find.byKey(AppNavBar.signInKey), findsOneWidget);
+    expect(find.text('Sign in'), findsOneWidget);
+    expect(find.byType(SyncBadge), findsNothing);
   });
 
-  testWidgets('hysteresis: a few dp past a boundary keeps the old layout', (
-    tester,
-  ) async {
-    await _pumpShell(tester, 590); // compact
-    expect(find.byKey(AppShell.bottomNavKey), findsOneWidget);
+  testWidgets('signed in: 32px sync badge, no sign-in link', (tester) async {
+    await _pumpShell(
+      tester,
+      1280,
+      overrides: [
+        authRepositoryProvider.overrideWithValue(
+          FakeAuthRepository(const AuthState.signedIn(testUser)),
+        ),
+      ],
+    );
+    expect(find.byKey(AppNavBar.signInKey), findsNothing);
+    expect(
+      tester.getSize(find.byKey(const ValueKey<String>('sync-badge'))),
+      const Size(32, 32),
+    );
+  });
 
-    await _pumpShell(tester, 603); // only 3dp past 600
-    expect(find.byKey(AppShell.bottomNavKey), findsOneWidget);
-
-    await _pumpShell(tester, 610); // >= 8dp past: commit to medium
-    expect(find.byKey(AppShell.railKey), findsOneWidget);
-
-    await _pumpShell(tester, 597); // only 3dp below: stay medium
-    expect(find.byKey(AppShell.railKey), findsOneWidget);
+  testWidgets('offline-only builds: neither sync nor sign-in', (tester) async {
+    await _pumpShell(
+      tester,
+      1280,
+      overrides: [offlineOnlyProvider.overrideWithValue(true)],
+    );
+    expect(find.byKey(AppNavBar.signInKey), findsNothing);
+    expect(find.byType(SyncBadge), findsNothing);
+    expect(find.text('Library'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget);
   });
 }

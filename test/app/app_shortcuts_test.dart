@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:paper/app/app.dart';
+import 'package:paper/app/app_nav_bar.dart';
 import 'package:paper/app/routes.dart';
 import 'package:paper/app/router.dart';
 import 'package:paper/auth/auth_providers.dart';
@@ -19,7 +20,6 @@ import 'package:paper/features/reader/reader_controller.dart';
 import 'package:paper/features/reader/reader_screen.dart';
 import 'package:paper/features/reader/reader_viewport.dart';
 import 'package:paper/features/settings/settings_screen.dart';
-import 'package:paper/features/sync/sync_badge.dart';
 import 'package:paper/sync/sync_providers.dart';
 
 import '../data/fakes.dart';
@@ -170,8 +170,8 @@ void main() {
     expect(find.byType(SignInScreen), findsNothing);
     expect(sync.calls, isNot(contains('start')));
 
-    // The rail's "Sign in" affordance opens sign-in on top…
-    await tester.tap(find.byKey(GuestSignInBadge.badgeKey));
+    // The nav bar's "Sign in" link opens sign-in on top…
+    await tester.tap(find.byKey(AppNavBar.signInKey));
     await tester.pumpAndSettle();
     expect(find.byType(SignInScreen), findsOneWidget);
     // …and it can be dismissed back to where the user was.

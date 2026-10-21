@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:paper/domain/domain.dart';
 import 'package:paper/features/sync/sync_badge.dart';
 import 'package:paper/sync/sync_providers.dart';
 import 'package:paper/theme/motion_extras.dart';
+import 'package:paper/ui/ui.dart';
 
 import '../helpers.dart';
 import 'feature_fakes.dart';
+
+Finder _icon(PaperIcons icon) =>
+    find.byWidgetPredicate((w) => w is PaperIcon && w.icon == icon);
 
 void main() {
   late FakeSyncService sync;
@@ -43,21 +46,21 @@ void main() {
 
   testWidgets('every state has its own icon and long text', (tester) async {
     await pump(tester);
-    expect(find.byIcon(Symbols.cloud_done_rounded), findsOneWidget);
+    expect(_icon(PaperIcons.cloud), findsOneWidget);
     expect(find.text('Not synced yet'), findsOneWidget);
 
     await show(
       tester,
       const SyncStatus(phase: SyncPhase.pending, pendingCount: 3),
     );
-    expect(find.byIcon(Symbols.cloud_upload_rounded), findsOneWidget);
+    expect(_icon(PaperIcons.timer), findsOneWidget);
     expect(find.text('3 changes waiting to sync'), findsOneWidget);
 
     await show(
       tester,
       const SyncStatus(phase: SyncPhase.offline, pendingCount: 1),
     );
-    expect(find.byIcon(Symbols.cloud_off_rounded), findsOneWidget);
+    expect(_icon(PaperIcons.cloudOff), findsOneWidget);
     expect(
       find.text('Offline · 1 change saved on this device'),
       findsOneWidget,
@@ -70,7 +73,7 @@ void main() {
       tester,
       const SyncStatus(phase: SyncPhase.error, failedCount: 2),
     );
-    expect(find.byIcon(Symbols.warning_rounded), findsOneWidget);
+    expect(_icon(PaperIcons.alertCircle), findsOneWidget);
     expect(find.text('2 changes couldn’t sync'), findsOneWidget);
 
     await show(
@@ -99,7 +102,7 @@ void main() {
     );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
-    expect(find.byIcon(Symbols.sync_rounded), findsNothing);
+    expect(_icon(PaperIcons.refreshCw), findsNothing);
 
     // Finished before kSyncingMinVisible: straight to synced.
     await show(
@@ -107,7 +110,7 @@ void main() {
       SyncStatus(phase: SyncPhase.synced, lastSyncedAt: DateTime(2026)),
     );
     await tester.pump(kSyncingMinVisible);
-    expect(find.byIcon(Symbols.sync_rounded), findsNothing);
+    expect(_icon(PaperIcons.refreshCw), findsNothing);
 
     // A long sync shows the progress.
     sync.emit(
@@ -121,7 +124,7 @@ void main() {
     await tester.pump();
     await tester.pump(kSyncingMinVisible + const Duration(milliseconds: 50));
     await tester.pump(PaperMotionTest.crossfade);
-    expect(find.byIcon(Symbols.sync_rounded), findsOneWidget);
+    expect(_icon(PaperIcons.refreshCw), findsOneWidget);
     expect(find.text('Syncing 2 of 4'), findsOneWidget);
 
     await show(

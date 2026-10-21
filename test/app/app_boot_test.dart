@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:paper/app/app.dart';
-import 'package:paper/app/app_shell.dart';
+import 'package:paper/app/app_nav_bar.dart';
 import 'package:paper/app/routes.dart';
 import 'package:paper/app/router.dart';
 import 'package:paper/features/reader/reader_screen.dart';
@@ -18,7 +18,7 @@ void main() {
     expect(find.text('Library'), findsWidgets);
     expect(find.text('No papers yet'), findsOneWidget);
     expect(find.textContaining('Not configured'), findsOneWidget);
-    expect(find.byKey(AppShell.sidebarKey), findsOneWidget);
+    expect(find.byType(AppNavBar), findsOneWidget);
 
     final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
     expect(app.themeMode, ThemeMode.dark);
@@ -40,7 +40,9 @@ void main() {
       find.byKey(const ValueKey<String>('settings-nav-appearance')),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Theme'), findsOneWidget);
+    // Dark-only: no theme selector, only Reduce motion.
+    expect(find.text('Theme'), findsNothing);
+    expect(find.text('Reduce motion'), findsOneWidget);
 
     final container = ProviderScope.containerOf(
       tester.element(find.byType(PaperApp)),
@@ -49,8 +51,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(ReaderScreen), findsOneWidget);
     // The reader is outside the shell: no navigation chrome.
-    expect(find.byType(NavigationRail), findsNothing);
-    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.byType(AppNavBar), findsNothing);
     await disposeTree(tester);
   });
 }
