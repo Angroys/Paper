@@ -81,7 +81,9 @@ class SettingsScreen extends ConsumerWidget {
               side + pad.left,
               top,
               side + pad.right,
-              top + pad.bottom,
+              // `padding`: 0 under the IME, which the shell Scaffold
+              // already resizes for.
+              top + MediaQuery.paddingOf(context).bottom,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,

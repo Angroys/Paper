@@ -169,4 +169,44 @@ void main() {
     final padding = tester.widget<Padding>(find.byType(Padding));
     expect(padding.padding, const EdgeInsets.fromLTRB(54, 40, 24, 0));
   });
+
+  testWidgets('SafeViewPadding bottom collapses while the IME is open', (
+    tester,
+  ) async {
+    // Engine metrics with a 48px nav bar: padding = viewPadding - viewInsets.
+    Future<double> bottomFor(MediaQueryData data) async {
+      late EdgeInsets resolved;
+      await tester.pumpWidget(
+        MediaQuery(
+          data: data,
+          child: Builder(
+            builder: (context) {
+              resolved = SafeViewPadding.resolve(context);
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+      return resolved.bottom;
+    }
+
+    expect(
+      await bottomFor(
+        const MediaQueryData(
+          viewPadding: EdgeInsets.only(bottom: 48),
+          padding: EdgeInsets.only(bottom: 48),
+        ),
+      ),
+      48,
+    );
+    expect(
+      await bottomFor(
+        const MediaQueryData(
+          viewPadding: EdgeInsets.only(bottom: 48),
+          viewInsets: EdgeInsets.only(bottom: 300),
+        ),
+      ),
+      0,
+    );
+  });
 }

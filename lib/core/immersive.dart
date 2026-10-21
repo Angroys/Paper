@@ -137,7 +137,8 @@ class ImmersiveMode with WidgetsBindingObserver {
 }
 
 /// Pads [child] by `MediaQuery.viewPaddingOf(context)` (display cutout, and
-/// real bar insets in multi-window) on the chosen sides, plus [base].
+/// real bar insets in multi-window) on the chosen sides, plus [base]. The
+/// bottom side uses `MediaQuery.paddingOf` so it collapses under the IME.
 ///
 /// "Backgrounds bleed, content insets" (README §4.4): use this around
 /// content, never around a whole screen, and never instead of `SafeArea`
@@ -176,7 +177,11 @@ class SafeViewPadding extends StatelessWidget {
           left: left ? p.left : 0,
           top: top ? p.top : 0,
           right: right ? p.right : 0,
-          bottom: bottom ? p.bottom : 0,
+          // `padding` (not `viewPadding`) at the bottom: it drops to 0 while
+          // the IME covers the bar, so callers that already lift content by
+          // the IME (a resizing Scaffold, the panel's viewInsets padding)
+          // don't add the bar inset on top of the keyboard.
+          bottom: bottom ? MediaQuery.paddingOf(context).bottom : 0,
         );
   }
 
