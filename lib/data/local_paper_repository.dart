@@ -62,6 +62,13 @@ class LocalPaperRepository implements PaperRepository {
     return id;
   }
 
+  /// URL import runs on the server: it needs an account, not the guest.
+  void _requireAccount() {
+    if (isGuestUserId(_requireUser())) {
+      throw const AuthExpiredException('Sign in to import from a link');
+    }
+  }
+
   @override
   Stream<List<Paper>> watchPapers({
     String query = '',
@@ -135,7 +142,7 @@ class LocalPaperRepository implements PaperRepository {
 
   @override
   Future<Paper> importFromUrl(Uri url) async {
-    _requireUser();
+    _requireAccount();
     if (!(url.isScheme('http') || url.isScheme('https')) || url.host.isEmpty) {
       throw const InvalidPdfException('Not an http(s) URL');
     }

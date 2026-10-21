@@ -22,6 +22,9 @@ class FileStore {
   Future<String> figurePath(String figureId) async =>
       p.join((await _dir('figures')).path, '$figureId.png');
 
+  /// Whether a file exists at [path].
+  Future<bool> exists(String path) => File(path).exists();
+
   /// Deletes [path] if it exists; never throws.
   Future<void> deleteQuietly(String? path) async {
     if (path == null) return;
