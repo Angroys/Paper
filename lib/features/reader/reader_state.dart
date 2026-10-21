@@ -379,6 +379,7 @@ class ReaderState {
     this.selectedHighlightId,
     this.selectedHighlightAnchor,
     this.citation,
+    this.explainAnchor,
     this.panelOpen = false,
     this.panelTab = ReaderPanelTab.notes,
     this.search = const ReaderSearchState(),
@@ -416,6 +417,10 @@ class ReaderState {
   /// Where the `HighlightPicker` anchors.
   final ReaderAnchor? selectedHighlightAnchor;
   final ReaderCitationTarget? citation;
+
+  /// Where the floating explanation popover anchors (the explained word),
+  /// shown while the side panel is not visible (reader.md §6); null = none.
+  final ReaderAnchor? explainAnchor;
   final bool panelOpen;
   final ReaderPanelTab panelTab;
   final ReaderSearchState search;
@@ -443,7 +448,10 @@ class ReaderState {
 
   /// True while any transient popover is up.
   bool get hasPopover =>
-      selection != null || selectedHighlightId != null || citation != null;
+      selection != null ||
+      selectedHighlightId != null ||
+      citation != null ||
+      explainAnchor != null;
 
   ReaderState copyWith({
     Object? paper = _unset,
@@ -459,6 +467,7 @@ class ReaderState {
     Object? selectedHighlightId = _unset,
     Object? selectedHighlightAnchor = _unset,
     Object? citation = _unset,
+    Object? explainAnchor = _unset,
     bool? panelOpen,
     ReaderPanelTab? panelTab,
     ReaderSearchState? search,
@@ -493,6 +502,9 @@ class ReaderState {
     citation: identical(citation, _unset)
         ? this.citation
         : citation as ReaderCitationTarget?,
+    explainAnchor: identical(explainAnchor, _unset)
+        ? this.explainAnchor
+        : explainAnchor as ReaderAnchor?,
     panelOpen: panelOpen ?? this.panelOpen,
     panelTab: panelTab ?? this.panelTab,
     search: search ?? this.search,

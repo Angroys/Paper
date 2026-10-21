@@ -1,37 +1,53 @@
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../domain/domain.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../theme/paper_tokens.dart';
-import '../../../theme/theme_x.dart';
+import '../../../ui/ui.dart';
 import 'highlight_layer.dart';
 
-/// Gap between a popover and its anchor (clears the touch handle knob).
-const double kPopoverGap = 16;
+/// Gap between a selection popover's bottom edge and the selection
+/// (reader.md §4: `top: anchor.top − 8`, `-translate-y-full`).
+const double kPopoverGap = 8;
 
-/// Below this much room above the anchor the popover flips below.
-const double kPopoverFlipThreshold = 56;
+/// Inset of the clamp rect inside the pane (+ view padding).
+const double kPopoverEdge = 8;
 
-/// Positions [child] above [anchor] (viewer-local), flipping below when there
-/// is less than [kPopoverFlipThreshold] above, clamped [kPopoverGap] inside
-/// the parent. Fills its parent (put it in a `Stack`).
+/// The zoom pill band at the top of the pane (24 + 36 + 8): a selection
+/// popover that would cross it flips below the selection.
+const double kZoomPillBand = 24 + 36 + 8;
+
+/// Positions [child] around [anchor] (pane-local) inside the pane rect
+/// deflated by the view padding + 8 (reader.md §4–§6):
+/// - [preferBelow] false (selection / highlight popovers): bottom edge
+///   [gap] above the anchor; flips [gap] below it when it would cross the
+///   clamp top or the zoom-pill band ([topReserve]).
+/// - [preferBelow] true (citation 6, floating explanation 8): top [gap]
+///   below the anchor; flips above when it doesn't fit below but fits
+///   above; otherwise the roomier side.
+/// Horizontally centred on the anchor and clamped. Fills its parent (put it
+/// in a `Stack`).
 ///
-/// Enters with opacity + 4dp translate toward the anchor (motion #9/#10/#11,
-/// `fast` · `decelerate`); under reduced motion it fades only. The
-/// popover is its own [RepaintBoundary] (motion.md §1.4 B7), so its fade
-/// never dirties the page below. Layout never animates.
+/// The web mounts popovers instantly: no fade, no translate (the
+/// transitions stay in the tree at their end values). The popover is its
+/// own [RepaintBoundary] (motion.md §1.4 B7).
 class AnchoredPopover extends StatefulWidget {
   const AnchoredPopover({
     super.key,
     required this.anchor,
     required this.child,
     this.maxWidth = 560,
+    this.gap = kPopoverGap,
+    this.preferBelow = false,
+    this.topReserve = kZoomPillBand,
   });
 
   final Rect anchor;
   final Widget child;
   final double maxWidth;
+  final double gap;
+  final bool preferBelow;
+  final double topReserve;
 
   @override
   State<AnchoredPopover> createState() => _AnchoredPopoverState();
@@ -39,53 +55,58 @@ class AnchoredPopover extends StatefulWidget {
 
 class _AnchoredPopoverState extends State<AnchoredPopover>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _enter = AnimationController(vsync: this);
-  late final CurvedAnimation _curve = CurvedAnimation(
-    parent: _enter,
-    curve: PaperMotion.decelerate,
+  // Always at its end value: popovers appear in one frame (reader.md §4).
+  late final AnimationController _enter = AnimationController(
+    vsync: this,
+    value: 1,
   );
-  bool _started = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_started) return;
-    _started = true;
-    _enter.duration = PaperMotion.fade(context, PaperMotion.fast);
-    _enter.forward();
-  }
 
   @override
   void dispose() {
-    _curve.dispose();
     _enter.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final reduce = MediaQuery.disableAnimationsOf(context);
+    final pad = MediaQuery.viewPaddingOf(context);
+    final clampInsets = EdgeInsets.fromLTRB(
+      kPopoverEdge + pad.left,
+      kPopoverEdge,
+      kPopoverEdge + pad.right,
+      kPopoverEdge + pad.bottom,
+    );
     return LayoutBuilder(
       builder: (context, constraints) {
         final size = constraints.biggest;
-        final above = widget.anchor.top - kPopoverGap >= kPopoverFlipThreshold;
-        final offset = Tween<Offset>(
-          begin: Offset(0, reduce ? 0 : (above ? 4 : -4) / 48),
-          end: Offset.zero,
-        ).animate(_curve);
         return CustomSingleChildLayout(
-          delegate: _PopoverLayout(anchor: widget.anchor, above: above),
+          delegate: _PopoverLayout(
+            anchor: widget.anchor,
+            gap: widget.gap,
+            preferBelow: widget.preferBelow,
+            topReserve: widget.topReserve,
+            insets: clampInsets,
+          ),
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              maxWidth: (size.width - 2 * kPopoverGap).clamp(
+              maxWidth: (size.width - clampInsets.horizontal).clamp(
                 0,
                 widget.maxWidth,
+              ),
+              maxHeight: (size.height - clampInsets.vertical).clamp(
+                0,
+                double.infinity,
               ),
             ),
             child: RepaintBoundary(
               child: FadeTransition(
-                opacity: _curve,
-                child: SlideTransition(position: offset, child: widget.child),
+                opacity: _enter,
+                child: SlideTransition(
+                  position: _enter.drive(
+                    Tween<Offset>(begin: Offset.zero, end: Offset.zero),
+                  ),
+                  child: widget.child,
+                ),
               ),
             ),
           ),
@@ -96,10 +117,19 @@ class _AnchoredPopoverState extends State<AnchoredPopover>
 }
 
 class _PopoverLayout extends SingleChildLayoutDelegate {
-  _PopoverLayout({required this.anchor, required this.above});
+  _PopoverLayout({
+    required this.anchor,
+    required this.gap,
+    required this.preferBelow,
+    required this.topReserve,
+    required this.insets,
+  });
 
   final Rect anchor;
-  final bool above;
+  final double gap;
+  final bool preferBelow;
+  final double topReserve;
+  final EdgeInsets insets;
 
   @override
   BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
@@ -107,128 +137,119 @@ class _PopoverLayout extends SingleChildLayoutDelegate {
 
   @override
   Offset getPositionForChild(Size size, Size child) {
+    final left = insets.left;
+    final right = size.width - insets.right;
+    final top = insets.top;
+    final bottom = size.height - insets.bottom;
     final x = (anchor.center.dx - child.width / 2).clamp(
-      kPopoverGap,
-      (size.width - child.width - kPopoverGap).clamp(
-        kPopoverGap,
-        double.infinity,
-      ),
+      left,
+      (right - child.width).clamp(left, double.infinity),
     );
-    var y = above
-        ? anchor.top - kPopoverGap - child.height
-        : anchor.bottom + kPopoverGap;
-    y = y.clamp(
-      kPopoverGap,
-      (size.height - child.height - kPopoverGap).clamp(
-        kPopoverGap,
-        double.infinity,
-      ),
-    );
-    return Offset(x.toDouble(), y.toDouble());
+    final above = anchor.top - gap - child.height;
+    final below = anchor.bottom + gap;
+    double y;
+    if (preferBelow) {
+      final fitsBelow = below + child.height <= bottom;
+      final fitsAbove = above >= top;
+      if (fitsBelow) {
+        y = below;
+      } else if (fitsAbove) {
+        y = above;
+      } else {
+        y = (anchor.top - top) > (bottom - anchor.bottom) ? above : below;
+      }
+    } else {
+      final limit = top > topReserve ? top : topReserve;
+      y = above < limit ? below : above;
+    }
+    y = y.clamp(top, (bottom - child.height).clamp(top, double.infinity));
+    return Offset(x.toDouble(), y);
   }
 
   @override
   bool shouldRelayout(_PopoverLayout old) =>
-      old.anchor != anchor || old.above != above;
+      old.anchor != anchor ||
+      old.gap != gap ||
+      old.preferBelow != preferBelow ||
+      old.topReserve != topReserve ||
+      old.insets != insets;
 }
 
-/// True when the last input was touch-like (48dp targets), else pointer.
+/// True when the last input was touch-like, else pointer.
 bool popoverIsTouch(BuildContext context) {
   final p = Theme.of(context).platform;
   return p == TargetPlatform.android || p == TargetPlatform.iOS;
 }
 
-/// Popover container: `surfaceRaised`, `r.xl`, 1dp border, `shadow2` in
-/// light only (components.md SelectionPopover).
+/// Selection-popover box (components.md §10.1): gray-900, **no border**,
+/// radius 6, shadow-lg.
 class PopoverSurface extends StatelessWidget {
   const PopoverSurface({
     super.key,
     required this.child,
-    this.padding = EdgeInsets.zero,
-    this.accentBar = false,
+    this.padding = const EdgeInsets.all(PaperSpacing.tw1),
   });
 
   final Widget child;
   final EdgeInsetsGeometry padding;
 
-  /// 3dp `primary` bar on the left (CitationPopover).
-  final bool accentBar;
-
   @override
-  Widget build(BuildContext context) {
-    final c = context.paper;
-    final brightness = Theme.of(context).brightness;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: c.surfaceRaised,
-        borderRadius: PaperRadii.borderXl,
-        border: Border.all(color: c.border),
-        boxShadow: PaperElevation.shadow2(brightness),
-      ),
-      child: ClipRRect(
-        borderRadius: PaperRadii.borderXl,
-        child: Material(
-          type: MaterialType.transparency,
-          child: accentBar
-              ? IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Container(width: 3, color: c.primary),
-                      Flexible(
-                        child: Padding(padding: padding, child: child),
-                      ),
-                    ],
-                  ),
-                )
-              : Padding(padding: padding, child: child),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Container(
+    padding: padding,
+    decoration: const BoxDecoration(
+      color: PaperWeb.gray900,
+      borderRadius: PaperRadii.borderMd,
+      boxShadow: PaperElevation.shadowLg,
+    ),
+    child: child,
+  );
 }
 
-/// A horizontal bar of popover actions (48 high touch / 40 pointer).
+/// `SelectionPopover` row: `p-1 gap-1`, 40 tall (4 + 32 + 4); scrolls
+/// horizontally when wider than the clamp rect.
 class PopoverBar extends StatelessWidget {
   const PopoverBar({super.key, required this.children});
 
   final List<Widget> children;
 
   @override
-  Widget build(BuildContext context) {
-    final touch = popoverIsTouch(context);
-    return PopoverSurface(
-      padding: const EdgeInsets.symmetric(horizontal: PaperSpacing.xs),
-      child: SizedBox(
-        height: touch ? 48 : 40,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(mainAxisSize: MainAxisSize.min, children: children),
+  Widget build(BuildContext context) => PopoverSurface(
+    child: SizedBox(
+      height: 32,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            for (var i = 0; i < children.length; i++) ...<Widget>[
+              if (i > 0) const SizedBox(width: PaperSpacing.tw1),
+              children[i],
+            ],
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
 }
 
+/// 1×20 gray-700 divider, centred vertically.
 class PopoverDivider extends StatelessWidget {
   const PopoverDivider({super.key});
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(
-      horizontal: PaperSpacing.xs,
-      vertical: PaperSpacing.sm,
-    ),
-    child: SizedBox(width: 1, child: ColoredBox(color: context.paper.divider)),
+  Widget build(BuildContext context) => const SizedBox(
+    width: 1,
+    height: 20,
+    child: ColoredBox(color: PaperWeb.gray700),
   );
 }
 
-/// Icon + label action in a popover bar.
+/// A text action in a popover bar: `PaperButton.popover` primary (Explain),
+/// neutral (Note, Copy) or destructive (Delete); 32 tall, radius 4. No
+/// icons (the web never shows icons in text actions).
 class PopoverAction extends StatelessWidget {
   const PopoverAction({
     super.key,
-    required this.icon,
     required this.label,
     required this.onPressed,
     this.emphasized = false,
@@ -237,7 +258,6 @@ class PopoverAction extends StatelessWidget {
     this.tooltip,
   });
 
-  final IconData icon;
   final String label;
   final VoidCallback? onPressed;
   final bool emphasized;
@@ -246,41 +266,17 @@ class PopoverAction extends StatelessWidget {
   final String? tooltip;
 
   @override
-  Widget build(BuildContext context) {
-    final c = context.paper;
-    final color = destructive
-        ? c.error
-        : (emphasized ? c.primary : c.textPrimary);
-    final touch = popoverIsTouch(context);
-    Widget button = InkWell(
-      onTap: onPressed,
-      borderRadius: PaperRadii.borderMd,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minWidth: touch ? 48 : 32),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: PaperSpacing.md),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Icon(icon, size: PaperIconSize.md, color: color),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: color,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              ?trailing,
-            ],
-          ),
-        ),
-      ),
-    );
-    if (tooltip != null) button = Tooltip(message: tooltip, child: button);
-    return Semantics(button: true, label: label, child: button);
-  }
+  Widget build(BuildContext context) => PaperButton(
+    label: label,
+    onPressed: onPressed,
+    tooltip: tooltip,
+    trailing: trailing,
+    variant: destructive
+        ? PaperButtonVariant.popoverDestructive
+        : (emphasized
+              ? PaperButtonVariant.popoverPrimary
+              : PaperButtonVariant.popoverNeutral),
+  );
 }
 
 /// Localised colour name.
@@ -294,8 +290,9 @@ String highlightColorName(AppLocalizations l10n, HighlightColor c) =>
       HighlightColor.orange => l10n.highlightColorOrange,
     };
 
-/// The 6 named swatches in token order. [checked] shows a check glyph (the
-/// `H` default on SelectionPopover, the current colour on HighlightPicker).
+/// The 6 named swatches in token order (components.md §10.1): 32×32
+/// `PaperButton.popover.highlight` boxes, each a 14px disc (`hue.wash` +
+/// 1.5 `hue.ring`); [checked] shows a 10px `#171717` check.
 class HighlightSwatches extends StatelessWidget {
   const HighlightSwatches({
     super.key,
@@ -311,38 +308,48 @@ class HighlightSwatches extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final touch = popoverIsTouch(context);
-    final disc = touch ? 22.0 : 18.0;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        for (final color in HighlightColor.values)
-          Semantics(
-            button: true,
+        for (final color in HighlightColor.values) ...<Widget>[
+          if (color.index > 0) const SizedBox(width: PaperSpacing.tw1),
+          PaperPressable(
+            key: ValueKey<String>('swatch-${color.name}'),
+            onPressed: enabled ? () => onPick(color) : null,
             selected: color == checked,
-            label: color == checked
+            tooltip: highlightColorName(l10n, color),
+            semanticLabel: color == checked
                 ? '${l10n.a11yColorSwatch(highlightColorName(l10n, color))}, ${l10n.a11yColorSelected}'
                 : l10n.a11yColorSwatch(highlightColorName(l10n, color)),
-            child: Tooltip(
-              message: highlightColorName(l10n, color),
-              child: InkWell(
-                key: ValueKey<String>('swatch-${color.name}'),
-                onTap: enabled ? () => onPick(color) : null,
-                customBorder: const CircleBorder(),
-                child: SizedBox(
-                  width: touch ? 36 : 30,
-                  height: touch ? 48 : 40,
-                  child: Center(
-                    child: _Swatch(
-                      color: paperHue(color),
-                      size: disc,
-                      checked: color == checked,
-                    ),
+            excludeSemantics: true,
+            builder: (context, states) {
+              final colors = paperButtonColors(
+                PaperButtonVariant.popoverHighlight,
+                states,
+              );
+              return PaperFocusRing(
+                show: states.contains(WidgetState.focused),
+                radius: PaperRadii.borderSm,
+                offset: 1,
+                gap: PaperWeb.gray900,
+                child: PaperColorBox(
+                  color: colors.fill,
+                  radius: PaperRadii.borderSm,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 32,
+                    height: 32,
+                  ),
+                  alignment: Alignment.center,
+                  child: _Swatch(
+                    color: paperHue(color),
+                    checked: color == checked,
+                    dimmed: states.contains(WidgetState.disabled),
                   ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
+        ],
       ],
     );
   }
@@ -351,25 +358,34 @@ class HighlightSwatches extends StatelessWidget {
 class _Swatch extends StatelessWidget {
   const _Swatch({
     required this.color,
-    required this.size,
     required this.checked,
+    required this.dimmed,
   });
 
   final PaperHighlightColor color;
-  final double size;
   final bool checked;
+  final bool dimmed;
 
   @override
-  Widget build(BuildContext context) => Container(
-    width: size,
-    height: size,
-    decoration: BoxDecoration(
-      color: color.wash,
-      shape: BoxShape.circle,
-      border: Border.all(color: color.ring, width: 1.5),
-    ),
-    child: checked
-        ? const Icon(Symbols.check_rounded, size: 14, color: Color(0xFF171717))
-        : null,
-  );
+  Widget build(BuildContext context) {
+    // Disabled @ 0.5 by colour, not an Opacity layer (reader P14).
+    final a = dimmed ? 0.5 : 1.0;
+    return Container(
+      width: 14,
+      height: 14,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: color.wash.withValues(alpha: a),
+        shape: BoxShape.circle,
+        border: Border.all(color: color.ring.withValues(alpha: a), width: 1.5),
+      ),
+      child: checked
+          ? const PaperIcon(
+              PaperIcons.check,
+              size: 10,
+              color: Color(0xFF171717),
+            )
+          : null,
+    );
+  }
 }

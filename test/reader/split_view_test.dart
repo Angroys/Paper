@@ -62,62 +62,37 @@ double readerWidth(WidgetTester tester) =>
 
 void main() {
   group('resolvePanelLayout', () {
-    test('compact -> bottom sheet, medium -> overlay', () {
+    test('< 640 -> bottom sheet, 640-1023 -> 384 overlay', () {
       expect(
-        resolvePanelLayout(
-          width: 400,
-          height: 800,
-          windowClass: PaperWindowClass.compact,
-        ).mode,
+        resolvePanelLayout(width: 400, height: 800).mode,
         PaperSidePanelMode.bottomSheet,
       );
-      final medium = resolvePanelLayout(
-        width: 700,
-        height: 900,
-        windowClass: PaperWindowClass.medium,
-      );
+      final medium = resolvePanelLayout(width: 800, height: 1280);
       expect(medium.mode, PaperSidePanelMode.overlay);
-      expect(medium.defaultWidth, PaperBreakpoints.sidePanelMedium);
-      expect(medium.maxWidth, closeTo(595, 1e-9));
+      expect(medium.defaultWidth, PaperBreakpoints.readerPanelWeb);
+      expect(medium.maxWidth, closeTo(680, 1e-9));
     });
 
-    test('expanded+ -> split with class widths and PDF minimum', () {
-      final large = resolvePanelLayout(
-        width: 1280,
-        height: 800,
-        windowClass: PaperWindowClass.large,
-      );
+    test('>= 1024 -> docked split at 384', () {
+      final large = resolvePanelLayout(width: 1280, height: 800);
       expect(large.mode, PaperSidePanelMode.split);
-      expect(large.defaultWidth, PaperBreakpoints.sidePanelLarge);
+      expect(large.defaultWidth, PaperBreakpoints.readerPanelWeb);
       expect(large.minWidth, 300);
       expect(large.maxWidth, 640);
-      final xl = resolvePanelLayout(
-        width: 1600,
-        height: 1000,
-        windowClass: PaperWindowClass.extraLarge,
-      );
-      expect(xl.defaultWidth, PaperBreakpoints.sidePanelExtraLarge);
-      expect(xl.maxWidth, 720, reason: '45% of 1600; PDF keeps >= 720');
-      expect(xl.clampWidth(10), 320);
-      expect(xl.clampWidth(5000), 720);
+      final lg = resolvePanelLayout(width: 1024, height: 800);
+      expect(lg.mode, PaperSidePanelMode.split);
+      expect(lg.defaultWidth, 384);
+      expect(lg.clampWidth(10), 300);
+      expect(lg.clampWidth(5000), 512);
     });
 
     test('short windows and the overlay preference fall back to overlay', () {
       expect(
-        resolvePanelLayout(
-          width: 1280,
-          height: 460,
-          windowClass: PaperWindowClass.large,
-        ).mode,
+        resolvePanelLayout(width: 1280, height: 460).mode,
         PaperSidePanelMode.overlay,
       );
       expect(
-        resolvePanelLayout(
-          width: 1280,
-          height: 800,
-          windowClass: PaperWindowClass.large,
-          preferOverlay: true,
-        ).mode,
+        resolvePanelLayout(width: 1280, height: 800, preferOverlay: true).mode,
         PaperSidePanelMode.overlay,
       );
     });
@@ -203,7 +178,7 @@ void main() {
       expect(readerWidth(tester), 1280);
     });
 
-    testWidgets('medium window: overlay side sheet, PDF never resizes', (
+    testWidgets('medium window: overlay, no scrim, PDF never resizes', (
       tester,
     ) async {
       PanelLayout? layout;
@@ -220,13 +195,13 @@ void main() {
         tester.getSize(find.byKey(panelKey)).width,
         PaperBreakpoints.sidePanelMedium,
       );
-      // Scrim tap closes.
+      // No scrim: a tap on the PDF reaches it and the panel stays open.
       await tester.tapAt(const Offset(50, 450));
       await tester.pumpAndSettle();
-      expect(open.value, isFalse);
+      expect(open.value, isTrue);
     });
 
-    testWidgets('compact window: bottom sheet at 40% height', (tester) async {
+    testWidgets('compact window: bottom sheet at 70% height', (tester) async {
       final open = await pumpSplit(tester, const Size(400, 800));
       open.value = true;
       await tester.pumpAndSettle();
@@ -238,7 +213,7 @@ void main() {
       final panel = tester.getRect(find.byKey(panelKey));
       expect(panel.width, 400);
       expect(panel.bottom, 800);
-      expect(panel.height, closeTo(800 * 0.4 - 24, 1));
+      expect(panel.height, closeTo(800 * 0.7 - kSheetHandleHeight, 1));
     });
 
     testWidgets('reduced motion: one pump reaches the end state (P13)', (

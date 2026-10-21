@@ -56,57 +56,51 @@ class PanelLayout {
       '${fellBackToOverlay ? ', fallback' : ''})';
 }
 
-/// Resolves the panel presentation (layout-system.md §4):
-/// - `compact`: bottom sheet.
-/// - `medium`: overlay side sheet (PDF does not resize).
-/// - `expanded`+: resizable split, unless the user prefers overlay, the
-///   window is shorter than [kSplitMinWindowHeight], or the split would push
-///   the PDF below its minimum width ([PaperWindowClass.splitFallsBackToOverlay]).
+/// Resolves the panel presentation on the **full window width** with the
+/// web breakpoints (screens/reader.md §1, side-panel.md §1):
+/// - `< 640`: bottom sheet.
+/// - `640–1023`: overlay, 384 wide, right-anchored, no scrim.
+/// - `>= 1024`: docked split at 384 (resizable), unless the user prefers the
+///   overlay ([preferOverlay]) or the window is shorter than
+///   [kSplitMinWindowHeight].
+///
+/// [windowClass] is accepted for older callers and ignored.
 PanelLayout resolvePanelLayout({
   required double width,
   required double height,
-  required PaperWindowClass windowClass,
+  PaperWindowClass? windowClass,
   bool preferOverlay = false,
 }) {
-  switch (windowClass.sidePanelMode) {
-    case PaperSidePanelMode.bottomSheet:
-      return PanelLayout(
-        mode: PaperSidePanelMode.bottomSheet,
-        defaultWidth: width,
-        minWidth: width,
-        maxWidth: width,
-      );
-    case PaperSidePanelMode.overlay:
-      return _overlay(width, windowClass, fellBack: false);
-    case PaperSidePanelMode.split:
-      final fallsBack = windowClass.splitFallsBackToOverlay(width);
-      if (fallsBack || preferOverlay || height < kSplitMinWindowHeight) {
-        return _overlay(width, windowClass, fellBack: fallsBack);
-      }
-      final min = windowClass.sidePanelMinWidth!;
-      final max = windowClass.sidePanelMaxWidth(width)!;
-      return PanelLayout(
-        mode: PaperSidePanelMode.split,
-        defaultWidth: windowClass.sidePanelWidth!.clamp(min, max).toDouble(),
-        minWidth: min,
-        maxWidth: max,
-      );
+  if (width < PaperBreakpoints.twSm) {
+    return PanelLayout(
+      mode: PaperSidePanelMode.bottomSheet,
+      defaultWidth: width,
+      minWidth: width,
+      maxWidth: width,
+    );
   }
-}
-
-PanelLayout _overlay(
-  double width,
-  PaperWindowClass windowClass, {
-  required bool fellBack,
-}) {
-  final min = windowClass.sidePanelMinWidth!;
-  final max = width * windowClass.sidePanelMaxFraction!;
-  final hi = max < min ? min : max;
+  if (width < PaperBreakpoints.twLg ||
+      preferOverlay ||
+      height < kSplitMinWindowHeight) {
+    final max = (width * PaperBreakpoints.sidePanelMediumMaxFraction)
+        .clamp(PaperBreakpoints.sidePanelMediumMin, double.infinity)
+        .toDouble();
+    return PanelLayout(
+      mode: PaperSidePanelMode.overlay,
+      defaultWidth: PaperBreakpoints.readerPanelWeb
+          .clamp(PaperBreakpoints.sidePanelMediumMin, max)
+          .toDouble(),
+      minWidth: PaperBreakpoints.sidePanelMediumMin,
+      maxWidth: max,
+    );
+  }
+  // Docked: the PDF pane keeps at least half of the window.
+  const min = PaperBreakpoints.sidePanelLargeMin;
+  final max = (width * 0.5).clamp(min, double.infinity).toDouble();
   return PanelLayout(
-    mode: PaperSidePanelMode.overlay,
-    defaultWidth: windowClass.sidePanelWidth!.clamp(min, hi).toDouble(),
+    mode: PaperSidePanelMode.split,
+    defaultWidth: PaperBreakpoints.readerPanelWeb.clamp(min, max).toDouble(),
     minWidth: min,
-    maxWidth: hi,
-    fellBackToOverlay: fellBack,
+    maxWidth: max,
   );
 }

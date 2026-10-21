@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../auth/auth_providers.dart';
@@ -12,9 +11,9 @@ import '../../../data/data_providers.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../theme/paper_tokens.dart';
 import '../../../theme/theme_x.dart';
+import '../../../ui/ui.dart';
 import '../../auth/sign_in_prompt.dart';
 import '../reader_controller.dart';
-import 'popover.dart';
 
 enum _ImportState { idle, importing, imported, failed }
 
@@ -56,7 +55,6 @@ class _CitationPopoverState extends ConsumerState<CitationPopover> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final c = context.paper;
-    final t = Theme.of(context).textTheme;
     final target = widget.target;
     final online = ref.watch(isOnlineProvider).value ?? true;
     // Offline-only builds: no "Import" (it fetches the paper by URL).
@@ -65,144 +63,134 @@ class _CitationPopoverState extends ConsumerState<CitationPopover> {
     final url = target.url;
 
     final children = <Widget>[
-      Semantics(
-        header: true,
-        child: Text(
-          target.label.toUpperCase(),
-          style: PaperTypography.popoverTitle(c),
-        ),
+      // Header: `mb-2 flex items-start justify-between gap-2`.
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Expanded(
+            child: Semantics(
+              header: true,
+              child: Text(target.label, style: PaperTypography.cardTitle(c)),
+            ),
+          ),
+          const SizedBox(width: PaperSpacing.tw2),
+          Transform.translate(
+            offset: const Offset(4, -4),
+            child: PaperIconButton(
+              size: PaperIconButtonSize.s24,
+              tooltip: l10n.commonClose,
+              icon: const PaperCloseGlyph(),
+              onPressed: ctrl.dismissCitation,
+            ),
+          ),
+        ],
       ),
-      const SizedBox(height: PaperSpacing.xs),
+      const SizedBox(height: PaperSpacing.tw2),
     ];
     if (target.resolving) {
       children.add(
-        Semantics(
-          label: l10n.citationLoading,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              for (final w in <double>[1, 0.9, 0.6])
-                Padding(
-                  padding: const EdgeInsets.only(top: PaperSpacing.xs),
-                  child: FractionallySizedBox(
-                    widthFactor: w,
-                    child: SizedBox(
-                      height: 10,
-                      child: ColoredBox(color: c.surfaceVariant),
-                    ),
-                  ),
-                ),
-            ],
+        Text(
+          l10n.citationLoading,
+          style: _sm.copyWith(
+            fontStyle: FontStyle.italic,
+            color: PaperWeb.gray400,
           ),
         ),
       );
     } else {
       final text = target.referenceText;
-      if (text != null) {
-        children.add(
-          Text(
-            text,
-            style: t.bodySmall?.copyWith(color: c.textPrimary),
-            maxLines: 8,
-            overflow: TextOverflow.ellipsis,
-          ),
-        );
-      } else {
-        children.add(
-          Text(
-            l10n.citationNotFound,
-            style: t.bodySmall?.copyWith(color: c.textMuted),
-          ),
-        );
-      }
-      if (!online) {
-        children.addAll(<Widget>[
-          const SizedBox(height: PaperSpacing.sm),
-          Row(
-            children: <Widget>[
-              Icon(Symbols.cloud_off_rounded, size: 16, color: c.textMuted),
-              const SizedBox(width: PaperSpacing.xs),
-              Expanded(
-                child: Text(
-                  l10n.citationOfflineHint,
-                  style: t.labelSmall?.copyWith(color: c.textMuted),
+      children.add(
+        text != null
+            ? Text(text, style: PaperTypography.explanationBodyCompact(c))
+            : Text(
+                l10n.citationNotFound,
+                style: _sm.copyWith(
+                  fontStyle: FontStyle.italic,
+                  color: PaperWeb.gray400,
                 ),
               ),
+      );
+      final actions = <Widget>[];
+      if (!online) {
+        actions.add(
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              const PaperIcon(PaperIcons.infoSmall, color: PaperWeb.gray400),
+              const SizedBox(width: PaperSpacing.tw1),
+              Expanded(child: Text(l10n.citationOfflineHint, style: _xs)),
             ],
           ),
-        ]);
+        );
       } else if (url != null) {
-        children.addAll(<Widget>[
-          const SizedBox(height: PaperSpacing.sm),
-          if (_import == _ImportState.imported)
-            _status(
-              context,
-              Symbols.check_circle_rounded,
-              c.success,
+        if (_import == _ImportState.imported) {
+          actions.add(
+            Text(
               l10n.citationImported,
+              style: _xs.copyWith(
+                fontWeight: FontWeight.w500,
+                color: PaperWeb.green400,
+              ),
             ),
-          if (_import == _ImportState.failed)
-            _status(
-              context,
-              Symbols.error_rounded,
-              c.error,
+          );
+        }
+        if (_import == _ImportState.failed) {
+          actions.add(
+            Text(
               l10n.citationImportFailed,
+              style: _xs.copyWith(color: PaperWeb.red400),
             ),
+          );
+        }
+        if (_import == _ImportState.importing) {
+          actions.add(
+            Row(
+              children: <Widget>[
+                const PaperSpinner(),
+                const SizedBox(width: PaperSpacing.tw2),
+                Text(l10n.commonLoading, style: _xs),
+              ],
+            ),
+          );
+        }
+        actions.add(
           Wrap(
-            spacing: PaperSpacing.sm,
-            runSpacing: PaperSpacing.xs,
+            spacing: PaperSpacing.tw3,
+            runSpacing: PaperSpacing.tw2,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: <Widget>[
               if (canImport && _import != _ImportState.imported)
-                FilledButton(
+                _CiteAddButton(
+                  label: _import == _ImportState.failed
+                      ? l10n.commonRetry
+                      : l10n.citationImport,
                   onPressed: _import == _ImportState.importing
                       ? null
                       : () => unawaited(_importPaper(url)),
-                  child: Text(
-                    _import == _ImportState.failed
-                        ? l10n.commonRetry
-                        : l10n.citationImport,
-                  ),
                 ),
-              OutlinedButton.icon(
+              _TextLink(
+                label: '${l10n.citationOpenLink} ↗',
                 onPressed: () => unawaited(
                   launchUrl(url, mode: LaunchMode.externalApplication),
                 ),
-                icon: const Icon(Symbols.open_in_new_rounded, size: 16),
-                label: Text(l10n.citationOpenLink),
               ),
             ],
           ),
-        ]);
+        );
       }
       final page = target.targetPage;
       if (page != null) {
-        children.addAll(<Widget>[
-          const SizedBox(height: PaperSpacing.sm),
-          Divider(height: 1, color: c.divider),
-          InkWell(
-            onTap: () => ctrl.goToReference(page),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: PaperSpacing.sm),
-              child: Row(
-                children: <Widget>[
-                  Icon(Symbols.south_rounded, size: 16, color: c.primary),
-                  const SizedBox(width: PaperSpacing.xs),
-                  Expanded(
-                    child: Text(
-                      l10n.citationGoToReference,
-                      style: t.labelLarge?.copyWith(color: c.primary),
-                    ),
-                  ),
-                  Text(
-                    '$page',
-                    style: PaperTypography.pageIndicator(c)
-                        .copyWith(color: c.textMuted),
-                  ),
-                ],
-              ),
-            ),
+        actions.add(
+          _TextLink(
+            label: '${l10n.citationGoToReference} ↓',
+            onPressed: () => ctrl.goToReference(page),
           ),
-        ]);
+        );
+      }
+      for (final w in actions) {
+        children
+          ..add(const SizedBox(height: PaperSpacing.tw2))
+          ..add(w);
       }
     }
 
@@ -210,11 +198,17 @@ class _CitationPopoverState extends ConsumerState<CitationPopover> {
       scopesRoute: true,
       explicitChildNodes: true,
       label: target.label,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 360),
-        child: PopoverSurface(
-          accentBar: true,
-          padding: const EdgeInsets.fromLTRB(18, 12, 14, 12),
+      child: Container(
+        width: 320,
+        constraints: const BoxConstraints(maxHeight: 320),
+        decoration: BoxDecoration(
+          color: PaperWeb.gray900,
+          border: Border.all(color: PaperWeb.gray700),
+          borderRadius: PaperRadii.borderLg,
+          boxShadow: PaperElevation.shadowXl,
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(PaperSpacing.tw4),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -224,26 +218,96 @@ class _CitationPopoverState extends ConsumerState<CitationPopover> {
       ),
     );
   }
+}
 
-  Widget _status(
-    BuildContext context,
-    IconData icon,
-    Color color,
-    String text,
-  ) => Padding(
-    padding: const EdgeInsets.only(bottom: PaperSpacing.xs),
-    child: Row(
-      children: <Widget>[
-        Icon(icon, size: 16, color: color),
-        const SizedBox(width: PaperSpacing.xs),
-        Expanded(
+const TextStyle _sm = TextStyle(
+  fontFamily: PaperTypography.sans,
+  fontFamilyFallback: PaperTypography.sansFallback,
+  fontSize: 14,
+  height: 20 / 14,
+);
+
+const TextStyle _xs = TextStyle(
+  fontFamily: PaperTypography.sans,
+  fontFamilyFallback: PaperTypography.sansFallback,
+  fontSize: 12,
+  height: 16 / 12,
+  color: PaperWeb.gray400,
+);
+
+/// `CITE_ADD_BUTTON_CLASS`: accent fill (hover accent-hover), `px-2.5
+/// py-1 xs 500` indigo-950, radius 6, shadow-sm, 24 tall; disabled @ .6.
+class _CiteAddButton extends StatelessWidget {
+  const _CiteAddButton({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) => PaperPressable(
+    onPressed: onPressed,
+    semanticLabel: label,
+    excludeSemantics: true,
+    builder: (context, states) {
+      final active =
+          states.contains(WidgetState.hovered) ||
+          states.contains(WidgetState.pressed);
+      final disabled = states.contains(WidgetState.disabled);
+      final fill = active ? PaperWeb.accentHover : PaperWeb.accent;
+      return PaperFocusRing(
+        show: states.contains(WidgetState.focused),
+        radius: PaperRadii.borderMd,
+        gap: PaperWeb.gray900,
+        child: PaperColorBox(
+          color: disabled ? fill.withValues(alpha: 0.6) : fill,
+          radius: PaperRadii.borderMd,
+          boxShadow: PaperElevation.shadowSm,
+          constraints: const BoxConstraints.tightFor(height: 24),
+          padding: const EdgeInsets.symmetric(horizontal: PaperSpacing.tw2_5),
+          alignment: Alignment.center,
           child: Text(
-            text,
-            style: Theme.of(context).textTheme.labelMedium
-                ?.copyWith(color: color),
+            label,
+            style: _xs.copyWith(
+              fontWeight: FontWeight.w500,
+              color: PaperWeb.indigo950.withValues(alpha: disabled ? 0.6 : 1),
+            ),
           ),
         ),
-      ],
-    ),
+      );
+    },
+  );
+}
+
+/// Link-out / jump (`xs 500 accent`, hover underline, focus ring 2).
+class _TextLink extends StatelessWidget {
+  const _TextLink({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => PaperPressable(
+    onPressed: onPressed,
+    semanticLabel: label,
+    excludeSemantics: true,
+    builder: (context, states) {
+      final hover =
+          states.contains(WidgetState.hovered) ||
+          states.contains(WidgetState.pressed);
+      return PaperFocusRing(
+        show: states.contains(WidgetState.focused),
+        radius: PaperRadii.borderMd,
+        gap: PaperWeb.gray900,
+        child: Text(
+          label,
+          style: _xs.copyWith(
+            fontWeight: FontWeight.w500,
+            color: hover ? PaperWeb.accentHover : PaperWeb.accent,
+            decoration: hover ? TextDecoration.underline : null,
+            decorationColor: PaperWeb.accentHover,
+          ),
+        ),
+      );
+    },
   );
 }

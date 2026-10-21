@@ -90,9 +90,16 @@ int _count(SyncStatus s, SyncPhase phase) => switch (phase) {
 /// is never colour-only (own icon shape + text). `syncing` shows only for
 /// syncs longer than [kSyncingMinVisible].
 class SyncBadge extends ConsumerStatefulWidget {
-  const SyncBadge({super.key, this.form = SyncBadgeForm.icon});
+  const SyncBadge({
+    super.key,
+    this.form = SyncBadgeForm.icon,
+    this.iconSize = PaperIconButtonSize.s32,
+  });
 
   final SyncBadgeForm form;
+
+  /// Icon form box: 32 in the nav bar, 28 in the 52-tall reader header.
+  final PaperIconButtonSize iconSize;
 
   @override
   ConsumerState<SyncBadge> createState() => _SyncBadgeState();
@@ -127,7 +134,9 @@ class _SyncBadgeState extends ConsumerState<SyncBadge> {
   Widget build(BuildContext context) {
     // Guests (no account): the badge is the library chrome's small
     // "Sign in" affordance instead of a sync state.
-    if (ref.watch(isGuestProvider)) return GuestSignInBadge(form: widget.form);
+    if (ref.watch(isGuestProvider)) {
+      return GuestSignInBadge(form: widget.form, iconSize: widget.iconSize);
+    }
     final l10n = AppLocalizations.of(context);
     final c = context.paper;
     final status = ref.watch(syncStatusProvider).value ?? SyncStatus.idle;
@@ -164,6 +173,7 @@ class _SyncBadgeState extends ConsumerState<SyncBadge> {
       // Nav bar / reader header: a 32×32 `btn-ghost` icon button.
       return PaperIconButton(
         key: const ValueKey<String>('sync-badge'),
+        size: widget.iconSize,
         tooltip: longText,
         semanticLabel: l10n.syncBadgeSemantics(longText),
         icon: switched,
@@ -246,11 +256,18 @@ class _SyncBadgeState extends ConsumerState<SyncBadge> {
 /// (rail bottom, sidebar row, compact top bar, reader toolbar, Settings ›
 /// Sync). Opens the sign-in screen, which can be dismissed.
 class GuestSignInBadge extends StatelessWidget {
-  const GuestSignInBadge({super.key, this.form = SyncBadgeForm.icon});
+  const GuestSignInBadge({
+    super.key,
+    this.form = SyncBadgeForm.icon,
+    this.iconSize = PaperIconButtonSize.s32,
+  });
 
   static const Key badgeKey = ValueKey<String>('guest-sign-in-badge');
 
   final SyncBadgeForm form;
+
+  /// Icon form box (see [SyncBadge.iconSize]).
+  final PaperIconButtonSize iconSize;
 
   @override
   Widget build(BuildContext context) {
@@ -265,6 +282,7 @@ class GuestSignInBadge extends StatelessWidget {
     if (form == SyncBadgeForm.icon) {
       return PaperIconButton(
         key: badgeKey,
+        size: iconSize,
         tooltip: l10n.guestSyncTitle,
         semanticLabel: l10n.guestBadgeSemantics,
         icon: glyph,
