@@ -12,35 +12,27 @@ const Duration kLibrarySearchDebounce = Duration(milliseconds: 150);
 
 enum LibraryFilter { all, downloaded, unread }
 
-enum LibraryViewMode { grid, list }
-
-/// Search / sort / filter / view choices of the Library screen.
+/// Search / sort / filter choices of the Library screen.
 @immutable
 class LibraryViewState {
   const LibraryViewState({
     this.query = '',
     this.sort = PaperSort.recentlyOpened,
     this.filter = LibraryFilter.all,
-    this.viewOverride,
   });
 
   final String query;
   final PaperSort sort;
   final LibraryFilter filter;
 
-  /// Set once the user picks grid / list; null = adaptive default.
-  final LibraryViewMode? viewOverride;
-
   LibraryViewState copyWith({
     String? query,
     PaperSort? sort,
     LibraryFilter? filter,
-    LibraryViewMode? viewOverride,
   }) => LibraryViewState(
     query: query ?? this.query,
     sort: sort ?? this.sort,
     filter: filter ?? this.filter,
-    viewOverride: viewOverride ?? this.viewOverride,
   );
 }
 
@@ -52,8 +44,6 @@ class LibraryViewController extends Notifier<LibraryViewState> {
   void setSort(PaperSort sort) => state = state.copyWith(sort: sort);
   void setFilter(LibraryFilter filter) =>
       state = state.copyWith(filter: filter);
-  void setView(LibraryViewMode mode) =>
-      state = state.copyWith(viewOverride: mode);
 }
 
 final libraryViewProvider =

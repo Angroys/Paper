@@ -115,21 +115,9 @@
       }
     }
   },
-  "signInScreenHeading": "Sign in to Paper",
-  "@signInScreenHeading": {
-    "description": "Sign-in screen heading (header semantics). Max 32 chars."
-  },
-  "signInTagline": "Read any paper without getting stuck.",
-  "@signInTagline": {
-    "description": "Sign-in value line under the wordmark. Max 48 chars."
-  },
   "signInGoogle": "Continue with Google",
   "@signInGoogle": {
     "description": "GoogleSignInButton label. Max 24 chars."
-  },
-  "signInDividerOr": "or",
-  "@signInDividerOr": {
-    "description": "Divider text between Google and the email form. Max 6 chars."
   },
   "signInEmailLabel": "Email",
   "@signInEmailLabel": {
@@ -166,14 +154,6 @@
   "signInMagicLink": "Email me a sign-in link",
   "@signInMagicLink": {
     "description": "Text button switching to magic-link sign-in. Max 24 chars."
-  },
-  "signInCreateAccountPrompt": "New to Paper? Create an account",
-  "@signInCreateAccountPrompt": {
-    "description": "Mode switch to create account. Max 40 chars."
-  },
-  "signInHaveAccountPrompt": "Have an account? Sign in",
-  "@signInHaveAccountPrompt": {
-    "description": "Mode switch back to sign in. Max 40 chars."
   },
   "signInTerms": "Terms",
   "@signInTerms": {
@@ -768,14 +748,6 @@
   "librarySortTitle": "Title A–Z",
   "@librarySortTitle": {
     "description": "Sort option. Max 24 chars."
-  },
-  "libraryViewGrid": "Grid view",
-  "@libraryViewGrid": {
-    "description": "View toggle tooltip. Max 18 chars."
-  },
-  "libraryViewList": "List view",
-  "@libraryViewList": {
-    "description": "View toggle tooltip. Max 18 chars."
   },
   "libraryEmptyTitle": "No papers yet",
   "@libraryEmptyTitle": {
@@ -1391,18 +1363,6 @@
   "@zoomLastUsed": {
     "description": "Settings › Reader › Default zoom option. Max 18 chars."
   },
-  "themeSystem": "System",
-  "@themeSystem": {
-    "description": "ThemeSelector option. Max 18 chars."
-  },
-  "themeLight": "Light",
-  "@themeLight": {
-    "description": "ThemeSelector option. Max 18 chars."
-  },
-  "themeDark": "Dark",
-  "@themeDark": {
-    "description": "ThemeSelector option (default). Max 18 chars."
-  },
   "selectionExplain": "Explain",
   "@selectionExplain": {
     "description": "SelectionPopover / HighlightPicker action. Max 18 chars."
@@ -1482,10 +1442,6 @@
   "settingsNeedsConnection": "Needs a connection",
   "@settingsNeedsConnection": {
     "description": "Disabled reason for account edits offline. Max 24 chars."
-  },
-  "settingsTheme": "Theme",
-  "@settingsTheme": {
-    "description": "Appearance row. Max 24 chars."
   },
   "settingsPersistentNotifications": "Keep notifications until dismissed",
   "@settingsPersistentNotifications": {
@@ -2127,10 +2083,6 @@
   "@windowClose": {
     "description": "Windows caption button tooltip. Max 18 chars."
   },
-  "a11yAppLogo": "Paper logo",
-  "@a11yAppLogo": {
-    "description": "Semantics label for logo image. Max 32 chars."
-  },
   "a11yPaperCard": "{title}, {pages, plural, =1{1 page} other{{pages} pages}}, {progress}% read, {status}",
   "@a11yPaperCard": {
     "description": "Semantics label for a PaperCard / PaperRow; status is a downloadState* string. Max 160 chars (excluding variable text).",
@@ -2555,30 +2507,24 @@
   "@a11yAppNavigation": {
     "description": "Screen-reader name of the top navigation bar (Library, Settings, sync). Max 32 chars."
   },
-  "ratingNotRated": "Not rated",
-  "@ratingNotRated": {
-    "description": "PaperRating value text when the explanation has no rating. Max 16 chars."
+  "libraryReadBadge": "Read",
+  "@libraryReadBadge": {
+    "description": "Library table: badge after the title of a paper marked read. Max 12 chars."
   },
-  "ratingValue": "{value}/5",
-  "@ratingValue": {
-    "description": "PaperRating value text, e.g. 4/5. Max 8 chars (excluding variable text).",
-    "placeholders": {
-      "value": {
-        "type": "int"
-      }
-    }
+  "libraryNeverOpened": "Not opened yet",
+  "@libraryNeverOpened": {
+    "description": "Library table Opened column: screen-reader text for the em dash shown when a paper was never opened. Max 32 chars."
   },
-  "highlightDeleteConfirm": "Confirm",
-  "@highlightDeleteConfirm": {
-    "description": "Highlights tab: second tap on Delete confirms. Max 12 chars."
+  "importChooseFile": "Choose file",
+  "@importChooseFile": {
+    "description": "Library add-paper panel, From a file card: file picker button. Max 18 chars."
   },
-  "highlightPageLabel": "Page {page}",
-  "@highlightPageLabel": {
-    "description": "Highlights tab card label: the page of the highlight. Max 12 chars (excluding variable text).",
-    "placeholders": {
-      "page": {
-        "type": "int"
-      }
-    }
+  "importNoFileChosen": "No file chosen",
+  "@importNoFileChosen": {
+    "description": "Library add-paper panel: status next to Choose file before a file is picked. Max 24 chars."
+  },
+  "commonSaving": "Saving…",
+  "@commonSaving": {
+    "description": "Button label while a save is in progress (inline rename). Max 18 chars."
   }
 }

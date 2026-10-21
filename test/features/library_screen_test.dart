@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:paper/core/core_providers.dart';
@@ -9,6 +10,7 @@ import 'package:paper/features/library/library_controller.dart';
 import 'package:paper/features/library/library_screen.dart';
 import 'package:paper/features/library/library_widgets.dart';
 import 'package:paper/sync/sync_providers.dart';
+import 'package:paper/ui/ui.dart';
 
 import '../data/fakes.dart';
 import '../helpers.dart';
@@ -55,6 +57,25 @@ void main() {
 
   Finder title(String t) => find.text(t);
 
+  Future<void> openMenu(WidgetTester tester, String id) async {
+    final menu = find.byKey(ValueKey<String>('paper-menu-$id'));
+    await tester.ensureVisible(menu);
+    await tester.pumpAndSettle();
+    await tester.tap(menu);
+    await tester.pumpAndSettle();
+  }
+
+  Future<void> openAddPanel(WidgetTester tester) async {
+    await tester.tap(find.byKey(LibraryScreen.importButtonKey));
+    await tester.pumpAndSettle();
+  }
+
+  /// Lets a toast time out so no timer outlives the test.
+  Future<void> settleToast(WidgetTester tester) async {
+    await tester.pump(const Duration(seconds: 9));
+    await tester.pumpAndSettle();
+  }
+
   testWidgets('search filters the list after the debounce', (tester) async {
     await pump(tester);
     expect(title('Attention Is All You Need'), findsOneWidget);
@@ -69,32 +90,100 @@ void main() {
     await tester.pump();
     expect(title('Attention Is All You Need'), findsNothing);
     expect(title('Diffusion Models Beat GANs'), findsOneWidget);
+    expect(find.text('1 paper found'), findsOneWidget);
 
     await tester.enterText(find.byKey(LibraryScreen.searchFieldKey), 'zzz');
     await tester.pump(kLibrarySearchDebounce);
     await tester.pumpAndSettle();
     expect(find.text('No papers match “zzz”'), findsOneWidget);
+    await tester.tap(find.text('Clear search').last);
+    await tester.pumpAndSettle();
+    expect(title('Attention Is All You Need'), findsOneWidget);
   });
 
-  Future<void> openMenu(WidgetTester tester, String id, String item) async {
-    await tester.tap(find.byKey(ValueKey<String>('paper-menu-$id')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(item).last);
-    await tester.pumpAndSettle();
-  }
-
-  testWidgets('rename through the dialog', (tester) async {
+  testWidgets('table: header labels, row geometry, read badge, no grid', (
+    tester,
+  ) async {
+    repo.papers[0] = repo.papers[0].copyWith(readAt: DateTime.utc(2026, 10));
     await pump(tester);
-    await openMenu(tester, 'a', 'Rename');
-    expect(find.text('Rename paper'), findsOneWidget);
+    expect(find.text('Library'), findsOneWidget);
+    expect(find.text('Your papers'), findsOneWidget);
+    for (final h in <String>[
+      'PHOTO',
+      'NAME',
+      'RATE',
+      'STATUS',
+      'OPENED',
+      'ACTION',
+    ]) {
+      expect(find.text(h), findsOneWidget, reason: h);
+    }
+    expect(find.byKey(LibraryScreen.tableKey), findsOneWidget);
+    expect(find.text('Read'), findsOneWidget);
+    expect(find.byType(FloatingActionButton), findsNothing);
+    expect(find.byType(GridView), findsNothing);
+    expect(find.byType(ReadMeter), findsNWidgets(3));
+    expect(find.byType(PaperThumbnail), findsNWidgets(3));
+    expect(
+      tester.getSize(find.byType(PaperThumbnail).first),
+      const Size(48, 64),
+    );
+    // 88 + 1px divider; the last row has no divider.
+    expect(
+      tester.getSize(find.byKey(const ValueKey<String>('paper-a'))).height,
+      89,
+    );
+    final search = tester.getSize(find.byKey(LibraryScreen.searchFieldKey));
+    expect(search, const Size(320, 38));
+  });
 
+  testWidgets('inline rename: empty error, Escape cancels, Enter saves', (
+    tester,
+  ) async {
+    await pump(tester);
+    final field = find.byKey(const ValueKey<String>('rename-field'));
+    await openMenu(tester, 'a');
+    await tester.tap(find.byKey(const ValueKey<String>('paper-rename-a')));
+    await tester.pumpAndSettle();
+    expect(field, findsOneWidget);
+    expect(find.text('Rename paper'), findsNothing); // no dialog at ≥ 640
+
+    await tester.enterText(field, '');
+    await tester.pump();
+    expect(find.text('Give the paper a title.'), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(field, findsNothing);
+    expect(repo.calls.where((c) => c.startsWith('rename')), isEmpty);
+
+    await openMenu(tester, 'a');
+    await tester.tap(find.byKey(const ValueKey<String>('paper-rename-a')));
+    await tester.pumpAndSettle();
+    await tester.enterText(field, 'Transformers');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(repo.calls, contains('rename a Transformers'));
+    expect(title('Transformers'), findsOneWidget);
+    expect(field, findsNothing);
+  });
+
+  testWidgets('narrow windows rename through the dialog', (tester) async {
+    await pump(tester, size: const Size(420, 900));
+    await openMenu(tester, 'a');
+    await tester.ensureVisible(
+      find.byKey(const ValueKey<String>('paper-rename-a')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey<String>('paper-rename-a')));
+    await tester.pumpAndSettle();
+    expect(find.text('Rename paper'), findsOneWidget);
     await tester.enterText(
       find.byKey(const ValueKey<String>('rename-field')),
       '',
     );
     await tester.pump();
     expect(find.text('Give the paper a title.'), findsOneWidget);
-
     await tester.enterText(
       find.byKey(const ValueKey<String>('rename-field')),
       'Transformers',
@@ -103,21 +192,56 @@ void main() {
     await tester.tap(find.byKey(const ValueKey<String>('rename-save')));
     await tester.pumpAndSettle();
     expect(repo.calls, contains('rename a Transformers'));
-    expect(title('Transformers'), findsOneWidget);
   });
 
-  testWidgets('delete shows an undo snackbar; undo restores', (tester) async {
+  testWidgets('delete shows an undo toast; undo restores', (tester) async {
     await pump(tester);
-    await openMenu(tester, 'a', 'Delete');
+    await tester.tap(find.byKey(const ValueKey<String>('paper-delete-a')));
+    await tester.pumpAndSettle();
     expect(title('Attention Is All You Need'), findsNothing);
     expect(find.text('Deleted “Attention Is All You Need”.'), findsOneWidget);
-    final bar = tester.widget<SnackBar>(find.byType(SnackBar));
-    expect(bar.duration, const Duration(seconds: 8));
+    expect(find.byType(PaperToast), findsOneWidget);
+    expect(find.byType(SnackBar), findsNothing);
 
     await tester.tap(find.text('Undo'));
     await tester.pumpAndSettle();
     expect(repo.calls, containsAllInOrder(<String>['delete a', 'undo a']));
     expect(title('Attention Is All You Need'), findsOneWidget);
+    expect(find.byType(PaperToast), findsNothing);
+  });
+
+  testWidgets('the delete toast stays for the 8 s undo window', (tester) async {
+    await pump(tester);
+    await tester.tap(find.byKey(const ValueKey<String>('paper-delete-b')));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 7));
+    expect(find.byType(PaperToast), findsOneWidget);
+    await settleToast(tester);
+    expect(find.byType(PaperToast), findsNothing);
+  });
+
+  testWidgets('add-paper disclosure: two equal cards, Close label, toggles', (
+    tester,
+  ) async {
+    await pump(tester);
+    expect(find.byKey(LibraryScreen.addPanelKey), findsNothing);
+    expect(find.text('Add paper'), findsOneWidget);
+    await openAddPanel(tester);
+    expect(find.byKey(LibraryScreen.addPanelKey), findsOneWidget);
+    expect(find.text('Close'), findsOneWidget);
+    expect(find.text('No file chosen'), findsOneWidget);
+    Rect card(String text) => tester.getRect(
+      find.ancestor(of: find.text(text), matching: find.byType(PaperCard)),
+    );
+    final file = card('From a file');
+    final link = card('Add a paper from a link');
+    // Side by side at ≥ 768, gap 16, equal height.
+    expect(file.top, link.top);
+    expect(file.height, link.height);
+    expect(link.left - file.right, 16);
+    await openAddPanel(tester);
+    expect(find.byKey(LibraryScreen.addPanelKey), findsNothing);
+    expect(find.text('Add paper'), findsOneWidget);
   });
 
   Future<void> importFileExpecting(
@@ -127,9 +251,8 @@ void main() {
   ) async {
     repo.importError = error;
     await pump(tester);
-    await tester.tap(find.byKey(LibraryScreen.importButtonKey));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('From a file'));
+    await openAddPanel(tester);
+    await tester.tap(find.byKey(LibraryScreen.chooseFileKey));
     await tester.pumpAndSettle();
     expect(find.text(message), findsOneWidget, reason: '$error');
     expect(find.text('Try again'), findsOneWidget);
@@ -159,58 +282,60 @@ void main() {
     );
   });
 
-  testWidgets('import from link: offline error and offline-disabled item', (
+  testWidgets('import from link: invalid link, offline error, offline card', (
     tester,
   ) async {
     repo.importError = const OfflineException();
     await pump(tester);
-    await tester.tap(find.byKey(LibraryScreen.importButtonKey));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('From a link'));
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const ValueKey<String>('import-url-field')),
-      'not a link',
-    );
-    await tester.tap(find.byKey(const ValueKey<String>('import-url-submit')));
+    await openAddPanel(tester);
+    final field = find.byKey(const ValueKey<String>('import-url-field'));
+    final submit = find.byKey(const ValueKey<String>('import-url-submit'));
+    await tester.enterText(field, 'not a link');
+    await tester.tap(submit);
     await tester.pump();
     expect(find.textContaining('doesn’t look like a link'), findsOneWidget);
 
+    await tester.enterText(field, 'https://arxiv.org/pdf/1706.03762');
+    await tester.tap(submit);
+    await tester.pumpAndSettle();
+    expect(find.text('Adding from a link needs a connection.'), findsOneWidget);
+
+    // Now actually offline: the link card is disabled with its reason.
+    await tester.tap(find.text('Dismiss'));
+    connectivity.set(false);
+    await tester.pumpAndSettle();
+    expect(tester.widget<PaperButton>(submit).onPressed, isNull);
+    expect(tester.widget<TextField>(field).enabled, isFalse);
+    expect(find.text('Adding from a link needs a connection.'), findsOneWidget);
+  });
+
+  testWidgets('import success adds the paper', (tester) async {
+    repo.importResult = libraryPaper('d', 'Fresh Import');
+    await pump(tester);
+    await openAddPanel(tester);
+    await tester.tap(find.byKey(LibraryScreen.chooseFileKey));
+    await tester.pumpAndSettle();
+    expect(repo.calls, contains('file x.pdf'));
+    expect(title('Fresh Import'), findsOneWidget);
+    expect(find.text('Added to your library.'), findsOneWidget);
+    expect(find.text('x.pdf'), findsOneWidget);
+  });
+
+  testWidgets('import from link success', (tester) async {
+    repo.importResult = libraryPaper('d', 'Linked Import');
+    await pump(tester);
+    await openAddPanel(tester);
     await tester.enterText(
       find.byKey(const ValueKey<String>('import-url-field')),
       'https://arxiv.org/pdf/1706.03762',
     );
     await tester.tap(find.byKey(const ValueKey<String>('import-url-submit')));
     await tester.pumpAndSettle();
-    expect(find.text('Adding from a link needs a connection.'), findsOneWidget);
-
-    // Now actually offline: the link item is disabled with its reason.
-    connectivity.set(false);
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(LibraryScreen.importButtonKey));
-    await tester.pumpAndSettle();
-    final item = tester.widget<MenuItemButton>(
-      find.ancestor(
-        of: find.text('From a link'),
-        matching: find.byType(MenuItemButton),
-      ),
-    );
-    expect(item.onPressed, isNull);
-  });
-
-  testWidgets('import success adds the paper', (tester) async {
-    repo.importResult = libraryPaper('d', 'Fresh Import');
-    await pump(tester);
-    await tester.tap(find.byKey(LibraryScreen.importButtonKey));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('From a file'));
-    await tester.pumpAndSettle();
-    expect(repo.calls, contains('file x.pdf'));
-    expect(title('Fresh Import'), findsOneWidget);
+    expect(repo.calls, contains('url https://arxiv.org/pdf/1706.03762'));
     expect(find.text('Added to your library.'), findsOneWidget);
   });
 
-  testWidgets('cloud-only paper offline: dimmed badge, open blocked', (
+  testWidgets('cloud-only paper offline: dimmed, chip, open blocked', (
     tester,
   ) async {
     connectivity.online = false;
@@ -222,53 +347,62 @@ void main() {
       badges.map((b) => b.state),
       contains(PaperDownloadBadge.unavailableOffline),
     );
+    // The chip says "Not downloaded"; the reason is its tooltip.
+    expect(find.text('Not downloaded'), findsOneWidget);
+    expect(
+      tester
+          .widgetList<PaperThumbnail>(find.byType(PaperThumbnail))
+          .where((t) => t.dimmed),
+      hasLength(1),
+    );
     await tester.tap(title('Deep Residual Learning'));
     await tester.pump();
     expect(
       find.text('This paper isn’t downloaded. Connect to open it.'),
       findsOneWidget,
     );
+    await settleToast(tester);
   });
 
   testWidgets('empty library state', (tester) async {
     repo.papers.clear();
     await pump(tester);
     expect(find.text('No papers yet'), findsOneWidget);
+    expect(find.text('Your papers'), findsNothing);
+    expect(find.byKey(LibraryScreen.searchFieldKey), findsNothing);
+    await openAddPanel(tester);
     expect(find.text('From a file'), findsOneWidget);
   });
 
-  group('adaptive grid / list', () {
-    testWidgets('compact: two-column grid', (tester) async {
-      await pump(tester, size: const Size(420, 900));
-      expect(find.byKey(LibraryScreen.gridKey), findsOneWidget);
-      final grid = tester.widget<GridView>(find.byKey(LibraryScreen.gridKey));
-      final delegate =
-          grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
-      expect(delegate.crossAxisCount, 2);
-    });
+  testWidgets('sort menu and filter segments', (tester) async {
+    await pump(tester);
+    await tester.tap(find.byKey(const ValueKey<String>('library-sort')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Title A–Z').last);
+    await tester.pumpAndSettle();
+    final c = ProviderScope.containerOf(
+      tester.element(find.byType(LibraryScreen)),
+    );
+    expect(c.read(libraryViewProvider).sort, PaperSort.title);
 
-    testWidgets('medium: three columns', (tester) async {
-      await pump(tester, size: const Size(700, 900));
-      final grid = tester.widget<GridView>(find.byKey(LibraryScreen.gridKey));
-      final delegate =
-          grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
-      expect(delegate.crossAxisCount, 3);
-    });
+    await tester.tap(find.byKey(const ValueKey<String>('filter-downloaded')));
+    await tester.pumpAndSettle();
+    expect(title('Deep Residual Learning'), findsNothing);
+    expect(title('Attention Is All You Need'), findsOneWidget);
+  });
 
-    testWidgets('large on touch: grid', (tester) async {
-      await pump(tester, size: const Size(1300, 900));
-      expect(find.byKey(LibraryScreen.gridKey), findsOneWidget);
-      expect(find.byKey(LibraryScreen.listKey), findsNothing);
-    });
-
-    testWidgets('large with a pointer: list by default, toggle back to grid', (
-      tester,
-    ) async {
-      await pump(tester, size: const Size(1300, 900));
-      expect(find.byKey(LibraryScreen.listKey), findsOneWidget);
-      await tester.tap(find.byTooltip('Grid view'));
-      await tester.pumpAndSettle();
-      expect(find.byKey(LibraryScreen.gridKey), findsOneWidget);
-    }, variant: TargetPlatformVariant.only(TargetPlatform.windows));
+  testWidgets('narrow windows: the table scrolls sideways in its card', (
+    tester,
+  ) async {
+    await pump(tester, size: const Size(420, 900));
+    expect(find.byKey(LibraryScreen.tableKey), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(LibraryScreen.tableKey),
+        matching: find.byType(SingleChildScrollView),
+      ),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
   });
 }

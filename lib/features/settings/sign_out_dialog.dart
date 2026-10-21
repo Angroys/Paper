@@ -9,7 +9,8 @@ import '../../data/data_providers.dart';
 import '../../domain/domain.dart';
 import '../../l10n/app_localizations.dart';
 import '../../sync/sync_providers.dart';
-import '../../theme/theme_x.dart';
+import '../../theme/paper_tokens.dart';
+import '../../ui/ui.dart';
 
 /// What the user chose in [SignOutDialog].
 enum SignOutChoice { cancel, syncFirst, signOut }
@@ -31,7 +32,7 @@ Future<bool> confirmAndSignOut(BuildContext context, WidgetRef ref) async {
   }
   if (!context.mounted) return false;
   final online = ref.read(isOnlineProvider).value ?? true;
-  final decision = await showDialog<SignOutDecision>(
+  final decision = await showPaperDialog<SignOutDecision>(
     context: context,
     builder: (context) => SignOutDialog(
       pendingCount: pending,
@@ -86,7 +87,7 @@ class _SignOutDialogState extends State<SignOutDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final c = context.paper;
+    final t = Theme.of(context).textTheme;
     final pending = widget.pendingCount > 0;
     final String body;
     if (!pending) {
@@ -96,53 +97,50 @@ class _SignOutDialogState extends State<SignOutDialog> {
           ? l10n.signOutPendingBody(widget.pendingCount)
           : l10n.signOutPendingKeptBody(widget.pendingCount);
     }
-    return AlertDialog(
-      title: Text(
-        pending ? l10n.signOutPendingTitle : l10n.signOutConfirmTitle,
-      ),
+    return PaperDialog(
+      title: pending ? l10n.signOutPendingTitle : l10n.signOutConfirmTitle,
+      // Body `mt-2`; the optional local-only paragraph and the checkbox
+      // row follow in the content slot.
+      body: body,
       content: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Text(body, key: const ValueKey<String>('signOut.body')),
           if (_remove && widget.localOnlyNotes > 0) ...<Widget>[
-            const SizedBox(height: 12),
             Text(
               l10n.signOutLocalOnlyBody(widget.localOnlyNotes),
               key: const ValueKey<String>('signOut.localOnly'),
+              style: t.bodyMedium?.copyWith(color: PaperWeb.gray400),
             ),
+            const SizedBox(height: PaperSpacing.tw4),
           ],
-          const SizedBox(height: 8),
-          CheckboxListTile(
+          PaperCheckboxRow(
             key: SignOutDialog.removeLocalKey,
-            contentPadding: EdgeInsets.zero,
-            controlAffinity: ListTileControlAffinity.leading,
-            dense: true,
             value: _remove,
-            onChanged: (v) => setState(() => _remove = v ?? false),
-            title: Text(l10n.signOutRemoveLocal),
+            label: l10n.signOutRemoveLocal,
+            onChanged: (v) => setState(() => _remove = v),
           ),
         ],
       ),
       actions: <Widget>[
-        TextButton(
+        PaperButton.secondary(
+          label: l10n.commonCancel,
           autofocus: true,
+          focusGap: PaperWeb.gray900,
           onPressed: () => _pop(SignOutChoice.cancel),
-          child: Text(l10n.commonCancel),
         ),
         if (pending && widget.online)
-          FilledButton(
+          PaperButton.secondary(
+            label: l10n.signOutSyncFirst,
+            focusGap: PaperWeb.gray900,
             onPressed: () => _pop(SignOutChoice.syncFirst),
-            child: Text(l10n.signOutSyncFirst),
           ),
-        OutlinedButton(
+        PaperButton.destructive(
           key: const ValueKey<String>('signOut.confirm'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: c.error,
-            side: BorderSide(color: c.errorBorder),
-          ),
+          label: pending ? l10n.signOutAnyway : l10n.settingsSignOut,
+          size: PaperButtonSize.md,
+          focusGap: PaperWeb.gray900,
           onPressed: () => _pop(SignOutChoice.signOut),
-          child: Text(pending ? l10n.signOutAnyway : l10n.settingsSignOut),
         ),
       ],
     );

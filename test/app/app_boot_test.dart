@@ -35,11 +35,11 @@ void main() {
 
     await tester.tap(find.text('Settings').first);
     await tester.pumpAndSettle();
-    // Master–detail on large windows: open the Appearance section.
-    await tester.tap(
-      find.byKey(const ValueKey<String>('settings-nav-appearance')),
+    // One column of section cards (no master–detail).
+    expect(
+      find.byKey(const ValueKey<String>('settings-section-appearance')),
+      findsOneWidget,
     );
-    await tester.pumpAndSettle();
     // Dark-only: no theme selector, only Reduce motion.
     expect(find.text('Theme'), findsNothing);
     expect(find.text('Reduce motion'), findsOneWidget);

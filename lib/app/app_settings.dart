@@ -9,10 +9,9 @@ final sharedPreferencesProvider = Provider<SharedPreferences?>((ref) => null);
 
 /// Preference keys. Never rename: they are persisted.
 abstract final class PrefKeys {
-  /// Legacy: the theme toggle was removed (web parity is dark-only). The
-  /// key may still hold "system"/"light"/"dark" on upgraded installs; it is
-  /// never read or written any more, so old values are harmless.
-  static const String themeMode = 'settings.themeMode';
+  // Retired: 'settings.themeMode' (the theme toggle was removed; web
+  // parity is dark-only). Upgraded installs may still hold it; it is never
+  // read or written, so don't reuse that key.
   static const String reduceMotion = 'settings.reduceMotion';
   static const String singleKeyShortcuts = 'settings.reader.singleKeyShortcuts';
   static const String panelStyle = 'settings.reader.panelStyle';
