@@ -471,7 +471,7 @@ The disclosure panels ("Add a paper", "Read papers") have **no** open animation:
 | gray-500 `#737373` on `#0a0a0a` / `#171717` | 4.18 / 3.78 | **no** for body text (web parity: chevrons, rare meta) |
 | accent `#818cf8` on `#0a0a0a` / `#171717` | 6.64 / 6.01 | yes |
 | indigo-950 on accent / accent-hover | 5.36 / 8.02 | yes |
-| **white on accent** (CitationPopover "Add to library", FigureHighlightsPanel save, featured-card overlay) | 2.98 | **no**, a web bug (`text-white` without `dark:text-indigo-950`); parity kept, flagged |
+| indigo-950 on accent in the small accent buttons (CitationPopover "Add to library", FigureHighlightsPanel save: `text-white … dark:text-indigo-950`) | 5.36 | yes (the light `text-white` is dead; white only paints on thumbnails, over the dark gradient or `bg-gray-950/70`) |
 | accent-ink on accent-soft | 10.72 | yes |
 | red-400 on `#0a0a0a` / `#171717`; red-300 on red-950 | 7.16 / 6.48; 8.51 | yes |
 | green-400 / amber-400 on `#171717` | 10.29 / 10.74 | yes |
@@ -547,7 +547,7 @@ Keep these as `Text`, not `Icon`, so the glyph shapes match.
 - **Settings "switch".** The Beta toggle is a native 20×20 `<input type="checkbox" role="switch">`, not a track-and-thumb switch. `text-accent` has no effect on a native checkbox. Map the app's `Switch` usages on restyled screens to a 20px rounded-4 checkbox, accent when checked.
 - **Sticky dashboard sidebar overlaps the full-width glossary section** when scrolled at `xl` (visible in earlier capture runs). This is a web layout bug; do not reproduce it.
 - **RPR production build bug, out of scope.** `next build` minifies an author-year citation regex into an invalid unicode escape (`\p{Lu}|…)\\\b` with the `u` flag). As a result, `/library/[paperId]` SSR throws `SyntaxError: Invalid regular expression` and the page falls back to client rendering, with **no citation hotspots**. That is why no citation popover could be captured. If it happens on the live site too, it needs an RPR fix.
-- The `ExplanationSidebar` close "×" button tone, the `CitationPopover` "Add to library" button (`text-white` on accent, 2.98:1) and `FigureHighlightsPanel` save are the only places the web paints white text on the dark accent.
+- No in-scope button paints white text on the dark accent. Every `bg-accent` button carries `dark:text-indigo-950` (#1E1B4B, 5.36:1), including CitationPopover "Add to library" and FigureHighlightsPanel save. `text-white` is live only on thumbnails: the FeaturedPaperCard title and the overlay "Remove" button.
 
 ## 15. Token changes (old → new)
 
