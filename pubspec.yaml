@@ -45,7 +45,6 @@ dependencies:
   go_router: ^18.1.0
   http: ^1.6.0
   intl: ^0.20.3
-  material_symbols_icons: ^4.2960.0
   meta: ^1.19.0
   path: ^1.9.1
   path_provider: ^2.1.6
@@ -83,7 +82,6 @@ flutter:
   assets:
     - assets/fonts/OFL.txt
     - assets/brand/splash/
-    - assets/brand/icons/
     - assets/icons/
     - assets/icons/app/
 

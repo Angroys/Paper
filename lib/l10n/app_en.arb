@@ -659,10 +659,6 @@
       }
     }
   },
-  "importCancel": "Cancel",
-  "@importCancel": {
-    "description": "ImportProgressTile action. Max 18 chars."
-  },
   "importRetry": "Try again",
   "@importRetry": {
     "description": "ImportProgressTile action. Max 18 chars."
@@ -1209,10 +1205,6 @@
   },
   "readerFitWidth": "Fit width",
   "@readerFitWidth": {
-    "description": "Zoom menu item. Max 18 chars."
-  },
-  "readerFitPage": "Fit page",
-  "@readerFitPage": {
     "description": "Zoom menu item. Max 18 chars."
   },
   "readerFind": "Find in paper",
@@ -2255,10 +2247,6 @@
   },
   "commonDismiss": "Dismiss",
   "@commonDismiss": {
-    "description": "Generic button / action label. Max 18 chars."
-  },
-  "commonOpen": "Open",
-  "@commonOpen": {
     "description": "Generic button / action label. Max 18 chars."
   },
   "commonRemove": "Remove",
