@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/build_flags.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../theme/paper_tokens.dart';
 import '../../../theme/theme_x.dart';
+import '../../../ui/ui.dart';
 import '../../sync/sync_badge.dart';
 import '../reader_controller.dart';
 
@@ -18,11 +18,13 @@ String readerToolLabel(AppLocalizations l10n, ReaderTool tool) =>
       ReaderTool.figure => l10n.readerToolFigure,
     };
 
-IconData readerToolIcon(ReaderTool tool) => switch (tool) {
-  ReaderTool.select => Symbols.arrow_selector_tool_rounded,
-  ReaderTool.highlight => Symbols.ink_highlighter_rounded,
-  ReaderTool.pen => Symbols.stylus_rounded,
-  ReaderTool.figure => Symbols.crop_free_rounded,
+/// Tool glyphs (components.md §19): Lucide mouse-pointer-2 / the web
+/// highlighter / Lucide pen-line / Lucide scan.
+PaperIcons readerToolIcon(ReaderTool tool) => switch (tool) {
+  ReaderTool.select => PaperIcons.mousePointer,
+  ReaderTool.highlight => PaperIcons.highlighter,
+  ReaderTool.pen => PaperIcons.penLine,
+  ReaderTool.figure => PaperIcons.scan,
 };
 
 String _toolShortcut(ReaderTool tool) => switch (tool) {
@@ -32,247 +34,100 @@ String _toolShortcut(ReaderTool tool) => switch (tool) {
   ReaderTool.figure => 'F',
 };
 
-/// `ToolModeSegmented`: Select / Highlight / Pen / Figure as a radio group.
+/// Header strip content height (`py-3` around 28): 52, + 1px border.
+const double kReaderHeaderHeight = 52;
+
+/// `ToolModeSegmented`: Select / Highlight / Pen / Figure as a
+/// `PaperSegmented.sm` with four 24×24 icon segments (28 tall, tooltips
+/// only, selected accent-soft / accent-ink).
 class ToolModeSegmented extends ConsumerWidget {
-  const ToolModeSegmented({
-    super.key,
-    required this.paperId,
-    this.showLabels = false,
-    this.dense = false,
-  });
+  const ToolModeSegmented({super.key, required this.paperId});
 
   final String paperId;
-  final bool showLabels;
-  final bool dense;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final c = context.paper;
     final provider = readerControllerProvider(paperId);
     final tool = ref.watch(provider.select((s) => s.tool));
     final hasText = ref.watch(provider.select((s) => s.hasTextLayer));
-    final height = dense ? 32.0 : 40.0;
     return Semantics(
       container: true,
       explicitChildNodes: true,
-      child: Container(
-        height: height,
-        padding: const EdgeInsets.all(2),
-        decoration: BoxDecoration(
-          color: c.surfaceVariant,
-          borderRadius: PaperRadii.borderLg,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            for (final t in ReaderTool.values)
-              _Segment(
-                key: ValueKey<String>('tool-${t.name}'),
-                icon: readerToolIcon(t),
-                label: readerToolLabel(l10n, t),
-                tooltip: hasText || t != ReaderTool.highlight
-                    ? '${readerToolLabel(l10n, t)} (${_toolShortcut(t)})'
-                    : l10n.readerNoTextLayer,
-                selected: t == tool,
-                showLabel: showLabels,
-                enabled: hasText || t != ReaderTool.highlight,
-                width: dense ? 36 : 44,
-                onTap: () => ref.read(provider.notifier).setTool(t),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _Segment extends StatelessWidget {
-  const _Segment({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.tooltip,
-    required this.selected,
-    required this.showLabel,
-    required this.enabled,
-    required this.width,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final String tooltip;
-  final bool selected;
-  final bool showLabel;
-  final bool enabled;
-  final double width;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.paper;
-    final content = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Icon(
-          icon,
-          size: PaperIconSize.md,
-          color: !enabled
-              ? c.textDisabled
-              : (selected ? c.primary : c.textSecondary),
-        ),
-        if (showLabel) ...<Widget>[
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-              color: enabled ? c.textPrimary : c.textDisabled,
+      child: PaperSegmented<ReaderTool>(
+        size: PaperSegmentedSize.sm,
+        selected: tool,
+        onChanged: (t) => ref.read(provider.notifier).setTool(t),
+        segments: <PaperSegment<ReaderTool>>[
+          for (final t in ReaderTool.values)
+            PaperSegment<ReaderTool>(
+              key: ValueKey<String>('tool-${t.name}'),
+              value: t,
+              icon: PaperIcon(readerToolIcon(t)),
+              enabled: hasText || t != ReaderTool.highlight,
+              tooltip: hasText || t != ReaderTool.highlight
+                  ? '${readerToolLabel(l10n, t)} (${_toolShortcut(t)})'
+                  : l10n.readerNoTextLayer,
             ),
-          ),
         ],
-      ],
-    );
-    return Semantics(
-      inMutuallyExclusiveGroup: true,
-      checked: selected,
-      button: true,
-      enabled: enabled,
-      label: label,
-      excludeSemantics: true,
-      child: Tooltip(
-        message: tooltip,
-        child: InkWell(
-          onTap: enabled ? onTap : null,
-          borderRadius: PaperRadii.borderMd,
-          child: Container(
-            constraints: BoxConstraints(minWidth: width),
-            padding: EdgeInsets.symmetric(horizontal: showLabel ? 10 : 0),
-            alignment: Alignment.center,
-            decoration: selected
-                ? BoxDecoration(
-                    color: c.surface,
-                    borderRadius: PaperRadii.borderMd,
-                    border: Border.all(color: c.border),
-                  )
-                : null,
-            child: content,
-          ),
-        ),
       ),
     );
   }
 }
 
-/// `PageNavigator`: ‹ · "12 / 34" (opens PageJumpDialog) · ›.
+/// `PageNavigator`: prev 24 · "3 / 12" (`PaperButton.ghost xxs`, opens the
+/// go-to-page dialog) · next 24 (mirrored), gap 2.
 class PageNavigator extends ConsumerWidget {
   const PageNavigator({
     super.key,
     required this.paperId,
     required this.onGoToPage,
-    this.pill = false,
   });
 
   final String paperId;
   final VoidCallback onGoToPage;
 
-  /// Floating pill form (compact / medium): no chevrons, inverse surface.
-  final bool pill;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final c = context.paper;
     final provider = readerControllerProvider(paperId);
     final page = ref.watch(provider.select((s) => s.currentPage));
     final total = ref.watch(provider.select((s) => s.pageCount));
     final ctrl = ref.read(provider.notifier);
     final label = '$page / ${total < 1 ? '–' : total}';
-    final semantics = l10n.readerPageIndicator(page, total);
-    if (pill) {
-      return Semantics(
-        button: true,
-        label: semantics,
-        excludeSemantics: true,
-        child: Material(
-          color: c.inverseSurface,
-          shape: const StadiumBorder(),
-          child: InkWell(
-            customBorder: const StadiumBorder(),
-            onTap: onGoToPage,
-            child: SizedBox(
-              height: 40,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: PaperSpacing.lg,
-                ),
-                child: Center(
-                  child: Text(
-                    label,
-                    style: PaperTypography.pageIndicator(c)
-                        .copyWith(color: c.onInverseSurface),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-    }
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        IconButton(
+        PaperIconButton(
+          size: PaperIconButtonSize.s24,
           tooltip: l10n.readerPrevPage,
+          icon: const PaperIcon(PaperIcons.navBack),
           onPressed: page > 1 ? ctrl.previousPage : null,
-          icon: const Icon(
-            Symbols.chevron_left_rounded,
-            size: PaperIconSize.md,
-          ),
         ),
-        Semantics(
-          button: true,
-          label: semantics,
-          excludeSemantics: true,
-          child: Tooltip(
-            message: l10n.readerGoToPage,
-            child: InkWell(
-              onTap: onGoToPage,
-              borderRadius: PaperRadii.borderMd,
-              child: Container(
-                constraints: const BoxConstraints(minWidth: 72),
-                height: 28,
-                alignment: Alignment.center,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: PaperSpacing.sm,
-                ),
-                decoration: BoxDecoration(
-                  color: c.surfaceVariant,
-                  borderRadius: PaperRadii.borderMd,
-                ),
-                child: Text(label, style: PaperTypography.pageIndicator(c)),
-              ),
-            ),
-          ),
+        const SizedBox(width: PaperSpacing.tw0_5),
+        PaperButton.ghost(
+          label: label,
+          size: PaperButtonSize.xxs,
+          tooltip: l10n.readerGoToPage,
+          semanticLabel: l10n.readerPageIndicator(page, total),
+          onPressed: onGoToPage,
         ),
-        IconButton(
+        const SizedBox(width: PaperSpacing.tw0_5),
+        PaperIconButton(
+          size: PaperIconButtonSize.s24,
           tooltip: l10n.readerNextPage,
+          icon: const PaperIcon(PaperIcons.navBack, mirror: true),
           onPressed: total > 0 && page < total ? ctrl.nextPage : null,
-          icon: const Icon(
-            Symbols.chevron_right_rounded,
-            size: PaperIconSize.md,
-          ),
         ),
       ],
     );
   }
 }
 
-enum _ZoomMenu { fitWidth, fitPage, step }
-
-/// `ZoomControl`: − · "125%" (fit menu + steps) · +.
+/// The web zoom pill (components.md §11.2): 36 tall, gray-900, 1px
+/// gray-800, radius 6, `px-2 py-1`, gap 6, shadow-sm; `−` / `+` 26
+/// bordered buttons around the `pageIndicator` percentage (min 48; tap =
+/// fit width).
 class ZoomControl extends ConsumerWidget {
   const ZoomControl({super.key, required this.paperId});
 
@@ -286,84 +141,94 @@ class ZoomControl extends ConsumerWidget {
     final zoom = ref.watch(provider.select((s) => s.zoom));
     final ctrl = ref.read(provider.notifier);
     final percent = (zoom * 100).round();
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        IconButton(
-          tooltip: l10n.readerZoomOut,
-          onPressed: zoom > kMinZoom + 1e-3 ? ctrl.zoomOut : null,
-          icon: const Icon(Symbols.remove_rounded, size: PaperIconSize.md),
-        ),
-        Semantics(
-          liveRegion: true,
-          label: l10n.readerZoomLevel(percent),
-          excludeSemantics: true,
-          child: PopupMenuButton<(_ZoomMenu, double)>(
-            tooltip: l10n.readerFitWidth,
-            onSelected: (v) => switch (v.$1) {
-              _ZoomMenu.fitWidth => ctrl.fitWidth(),
-              _ZoomMenu.fitPage => ctrl.fitPage(),
-              _ZoomMenu.step => ctrl.setZoom(v.$2),
-            },
-            itemBuilder: (context) => <PopupMenuEntry<(_ZoomMenu, double)>>[
-              PopupMenuItem(
-                value: (_ZoomMenu.fitWidth, 0),
-                child: Text(l10n.readerFitWidth),
-              ),
-              PopupMenuItem(
-                value: (_ZoomMenu.fitPage, 0),
-                child: Text(l10n.readerFitPage),
-              ),
-              const PopupMenuDivider(),
-              for (final s in kZoomSteps)
-                PopupMenuItem(
-                  value: (_ZoomMenu.step, s),
-                  child: Text(l10n.readerZoomLevel((s * 100).round())),
-                ),
-            ],
-            child: SizedBox(
-              width: 60,
-              height: 32,
-              child: Center(
-                child: Text(
-                  l10n.readerZoomLevel(percent),
-                  style: PaperTypography.pageIndicator(c)
-                      .copyWith(fontSize: 13),
+    return ReaderPill(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          PaperIconButton(
+            size: PaperIconButtonSize.zoom26,
+            tooltip: l10n.readerZoomOut,
+            focusGap: PaperWeb.gray900,
+            icon: const Text('−'),
+            onPressed: zoom > kMinZoom + 1e-3 ? ctrl.zoomOut : null,
+          ),
+          const SizedBox(width: PaperSpacing.tw1_5),
+          Semantics(
+            liveRegion: true,
+            button: true,
+            label: l10n.readerZoomLevel(percent),
+            excludeSemantics: true,
+            child: Tooltip(
+              message: l10n.readerFitWidth,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: ctrl.fitWidth,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minWidth: 48),
+                  child: Text(
+                    l10n.readerZoomLevel(percent),
+                    textAlign: TextAlign.center,
+                    style: PaperTypography.pageIndicator(c),
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-        IconButton(
-          tooltip: l10n.readerZoomIn,
-          onPressed: zoom < kMaxZoom - 1e-3 ? ctrl.zoomIn : null,
-          icon: const Icon(Symbols.add_rounded, size: PaperIconSize.md),
-        ),
-      ],
+          const SizedBox(width: PaperSpacing.tw1_5),
+          PaperIconButton(
+            size: PaperIconButtonSize.zoom26,
+            tooltip: l10n.readerZoomIn,
+            focusGap: PaperWeb.gray900,
+            icon: const Text('+'),
+            onPressed: zoom < kMaxZoom - 1e-3 ? ctrl.zoomIn : null,
+          ),
+        ],
+      ),
     );
   }
 }
 
-/// `ReaderToolbar` per window class (components.md). Built once per state
-/// change of the values it shows; it lives in its own RepaintBoundary (B5)
-/// set up by the screen.
+/// The toolbar-pill box shared by the zoom pill and the tool dock: 36 tall,
+/// gray-900, 1px gray-800, radius 6, `px-2 py-1`, shadow-sm.
+class ReaderPill extends StatelessWidget {
+  const ReaderPill({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    height: 36,
+    padding: const EdgeInsets.symmetric(
+      horizontal: PaperSpacing.tw2,
+      vertical: PaperSpacing.tw1,
+    ),
+    decoration: BoxDecoration(
+      color: PaperWeb.gray900,
+      border: Border.all(color: PaperWeb.gray800),
+      borderRadius: PaperRadii.borderMd,
+      boxShadow: PaperElevation.shadowSm,
+    ),
+    child: child,
+  );
+}
+
+/// `ReaderHeader` (components.md §11.1, reader.md §2): the 52 + 1 strip.
+/// Fill gray-950 bleeds under the top / side cutouts; content is inset.
+/// ≥ 640: back · title · tools · page navigator · find · sync · ···.
+/// < 640: back · title · find · sync · ··· (tools in the `ToolDock`, the
+/// page navigator in the menu). While find is open the [FindBar] replaces
+/// the tool / page / find controls.
 class ReaderToolbar extends ConsumerWidget {
   const ReaderToolbar({
     super.key,
     required this.paperId,
-    required this.windowClass,
-    required this.height,
     required this.onBack,
     required this.onGoToPage,
-    this.pointer = false,
   });
 
   final String paperId;
-  final PaperWindowClass windowClass;
-  final double height;
   final VoidCallback onBack;
   final VoidCallback onGoToPage;
-  final bool pointer;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -371,113 +236,104 @@ class ReaderToolbar extends ConsumerWidget {
     final c = context.paper;
     final provider = readerControllerProvider(paperId);
     final title = ref.watch(provider.select((s) => s.paper?.title)) ?? '';
-    final panelOpen = ref.watch(provider.select((s) => s.panelOpen));
+    final searchOpen = ref.watch(provider.select((s) => s.search.open));
     final ctrl = ref.read(provider.notifier);
-    final compact = windowClass == PaperWindowClass.compact;
-    final inline = windowClass.index >= PaperWindowClass.expanded.index;
-    final dark = Theme.of(context).brightness == Brightness.dark;
+    final wide = WebBreakpoint.of(context).isSmUp;
+    final pad = MediaQuery.viewPaddingOf(context);
 
-    return Material(
-      color: dark ? c.background : c.surface,
-      child: Container(
-        height: height,
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: c.border)),
+    final controls = <Widget>[
+      if (searchOpen)
+        Flexible(flex: 3, child: FindBar(paperId: paperId))
+      else ...<Widget>[
+        if (wide) ...<Widget>[
+          ToolModeSegmented(paperId: paperId),
+          PageNavigator(paperId: paperId, onGoToPage: onGoToPage),
+        ],
+        PaperIconButton(
+          key: const ValueKey<String>('reader-find'),
+          size: PaperIconButtonSize.s28,
+          tooltip: l10n.readerFind,
+          icon: const PaperIcon(PaperIcons.search),
+          onPressed: ctrl.openSearch,
         ),
-        padding: const EdgeInsets.symmetric(horizontal: PaperSpacing.xs),
-        child: Row(
-          children: <Widget>[
-            IconButton(
-              tooltip: l10n.readerBack,
-              onPressed: onBack,
-              icon: const Icon(
-                Symbols.arrow_back_rounded,
-                size: PaperIconSize.md,
-              ),
-            ),
-            const SizedBox(width: PaperSpacing.xs),
-            Expanded(
-              child: Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleMedium
-                    ?.copyWith(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-            ),
-            if (!compact) ...<Widget>[
-              const SizedBox(width: PaperSpacing.lg),
-              ToolModeSegmented(
-                paperId: paperId,
-                dense: pointer && inline,
-                showLabels: windowClass == PaperWindowClass.extraLarge,
-              ),
-              const SizedBox(width: PaperSpacing.lg),
-            ],
-            if (inline) ...<Widget>[
-              PageNavigator(paperId: paperId, onGoToPage: onGoToPage),
-              const SizedBox(width: PaperSpacing.sm),
-              ZoomControl(paperId: paperId),
-              IconButton(
-                tooltip: l10n.readerFind,
-                onPressed: ctrl.openSearch,
-                icon: const Icon(
-                  Symbols.search_rounded,
-                  size: PaperIconSize.md,
-                ),
-              ),
-            ],
-            if (!compact)
-              IconButton(
-                tooltip: l10n.readerTogglePanel,
-                isSelected: panelOpen,
-                onPressed: ctrl.togglePanel,
-                icon: Icon(
-                  panelOpen
-                      ? Symbols.right_panel_close_rounded
-                      : Symbols.right_panel_open_rounded,
-                  size: PaperIconSize.md,
-                ),
-              ),
-            // Sync status in the reader chrome (sync-status.md); none in
-            // offline-only builds.
-            if (!ref.watch(offlineOnlyProvider))
-              SyncBadge(
-                form: pointer && windowClass.usesSidebar
-                    ? SyncBadgeForm.short
-                    : SyncBadgeForm.icon,
-              ),
-            PopupMenuButton<int>(
-              tooltip: l10n.readerMore,
-              icon: const Icon(
-                Symbols.more_vert_rounded,
-                size: PaperIconSize.md,
-              ),
-              onSelected: (v) => switch (v) {
-                0 => ctrl.openSearch(),
-                1 => ctrl.fitWidth(),
-                2 => ctrl.zoomIn(),
-                3 => ctrl.zoomOut(),
-                _ => null,
-              },
-              itemBuilder: (context) => <PopupMenuEntry<int>>[
-                if (!inline) ...<PopupMenuEntry<int>>[
-                  PopupMenuItem(value: 0, child: Text(l10n.readerFind)),
-                  PopupMenuItem(value: 1, child: Text(l10n.readerFitWidth)),
-                  PopupMenuItem(value: 2, child: Text(l10n.readerZoomIn)),
-                  PopupMenuItem(value: 3, child: Text(l10n.readerZoomOut)),
-                ],
-                PopupMenuItem(value: 9, child: Text(l10n.readerPaperInfo)),
-              ],
-            ),
+      ],
+      // Sync status (sync-status.md); none in offline-only builds.
+      if (!ref.watch(offlineOnlyProvider))
+        const SyncBadge(iconSize: PaperIconButtonSize.s28),
+      MenuAnchor(
+        alignmentOffset: const Offset(0, 4),
+        menuChildren: <Widget>[
+          if (!wide) ...<Widget>[
+            PaperMenuItem(label: l10n.readerGoToPage, onPressed: onGoToPage),
+            PaperMenuItem(label: l10n.readerFind, onPressed: ctrl.openSearch),
           ],
+          PaperMenuItem(label: l10n.readerFitWidth, onPressed: ctrl.fitWidth),
+          PaperMenuItem(label: l10n.readerPaperInfo, onPressed: () {}),
+        ],
+        builder: (context, menu, _) => PaperButton.ghost(
+          key: const ValueKey<String>('reader-more'),
+          label: '···',
+          size: PaperButtonSize.xs,
+          tooltip: l10n.readerMore,
+          open: menu.isOpen,
+          onPressed: () => menu.isOpen ? menu.close() : menu.open(),
+        ),
+      ),
+    ];
+
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: PaperWeb.gray950,
+        border: Border(bottom: BorderSide(color: PaperWeb.gray800)),
+      ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          PaperSpacing.tw4 + pad.left,
+          pad.top,
+          PaperSpacing.tw4 + pad.right,
+          1, // the 1px bottom border sits below the 52 content
+        ),
+        child: SizedBox(
+          height: kReaderHeaderHeight,
+          child: Row(
+            children: <Widget>[
+              // `-m-1`: the glyph box starts at x = 12.
+              Transform.translate(
+                offset: const Offset(-4, 0),
+                child: PaperIconButton(
+                  size: PaperIconButtonSize.s28,
+                  tooltip: l10n.readerBack,
+                  icon: const PaperIcon(PaperIcons.readerBack, size: 20),
+                  onPressed: onBack,
+                ),
+              ),
+              const SizedBox(width: PaperSpacing.tw2 - 4),
+              Expanded(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minWidth: 120),
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: PaperTypography.sectionTitle(c),
+                  ),
+                ),
+              ),
+              for (final w in controls) ...<Widget>[
+                const SizedBox(width: PaperSpacing.tw2),
+                w,
+              ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// `ToolDock` (compact): floating pill with the 4 tools, eraser and panel.
+/// `ToolDock` (< 640, components.md §11.6): a zoom-pill box with 28 icon
+/// buttons for the four tools and the eraser (selected accent-soft /
+/// accent-ink), bottom-centred in the pane.
 class ToolDock extends ConsumerWidget {
   const ToolDock({super.key, required this.paperId});
 
@@ -486,89 +342,50 @@ class ToolDock extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final c = context.paper;
     final provider = readerControllerProvider(paperId);
     final tool = ref.watch(provider.select((s) => s.tool));
     final eraser = ref.watch(provider.select((s) => s.eraser));
     final ctrl = ref.read(provider.notifier);
     Widget button(
-      IconData icon,
+      PaperIcons icon,
       String label,
       bool selected,
       VoidCallback onTap,
-    ) => Semantics(
-      button: true,
+    ) => PaperIconButton(
+      size: PaperIconButtonSize.s28,
+      tooltip: label,
       selected: selected,
-      label: label,
-      excludeSemantics: true,
-      child: Tooltip(
-        message: label,
-        child: InkResponse(
-          onTap: onTap,
-          radius: 24,
-          child: SizedBox(
-            width: 48,
-            height: 48,
-            child: Center(
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: selected
-                    ? BoxDecoration(
-                        color: c.primarySoft,
-                        shape: BoxShape.circle,
-                      )
-                    : null,
-                child: Icon(
-                  icon,
-                  size: PaperIconSize.lg,
-                  color: selected ? c.onPrimarySoft : c.textSecondary,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
+      icon: PaperIcon(icon),
+      onPressed: onTap,
     );
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: c.surfaceRaised,
-        borderRadius: PaperRadii.borderFull,
-        border: Border.all(color: c.border),
-        boxShadow: PaperElevation.shadow2(Theme.of(context).brightness),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: PaperSpacing.xs),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            for (final t in ReaderTool.values)
-              button(
-                readerToolIcon(t),
-                readerToolLabel(l10n, t),
-                t == tool && !eraser,
-                () => ctrl.setTool(t),
-              ),
+    return ReaderPill(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          for (final t in ReaderTool.values) ...<Widget>[
             button(
-              Symbols.ink_eraser_rounded,
-              l10n.readerToolEraser,
-              eraser,
-              ctrl.toggleEraser,
+              readerToolIcon(t),
+              readerToolLabel(l10n, t),
+              t == tool && !eraser,
+              () => ctrl.setTool(t),
             ),
-            button(
-              Symbols.right_panel_open_rounded,
-              l10n.readerTogglePanel,
-              false,
-              ctrl.togglePanel,
-            ),
+            const SizedBox(width: PaperSpacing.tw1_5),
           ],
-        ),
+          button(
+            PaperIcons.eraser,
+            l10n.readerToolEraser,
+            eraser,
+            ctrl.toggleEraser,
+          ),
+        ],
       ),
     );
   }
 }
 
-/// `FindBar`: field · count · ↑ ↓ · match case · close.
+/// `FindBar` (components.md §11.5), in the header strip: `PaperTextField.xs`
+/// 256×26 · match count · prev / next 24 · `Aa` toggle · `×` 24. The strip
+/// height does not change.
 class FindBar extends ConsumerStatefulWidget {
   const FindBar({super.key, required this.paperId});
 
@@ -609,94 +426,91 @@ class _FindBarState extends ConsumerState<FindBar> {
     final search = ref.watch(provider.select((s) => s.search));
     final ctrl = ref.read(provider.notifier);
     final noResults = search.query.isNotEmpty && search.total == 0;
-    return Material(
-      color: c.surface,
-      child: Container(
-        height: 48,
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: c.border)),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: <Widget>[
+        Flexible(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 256),
+            child: CallbackShortcuts(
+              bindings: <ShortcutActivator, VoidCallback>{
+                const SingleActivator(LogicalKeyboardKey.enter):
+                    ctrl.searchNext,
+                const SingleActivator(LogicalKeyboardKey.enter, shift: true):
+                    ctrl.searchPrevious,
+              },
+              child: PaperTextField(
+                fieldKey: const ValueKey<String>('find-field'),
+                controller: _text,
+                focusNode: _focus,
+                size: PaperTextFieldSize.xs,
+                hintText: l10n.readerFind,
+                onChanged: ctrl.setSearchQuery,
+              ),
+            ),
+          ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: PaperSpacing.sm),
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              child: CallbackShortcuts(
-                bindings: <ShortcutActivator, VoidCallback>{
-                  const SingleActivator(LogicalKeyboardKey.enter):
-                      ctrl.searchNext,
-                  const SingleActivator(LogicalKeyboardKey.enter, shift: true):
-                      ctrl.searchPrevious,
-                },
-                child: TextField(
-                  key: const ValueKey<String>('find-field'),
-                  controller: _text,
-                  focusNode: _focus,
-                  onChanged: ctrl.setSearchQuery,
-                  decoration: InputDecoration(
-                    hintText: l10n.readerFind,
-                    isDense: true,
-                    prefixIcon: const Icon(
-                      Symbols.search_rounded,
-                      size: PaperIconSize.md,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: PaperSpacing.sm),
-            Semantics(
-              liveRegion: true,
-              child: Text(
-                noResults
-                    ? l10n.readerFindNoResults
-                    : (search.query.isEmpty
-                          ? ''
-                          : l10n.readerFindResultCount(
-                              search.current,
-                              search.total,
-                            )),
-                style: PaperTypography.pageIndicator(c)
-                    .copyWith(color: noResults ? c.error : c.textMuted),
-              ),
-            ),
-            IconButton(
-              tooltip: l10n.shortcutsPrevMatch,
-              onPressed: search.total > 0 ? ctrl.searchPrevious : null,
-              icon: const Icon(
-                Symbols.keyboard_arrow_up_rounded,
-                size: PaperIconSize.md,
-              ),
-            ),
-            IconButton(
-              tooltip: l10n.shortcutsNextMatch,
-              onPressed: search.total > 0 ? ctrl.searchNext : null,
-              icon: const Icon(
-                Symbols.keyboard_arrow_down_rounded,
-                size: PaperIconSize.md,
-              ),
-            ),
-            IconButton(
-              tooltip: l10n.readerFindMatchCase,
-              isSelected: search.matchCase,
-              onPressed: () => ctrl.setSearchMatchCase(!search.matchCase),
-              icon: const Icon(
-                Symbols.match_case_rounded,
-                size: PaperIconSize.md,
-              ),
-            ),
-            IconButton(
-              tooltip: l10n.commonClose,
-              onPressed: ctrl.closeSearch,
-              icon: const Icon(Symbols.close_rounded, size: PaperIconSize.md),
-            ),
-          ],
+        const SizedBox(width: PaperSpacing.tw2),
+        Semantics(
+          liveRegion: true,
+          child: Text(
+            noResults
+                ? l10n.readerFindNoResults
+                : (search.query.isEmpty
+                      ? ''
+                      : l10n.readerFindResultCount(
+                          search.current,
+                          search.total,
+                        )),
+            style: PaperTypography.pageIndicator(
+              c,
+            ).copyWith(color: noResults ? PaperWeb.red400 : PaperWeb.gray400),
+          ),
         ),
-      ),
+        const SizedBox(width: PaperSpacing.tw1),
+        PaperIconButton(
+          size: PaperIconButtonSize.s24,
+          tooltip: l10n.shortcutsPrevMatch,
+          icon: const PaperIcon(PaperIcons.chevronDown, quarterTurns: 2),
+          onPressed: search.total > 0 ? ctrl.searchPrevious : null,
+        ),
+        PaperIconButton(
+          size: PaperIconButtonSize.s24,
+          tooltip: l10n.shortcutsNextMatch,
+          icon: const PaperIcon(PaperIcons.chevronDown),
+          onPressed: search.total > 0 ? ctrl.searchNext : null,
+        ),
+        const SizedBox(width: PaperSpacing.tw1),
+        Tooltip(
+          message: l10n.readerFindMatchCase,
+          child: PaperSegmented<bool>(
+            size: PaperSegmentedSize.sm,
+            selected: search.matchCase,
+            onChanged: (_) => ctrl.setSearchMatchCase(!search.matchCase),
+            segments: <PaperSegment<bool>>[
+              PaperSegment<bool>(
+                key: const ValueKey<String>('find-match-case'),
+                value: true,
+                label: 'Aa',
+                tooltip: l10n.readerFindMatchCase,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: PaperSpacing.tw1),
+        PaperIconButton(
+          size: PaperIconButtonSize.s24,
+          tooltip: l10n.commonClose,
+          icon: const PaperCloseGlyph(),
+          onPressed: ctrl.closeSearch,
+        ),
+      ],
     );
   }
 }
 
-/// "Back to page N" return pill (motion #28).
+/// "↩ Back to page N" (components.md §11.4): 38 tall, radius full, gray-900
+/// + 1px gray-700, `px-4 py-2 sm 500 gray-100`, shadow-lg, hover gray-800.
 class ReturnPill extends ConsumerWidget {
   const ReturnPill({super.key, required this.paperId});
 
@@ -705,46 +519,68 @@ class ReturnPill extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final c = context.paper;
     final provider = readerControllerProvider(paperId);
     final page = ref.watch(provider.select((s) => s.returnPage));
     if (page == null) return const SizedBox.shrink();
-    return Material(
-      color: c.inverseSurface,
-      shape: const StadiumBorder(),
-      child: InkWell(
-        customBorder: const StadiumBorder(),
-        onTap: ref.read(provider.notifier).returnToPreviousPage,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: PaperSpacing.lg,
-            vertical: PaperSpacing.sm,
+    const style = TextStyle(
+      fontFamily: PaperTypography.sans,
+      fontFamilyFallback: PaperTypography.sansFallback,
+      fontSize: 14,
+      height: 20 / 14,
+      fontWeight: FontWeight.w500,
+      color: PaperWeb.gray100,
+    );
+    return PaperPressable(
+      onPressed: ref.read(provider.notifier).returnToPreviousPage,
+      semanticLabel: l10n.readerBackToPage(page),
+      excludeSemantics: true,
+      builder: (context, states) {
+        final active =
+            states.contains(WidgetState.hovered) ||
+            states.contains(WidgetState.pressed);
+        return PaperFocusRing(
+          show: states.contains(WidgetState.focused),
+          radius: PaperRadii.borderFull,
+          offset: 0,
+          child: PaperColorBox(
+            color: active ? PaperWeb.gray800 : PaperWeb.gray900,
+            borderColor: PaperWeb.gray700,
+            radius: PaperRadii.borderFull,
+            boxShadow: PaperElevation.shadowLg,
+            constraints: const BoxConstraints.tightFor(height: 38),
+            padding: const EdgeInsets.symmetric(horizontal: PaperSpacing.tw4),
+            alignment: Alignment.center,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                const Text('↩ ', style: style),
+                Text(l10n.readerBackToPage(page), style: style),
+              ],
+            ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Icon(
-                Symbols.undo_rounded,
-                size: PaperIconSize.sm,
-                color: c.onInverseSurface,
-              ),
-              const SizedBox(width: PaperSpacing.xs),
-              Text(
-                l10n.readerBackToPage(page),
-                style: TextStyle(
-                  color: c.onInverseSurface,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
 
-/// `PageJumpDialog`. Returns the chosen page or null.
+/// `ShowPanelButton` (reader.md §3.3): 36 bordered, `panel-show.svg` 20.
+class ShowPanelButton extends StatelessWidget {
+  const ShowPanelButton({super.key, required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => PaperIconButton(
+    key: const ValueKey<String>('reader-show-panel'),
+    size: PaperIconButtonSize.s36Bordered,
+    tooltip: AppLocalizations.of(context).readerTogglePanel,
+    icon: const PaperIcon(PaperIcons.panelShow, size: 20),
+    onPressed: onPressed,
+  );
+}
+
+/// `PageJumpDialog` (a `PaperDialog`). Returns the chosen page or null.
 Future<int?> showPageJumpDialog(
   BuildContext context, {
   required int current,
@@ -753,7 +589,7 @@ Future<int?> showPageJumpDialog(
   final l10n = AppLocalizations.of(context);
   final controller = TextEditingController(text: '$current');
   String? error;
-  return showDialog<int>(
+  return showPaperDialog<int>(
     context: context,
     builder: (context) => StatefulBuilder(
       builder: (context, setState) {
@@ -766,30 +602,30 @@ Future<int?> showPageJumpDialog(
           Navigator.of(context).pop(n);
         }
 
-        return AlertDialog(
-          title: Text(l10n.readerPageJumpTitle),
-          content: SizedBox(
-            width: 280,
-            child: TextField(
-              controller: controller,
-              autofocus: true,
-              keyboardType: TextInputType.number,
-              inputFormatters: <TextInputFormatter>[
-                FilteringTextInputFormatter.digitsOnly,
-              ],
-              decoration: InputDecoration(
-                labelText: l10n.readerPageJumpField,
-                errorText: error,
-              ),
-              onSubmitted: (_) => submit(),
-            ),
+        return PaperDialog(
+          title: l10n.readerPageJumpTitle,
+          content: PaperTextField(
+            controller: controller,
+            autofocus: true,
+            label: l10n.readerPageJumpField,
+            errorText: error,
+            keyboardType: TextInputType.number,
+            inputFormatters: <TextInputFormatter>[
+              FilteringTextInputFormatter.digitsOnly,
+            ],
+            onSubmitted: (_) => submit(),
           ),
           actions: <Widget>[
-            TextButton(
+            PaperButton.secondary(
+              label: l10n.commonCancel,
+              focusGap: PaperWeb.gray900,
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(l10n.commonCancel),
             ),
-            FilledButton(onPressed: submit, child: Text(l10n.readerGoToPage)),
+            PaperButton.primary(
+              label: l10n.readerGoToPage,
+              focusGap: PaperWeb.gray900,
+              onPressed: submit,
+            ),
           ],
         );
       },

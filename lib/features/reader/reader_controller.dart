@@ -410,6 +410,7 @@ class ReaderController extends Notifier<ReaderState> {
       selectedHighlightId: null,
       selectedHighlightAnchor: null,
       citation: null,
+      explainAnchor: null,
     );
   }
 
@@ -445,6 +446,7 @@ class ReaderController extends Notifier<ReaderState> {
           ? state.selectedHighlightAnchor
           : null,
       citation: selection == null ? state.citation : null,
+      explainAnchor: selection == null ? state.explainAnchor : null,
     );
   }
 
@@ -466,6 +468,7 @@ class ReaderController extends Notifier<ReaderState> {
       selectedHighlightAnchor: anchor,
       selection: null,
       citation: null,
+      explainAnchor: null,
     );
   }
 
@@ -507,10 +510,43 @@ class ReaderController extends Notifier<ReaderState> {
   // Side panel
   // ---------------------------------------------------------------------
 
-  void togglePanel() => state = state.copyWith(panelOpen: !state.panelOpen);
+  void togglePanel() => state = state.copyWith(
+    panelOpen: !state.panelOpen,
+    explainAnchor: state.panelOpen ? state.explainAnchor : null,
+  );
 
-  void openPanel([ReaderPanelTab? tab]) =>
-      state = state.copyWith(panelOpen: true, panelTab: tab ?? state.panelTab);
+  /// Opening the panel retires the floating explanation (its card is the
+  /// newest one in the Explanation tab).
+  void openPanel([ReaderPanelTab? tab]) => state = state.copyWith(
+    panelOpen: true,
+    panelTab: tab ?? state.panelTab,
+    explainAnchor: null,
+  );
+
+  /// Closes the floating explanation popover (outside tap, Escape, `×`).
+  void dismissExplanation() {
+    if (state.explainAnchor == null) return;
+    state = state.copyWith(explainAnchor: null);
+  }
+
+  void updateExplainAnchor(ReaderAnchor? anchor) {
+    if (state.explainAnchor == null || state.explainAnchor == anchor) return;
+    state = state.copyWith(explainAnchor: anchor);
+  }
+
+  /// Explain from the reader: with the panel visible the card goes to the
+  /// top of its Explanation tab; otherwise the floating explanation popover
+  /// shows it at [anchor] (reader.md §6) and the tab is selected for later.
+  void _showExplanation(ReaderAnchor? anchor) {
+    if (state.panelOpen || anchor?.local == null) {
+      openPanel(ReaderPanelTab.explanation);
+    } else {
+      state = state.copyWith(
+        panelTab: ReaderPanelTab.explanation,
+        explainAnchor: anchor,
+      );
+    }
+  }
 
   void closePanel() {
     if (!state.panelOpen) return;
@@ -573,6 +609,7 @@ class ReaderController extends Notifier<ReaderState> {
         selectedHighlightId: null,
         selectedHighlightAnchor: null,
         citation: null,
+        explainAnchor: null,
       );
       return true;
     }
@@ -666,14 +703,14 @@ class ReaderController extends Notifier<ReaderState> {
     return createTextHighlight(sel, color: color);
   }
 
-  /// `E` / Explain: save the highlight (flows F5), open the Explanation tab
-  /// and emit [ExplainRequestedEvent].
+  /// `E` / Explain: save the highlight (flows F5), show the explanation
+  /// (panel tab or floating popover) and emit [ExplainRequestedEvent].
   Future<void> explainSelection() async {
     final sel = state.selection;
     if (sel == null) return;
     state = state.copyWith(selection: null);
     final h = await createTextHighlight(sel);
-    openPanel(ReaderPanelTab.explanation);
+    _showExplanation(sel.anchor);
     _emit(
       ExplainRequestedEvent(
         term: sel.text,
@@ -697,8 +734,11 @@ class ReaderController extends Notifier<ReaderState> {
   }
 
   void explainHighlight(Highlight h) {
+    final anchor = state.selectedHighlightId == h.id
+        ? state.selectedHighlightAnchor
+        : null;
     clearHighlightSelection();
-    openPanel(ReaderPanelTab.explanation);
+    _showExplanation(anchor);
     _emit(
       ExplainRequestedEvent(
         term: h.selectedText,

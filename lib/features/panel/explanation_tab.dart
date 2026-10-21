@@ -2,22 +2,34 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../ai/http_ai_service.dart' show SceneVisualAid;
 import '../../core/core_providers.dart';
+import '../../core/format.dart';
+import '../../core/immersive.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/paper_tokens.dart';
 import '../../theme/theme_x.dart';
+import '../../ui/ui.dart';
 import 'ai_states.dart';
 import 'panel_session.dart';
 import 'reader_side_panel.dart';
 
-/// Explanation tab: `ExplanationStack` (newest first) of
-/// `ExplanationCard`s, fed by `explanationStackProvider` (which handles
-/// `ExplainRequestedEvent`). Offline → strip + queued / cached cards;
-/// AI unavailable while online → `AiUnavailableState` with Retry.
+const TextStyle _xs = TextStyle(
+  fontFamily: PaperTypography.sans,
+  fontFamilyFallback: PaperTypography.sansFallback,
+  fontSize: 12,
+  height: 16 / 12,
+  leadingDistribution: TextLeadingDistribution.even,
+  color: PaperWeb.gray400,
+);
+
+/// Explanation tab: the web `ExplanationSidebar` (side-panel.md §3.4): a
+/// newest-first `flex-col gap-3 p-4` stack of `ExplanationCard`s, fed by
+/// `explanationStackProvider` (which handles `ExplainRequestedEvent`).
+/// Offline → notice strip + queued / cached cards; AI unavailable while
+/// online → `AiUnavailableState` with Try again.
 class ExplanationTab extends ConsumerWidget {
   const ExplanationTab({super.key, required this.panel});
 
@@ -40,28 +52,31 @@ class ExplanationTab extends ConsumerWidget {
     final Widget body;
     if (entries.isEmpty) {
       body = PanelEmptyState(
-        icon: Symbols.auto_awesome_rounded,
         title: l10n.explanationEmptyTitle,
         body: l10n.explanationEmptyBody,
       );
     } else {
+      // New cards prepend with no animation (web parity).
       body = ListView.separated(
         key: const PageStorageKey<String>('panel-explanation'),
-        padding: const EdgeInsets.all(PaperSpacing.panePadding),
+        padding: SafeViewPadding.resolve(
+          context,
+          base: const EdgeInsets.all(PaperSpacing.tw4),
+          left: false,
+          top: false,
+        ),
         itemCount: entries.length + 1,
-        separatorBuilder: (_, _) => const SizedBox(height: PaperSpacing.md),
+        separatorBuilder: (_, _) => const SizedBox(height: PaperSpacing.tw3),
         itemBuilder: (context, i) {
           if (i == entries.length) {
-            return Text(
-              l10n.aiPoweredNote,
-              style: Theme.of(context).textTheme.bodySmall
-                  ?.copyWith(color: context.paper.textMuted),
-            );
+            return Text(l10n.aiPoweredNote, style: _xs);
           }
           final entry = entries[i];
-          return _FadeIn(
+          return ExplanationCard(
             key: ValueKey<String>(entry.id),
-            child: ExplanationCard(entry: entry, online: online, panel: panel),
+            entry: entry,
+            online: online,
+            panel: panel,
           );
         },
       );
@@ -76,45 +91,177 @@ class ExplanationTab extends ConsumerWidget {
   }
 }
 
-/// New cards fade in at the top; cards below jump (motion #43).
-class _FadeIn extends StatefulWidget {
-  const _FadeIn({super.key, required this.child});
-
-  final Widget child;
-
-  @override
-  State<_FadeIn> createState() => _FadeInState();
-}
-
-class _FadeInState extends State<_FadeIn> with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(vsync: this);
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_c.status == AnimationStatus.dismissed) {
-      _c.duration = PaperMotion.fade(context, PaperMotion.base);
-      unawaited(_c.forward());
-    }
-  }
-
-  @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => FadeTransition(
-    opacity: CurvedAnimation(parent: _c, curve: PaperMotion.decelerate),
-    child: widget.child,
-  );
-}
-
-/// One card of the stack. States per components.md §5.
+/// One `ExplanationCard` (components.md §12.3) in every state: pending /
+/// progress, complete, error, offline (queued). Used by the Explanation
+/// tab and by the reader's floating explanation popover.
 class ExplanationCard extends ConsumerWidget {
   const ExplanationCard({
     super.key,
+    required this.entry,
+    required this.online,
+    required this.panel,
+    this.onDismiss,
+  });
+
+  final ExplanationEntry entry;
+  final bool online;
+  final ReaderPanelContext panel;
+
+  /// The `×`; defaults to removing the card from the stack.
+  final VoidCallback? onDismiss;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final c = context.paper;
+    final l10n = AppLocalizations.of(context);
+    final ctrl = ref.read(explanationStackProvider(panel.paperId).notifier);
+    final dismiss = onDismiss ?? () => ctrl.dismiss(entry.id);
+    final isError = entry.status == ExplanationStatus.error;
+
+    // Header: term (cardTitle, break-words) + 24 `×` overhanging by 4.
+    Widget header({bool error = false}) => Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Expanded(
+          child: Text(
+            entry.term,
+            style: PaperTypography.cardTitle(c)
+                .copyWith(color: error ? PaperWeb.red200 : PaperWeb.gray100),
+          ),
+        ),
+        const SizedBox(width: PaperSpacing.tw2),
+        Transform.translate(
+          offset: const Offset(4, -4),
+          child: PaperIconButton(
+            size: PaperIconButtonSize.s24,
+            tone: error
+                ? PaperIconButtonTone.error
+                : PaperIconButtonTone.neutral,
+            tooltip: l10n.commonClose,
+            icon: const PaperCloseGlyph(),
+            onPressed: dismiss,
+          ),
+        ),
+      ],
+    );
+
+    final Widget card;
+    switch (entry.status) {
+      case ExplanationStatus.pending || ExplanationStatus.unavailable:
+        card = PaperCard(
+          padding: const EdgeInsets.all(PaperSpacing.tw4),
+          child: Semantics(
+            key: const ValueKey<String>('explanation-pending'),
+            label: l10n.explanationPending(entry.term),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                header(),
+                const SizedBox(height: PaperSpacing.tw1),
+                const RepaintBoundary(child: PaperProgressBar()),
+                const SizedBox(height: PaperSpacing.tw2),
+                Text(l10n.explanationPending(entry.term), style: _xs),
+              ],
+            ),
+          ),
+        );
+      case ExplanationStatus.error:
+        card = Container(
+          key: const ValueKey<String>('explanation-error'),
+          padding: const EdgeInsets.all(PaperSpacing.tw4),
+          decoration: BoxDecoration(
+            color: PaperWeb.red950,
+            border: Border.all(color: PaperWeb.red900),
+            borderRadius: PaperRadii.borderLg,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              header(error: true),
+              const SizedBox(height: PaperSpacing.tw2),
+              Text(
+                l10n.aiExplainFailed,
+                style: PaperTypography.explanationBody(c)
+                    .copyWith(color: PaperWeb.red300),
+              ),
+              if (entry.retryable) ...<Widget>[
+                const SizedBox(height: PaperSpacing.tw3),
+                PaperButton.secondary(
+                  label: l10n.aiRetry,
+                  size: PaperButtonSize.xs,
+                  focusGap: PaperWeb.red950,
+                  onPressed: () => unawaited(ctrl.retry(entry.id)),
+                ),
+              ],
+            ],
+          ),
+        );
+      case ExplanationStatus.queued:
+        card = PaperCard(
+          key: const ValueKey<String>('explanation-queued'),
+          padding: const EdgeInsets.all(PaperSpacing.tw4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              header(),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const PaperIcon(
+                    PaperIcons.infoSmall,
+                    color: PaperWeb.gray400,
+                  ),
+                  const SizedBox(width: PaperSpacing.tw2),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          l10n.aiOfflineCardTitle,
+                          style: _xs.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: PaperWeb.gray300,
+                          ),
+                        ),
+                        Text(l10n.aiOfflineCardBody, style: _xs),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: PaperSpacing.tw3),
+              PaperCheckboxRow(
+                value: entry.explainWhenOnline,
+                label: l10n.aiExplainWhenOnline,
+                onChanged: (v) => ctrl.setExplainWhenOnline(entry.id, v),
+              ),
+            ],
+          ),
+        );
+      case ExplanationStatus.complete || ExplanationStatus.reexplaining:
+        card = PaperCard(
+          padding: const EdgeInsets.all(PaperSpacing.tw4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              header(),
+              const SizedBox(height: PaperSpacing.tw2),
+              _CompleteBody(entry: entry, online: online, panel: panel),
+            ],
+          ),
+        );
+    }
+
+    return Semantics(
+      container: true,
+      liveRegion: entry.status == ExplanationStatus.complete && !isError,
+      child: card,
+    );
+  }
+}
+
+class _CompleteBody extends ConsumerWidget {
+  const _CompleteBody({
     required this.entry,
     required this.online,
     required this.panel,
@@ -128,224 +275,7 @@ class ExplanationCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final c = context.paper;
     final l10n = AppLocalizations.of(context);
-    final t = Theme.of(context).textTheme;
     final ctrl = ref.read(explanationStackProvider(panel.paperId).notifier);
-
-    final isError = entry.status == ExplanationStatus.error;
-    final isQueued = entry.status == ExplanationStatus.queued;
-    final decoration = BoxDecoration(
-      color: isError ? c.errorSurface : c.surface,
-      border: Border.all(
-        color: isError
-            ? c.errorBorder
-            : (isQueued ? c.outlineVariant : c.border),
-      ),
-      borderRadius: PaperRadii.borderLg,
-    );
-
-    final header = Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Expanded(
-          child: Text(
-            entry.term,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: t.titleSmall?.copyWith(
-              color: isError ? c.onErrorSurface : null,
-            ),
-          ),
-        ),
-        if (entry.pageNumber case final page?)
-          Semantics(
-            button: true,
-            label: l10n.explanationJumpToPage(page),
-            excludeSemantics: true,
-            child: InkWell(
-              borderRadius: PaperRadii.borderSm,
-              onTap: () {
-                final h = entry.highlight;
-                if (h != null) {
-                  panel.onJumpToHighlight(h);
-                } else {
-                  panel.onJumpToPage(page);
-                }
-              },
-              child: Padding(
-                padding: const EdgeInsets.all(PaperSpacing.xs),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Text(
-                      'p. $page',
-                      style: PaperTypography.pageIndicator(c)
-                          .copyWith(color: c.primary),
-                    ),
-                    const SizedBox(width: PaperSpacing.xs),
-                    Icon(
-                      Symbols.open_in_new_rounded,
-                      size: 16,
-                      color: c.primary,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-
-    final Widget content = switch (entry.status) {
-      ExplanationStatus.pending || ExplanationStatus.unavailable => Semantics(
-        key: const ValueKey<String>('explanation-pending'),
-        label: l10n.explanationPending(entry.term),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            const _ProgressBar(),
-            const SizedBox(height: PaperSpacing.sm),
-            Text(
-              l10n.explanationPending(entry.term),
-              style: t.bodySmall?.copyWith(color: c.textMuted),
-            ),
-          ],
-        ),
-      ),
-      ExplanationStatus.error => Column(
-        key: const ValueKey<String>('explanation-error'),
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Icon(Symbols.error_rounded, size: 18, color: c.error),
-              const SizedBox(width: PaperSpacing.sm),
-              Expanded(
-                child: Text(
-                  l10n.aiExplainFailed,
-                  style: t.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                    color: c.onErrorSurface,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          if (entry.retryable) ...<Widget>[
-            const SizedBox(height: PaperSpacing.sm),
-            OutlinedButton(
-              onPressed: () => unawaited(ctrl.retry(entry.id)),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: c.error,
-                side: BorderSide(color: c.errorBorder),
-              ),
-              child: Text(l10n.aiRetry),
-            ),
-          ],
-        ],
-      ),
-      ExplanationStatus.queued => Column(
-        key: const ValueKey<String>('explanation-queued'),
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Icon(Symbols.cloud_off_rounded, size: 18, color: c.textSecondary),
-              const SizedBox(width: PaperSpacing.sm),
-              Expanded(
-                child: Text(l10n.aiOfflineCardTitle, style: t.labelLarge),
-              ),
-            ],
-          ),
-          const SizedBox(height: PaperSpacing.xs),
-          Text(
-            l10n.aiOfflineCardBody,
-            style: t.bodyMedium?.copyWith(color: c.textSecondary),
-          ),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(l10n.aiExplainWhenOnline, style: t.bodyMedium),
-              ),
-              Switch(
-                value: entry.explainWhenOnline,
-                onChanged: (v) => ctrl.setExplainWhenOnline(entry.id, v),
-              ),
-            ],
-          ),
-        ],
-      ),
-      ExplanationStatus.complete || ExplanationStatus.reexplaining =>
-        _CompleteBody(entry: entry, online: online, paperId: panel.paperId),
-    };
-
-    return Semantics(
-      container: true,
-      liveRegion: entry.status == ExplanationStatus.complete,
-      child: DecoratedBox(
-        decoration: decoration,
-        child: Padding(
-          padding: const EdgeInsets.all(PaperSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              header,
-              const SizedBox(height: PaperSpacing.sm),
-              AnimatedSwitcher(
-                duration: PaperMotion.fade(context, PaperMotion.base),
-                layoutBuilder: (current, previous) => Stack(
-                  alignment: Alignment.topLeft,
-                  children: <Widget>[...previous, ?current],
-                ),
-                child: content,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// 6dp indeterminate bar (motion #44), static under reduced motion. Own
-/// RepaintBoundary so the loop never repaints the panel.
-class _ProgressBar extends StatelessWidget {
-  const _ProgressBar();
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.paper;
-    final reduced = MediaQuery.disableAnimationsOf(context);
-    return RepaintBoundary(
-      child: ClipRRect(
-        borderRadius: PaperRadii.borderFull,
-        child: LinearProgressIndicator(
-          minHeight: 6,
-          value: reduced ? 1 / 3 : null,
-          color: c.primary,
-          backgroundColor: c.outlineVariant,
-        ),
-      ),
-    );
-  }
-}
-
-class _CompleteBody extends ConsumerWidget {
-  const _CompleteBody({
-    required this.entry,
-    required this.online,
-    required this.paperId,
-  });
-
-  final ExplanationEntry entry;
-  final bool online;
-  final String paperId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final c = context.paper;
-    final l10n = AppLocalizations.of(context);
-    final t = Theme.of(context).textTheme;
-    final ctrl = ref.read(explanationStackProvider(paperId).notifier);
     final explanation = entry.explanation;
     final reexplaining = entry.status == ExplanationStatus.reexplaining;
     final text = explanation?.explanation ?? '';
@@ -355,76 +285,101 @@ class _CompleteBody extends ConsumerWidget {
     final bodyStyle = PaperTypography.explanationBody(c).copyWith(
       // Re-explaining dims the previous text by colour, not an Opacity
       // layer (motion.md §1.7).
-      color: c.textSecondary.withValues(alpha: reexplaining ? 0.6 : 1),
+      color: PaperWeb.gray300.withValues(alpha: reexplaining ? 0.6 : 1),
     );
-    final overline = t.labelSmall?.copyWith(
-      color: c.textMuted,
-      fontWeight: FontWeight.w600,
-      letterSpacing: 0.44,
-    );
-    final canUseAi = online && explanation?.glossaryTermId != null;
+    final eyebrow = PaperTypography.eyebrow(c);
+    final hasTerm = explanation?.glossaryTermId != null;
+    final canUseAi = online && hasTerm;
+    final page = entry.pageNumber;
+    final showVisual =
+        online &&
+        entry.visualStatus == VisualStatus.none &&
+        explanation != null;
 
     return Column(
       key: const ValueKey<String>('explanation-complete'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
+        if (explanation?.fromCache ?? false) ...<Widget>[
+          Text(l10n.aiCachedExplanation, style: _xs),
+          const SizedBox(height: PaperSpacing.tw2),
+        ],
         if (reexplaining) ...<Widget>[
-          const _ProgressBar(),
-          const SizedBox(height: PaperSpacing.xs),
-          Text(
-            l10n.explanationReexplaining,
-            style: t.bodySmall?.copyWith(color: c.textMuted),
-          ),
-          const SizedBox(height: PaperSpacing.sm),
+          const RepaintBoundary(child: PaperProgressBar()),
+          const SizedBox(height: PaperSpacing.tw1),
+          Text(l10n.explanationReexplaining, style: _xs),
+          const SizedBox(height: PaperSpacing.tw2),
         ],
         if (formal.isNotEmpty) ...<Widget>[
-          Text(l10n.explanationAnalogyHeading.toUpperCase(), style: overline),
-          const SizedBox(height: PaperSpacing.xs),
+          Text(l10n.explanationAnalogyHeading.toUpperCase(), style: eyebrow),
+          const SizedBox(height: PaperSpacing.tw1),
         ],
         Text(analogy, style: bodyStyle),
         if (formal.isNotEmpty) ...<Widget>[
-          const SizedBox(height: PaperSpacing.md),
-          Text(l10n.explanationFormalHeading.toUpperCase(), style: overline),
-          const SizedBox(height: PaperSpacing.xs),
+          const SizedBox(height: PaperSpacing.tw3),
+          Text(l10n.explanationFormalHeading.toUpperCase(), style: eyebrow),
+          const SizedBox(height: PaperSpacing.tw1),
           Text(formal, style: bodyStyle),
         ],
-        if (explanation?.fromCache ?? false) ...<Widget>[
-          const SizedBox(height: PaperSpacing.sm),
-          Text(
-            l10n.aiCachedExplanation,
-            style: t.bodySmall?.copyWith(color: c.textMuted),
-          ),
-        ],
         if (entry.reexplainFailed) ...<Widget>[
-          const SizedBox(height: PaperSpacing.sm),
+          const SizedBox(height: PaperSpacing.tw2),
           Text(
             l10n.aiReexplainFailed,
-            style: t.bodySmall?.copyWith(color: c.error),
+            style: _xs.copyWith(color: PaperWeb.red400),
           ),
         ],
-        const SizedBox(height: PaperSpacing.md),
-        _VisualAid(entry: entry, online: online, paperId: paperId),
-        const SizedBox(height: PaperSpacing.sm),
+        _VisualAid(entry: entry, online: online, paperId: panel.paperId),
+        if (explanation != null) ...<Widget>[
+          const SizedBox(height: PaperSpacing.tw3),
+          Text(formatWhen(context, explanation.createdAt), style: _xs),
+        ],
+        if (hasTerm) ...<Widget>[
+          const SizedBox(height: PaperSpacing.tw3),
+          PaperRating(
+            value: entry.rating,
+            label: l10n.explanationRateLabel,
+            valueText: entry.rating == null
+                ? l10n.ratingNotRated
+                : l10n.ratingValue(entry.rating!),
+            semanticValue: entry.rating == null
+                ? l10n.ratingNotRated
+                : l10n.explanationRated(entry.rating!),
+            tooltip: online ? null : l10n.aiNeedsConnection,
+            onRate: canUseAi && !reexplaining
+                ? (stars) => unawaited(ctrl.rate(entry.id, stars))
+                : null,
+          ),
+        ],
+        const SizedBox(height: PaperSpacing.tw2),
         Wrap(
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: PaperSpacing.sm,
+          alignment: WrapAlignment.end,
+          spacing: PaperSpacing.tw1,
+          runSpacing: PaperSpacing.tw1,
           children: <Widget>[
-            if (explanation?.glossaryTermId != null)
-              StarRating(
-                rating: entry.rating,
-                enabled: canUseAi && !reexplaining,
-                onRate: (stars) => unawaited(ctrl.rate(entry.id, stars)),
+            if (hasTerm)
+              PaperButton.quiet(
+                label: l10n.explanationReexplain,
+                tooltip: online ? null : l10n.aiNeedsConnection,
+                onPressed: canUseAi && !reexplaining
+                    ? () => unawaited(ctrl.reexplain(entry.id))
+                    : null,
               ),
-            if (explanation?.glossaryTermId != null)
-              Tooltip(
-                message: online ? '' : l10n.aiNeedsConnection,
-                child: TextButton.icon(
-                  onPressed: canUseAi && !reexplaining
-                      ? () => unawaited(ctrl.reexplain(entry.id))
-                      : null,
-                  icon: const Icon(Symbols.refresh_rounded, size: 18),
-                  label: Text(l10n.explanationReexplain),
-                ),
+            if (page != null)
+              PaperButton.quiet(
+                label: l10n.explanationJumpToPage(page),
+                onPressed: () {
+                  final h = entry.highlight;
+                  if (h != null) {
+                    panel.onJumpToHighlight(h);
+                  } else {
+                    panel.onJumpToPage(page);
+                  }
+                },
+              ),
+            if (showVisual)
+              PaperButton.quiet(
+                label: l10n.aiVisualShow,
+                onPressed: () => unawaited(ctrl.requestVisual(entry.id)),
               ),
           ],
         ),
@@ -433,10 +388,10 @@ class _CompleteBody extends ConsumerWidget {
   }
 }
 
-/// `VisualAidPlayer` stand-in: the app ships no video player dependency,
-/// so a ready video / image opens in the system player or browser; a
-/// scene-only result shows a text summary. The text explanation stays the
-/// primary content.
+/// `VisualAidPlayer` stand-in (`mt-3`): the app ships no video player
+/// dependency, so a ready video / image opens in the system player or
+/// browser; a scene-only result shows a text summary. The text explanation
+/// stays the primary content. "Show a visual" is a card action.
 class _VisualAid extends ConsumerWidget {
   const _VisualAid({
     required this.entry,
@@ -450,53 +405,49 @@ class _VisualAid extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final c = context.paper;
     final l10n = AppLocalizations.of(context);
-    final t = Theme.of(context).textTheme;
-    final ctrl = ref.read(explanationStackProvider(paperId).notifier);
-    if (!online || entry.visualStatus == VisualStatus.offline) {
-      if (entry.visualStatus == VisualStatus.ready) {
-        // Already fetched: still link it.
-      } else {
-        return Text(
-          l10n.aiVisualOffline,
-          style: t.bodySmall?.copyWith(color: c.textMuted),
-        );
+    Widget wrap(Widget child) => Padding(
+      padding: const EdgeInsets.only(top: PaperSpacing.tw3),
+      child: child,
+    );
+    if ((!online || entry.visualStatus == VisualStatus.offline) &&
+        entry.visualStatus != VisualStatus.ready) {
+      if (entry.visualStatus == VisualStatus.none) {
+        return const SizedBox.shrink();
       }
+      return wrap(Text(l10n.aiVisualOffline, style: _xs));
     }
     switch (entry.visualStatus) {
       case VisualStatus.none:
-        return Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: TextButton.icon(
-            onPressed: () => unawaited(ctrl.requestVisual(entry.id)),
-            icon: const Icon(Symbols.movie_rounded, size: 18),
-            label: Text(l10n.aiVisualShow),
-          ),
-        );
-      case VisualStatus.loading:
-        return Row(
-          children: <Widget>[
-            const Expanded(child: _ProgressBar()),
-            const SizedBox(width: PaperSpacing.sm),
-            Text(l10n.commonLoading, style: t.bodySmall),
-          ],
-        );
       case VisualStatus.failed:
       case VisualStatus.offline:
         return const SizedBox.shrink();
+      case VisualStatus.loading:
+        return wrap(
+          Row(
+            children: <Widget>[
+              const Expanded(child: RepaintBoundary(child: PaperProgressBar())),
+              const SizedBox(width: PaperSpacing.tw2),
+              Text(l10n.commonLoading, style: _xs),
+            ],
+          ),
+        );
       case VisualStatus.ready:
         final visual = entry.visual;
         final url = visual?.videoUrl ?? visual?.imageUrl;
         if (url != null) {
-          return Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: OutlinedButton.icon(
-              onPressed: () => unawaited(
-                launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
+          return wrap(
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: PaperButton.quiet(
+                label: '${l10n.aiVisualPlay} ↗',
+                onPressed: () => unawaited(
+                  launchUrl(
+                    Uri.parse(url),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                ),
               ),
-              icon: const Icon(Symbols.play_arrow_rounded, size: 18),
-              label: Text(l10n.aiVisualPlay),
             ),
           );
         }
@@ -504,13 +455,16 @@ class _VisualAid extends ConsumerWidget {
             ? sceneSummary(visual.sceneJson)
             : null;
         if (summary == null) return const SizedBox.shrink();
-        return Container(
-          padding: const EdgeInsets.all(PaperSpacing.md),
-          decoration: BoxDecoration(
-            color: c.surfaceVariant,
-            borderRadius: PaperRadii.borderMd,
+        return wrap(
+          Container(
+            padding: const EdgeInsets.all(PaperSpacing.tw3),
+            decoration: BoxDecoration(
+              color: PaperWeb.gray950,
+              border: Border.all(color: PaperWeb.gray700),
+              borderRadius: PaperRadii.borderMd,
+            ),
+            child: Text(summary, style: _xs.copyWith(height: 1.625)),
           ),
-          child: Text(summary, style: t.bodySmall),
         );
     }
   }
@@ -540,55 +494,4 @@ String? sceneSummary(Map<String, Object?> scene) {
   }
   if (lines.isEmpty) return null;
   return lines.take(6).join('\n');
-}
-
-/// 1–5 stars (single tap, changeable). Disabled offline with
-/// `aiNeedsConnection`.
-class StarRating extends StatelessWidget {
-  const StarRating({
-    super.key,
-    required this.rating,
-    required this.enabled,
-    required this.onRate,
-  });
-
-  final int? rating;
-  final bool enabled;
-  final ValueChanged<int> onRate;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.paper;
-    final l10n = AppLocalizations.of(context);
-    final current = rating ?? 0;
-    return Semantics(
-      label: l10n.explanationRateLabel,
-      value: current > 0 ? l10n.explanationRated(current) : null,
-      child: Tooltip(
-        message: enabled ? l10n.explanationRateLabel : l10n.aiNeedsConnection,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            for (var i = 1; i <= 5; i++)
-              InkResponse(
-                key: ValueKey<String>('star-$i'),
-                radius: 16,
-                onTap: enabled ? () => onRate(i) : null,
-                child: Padding(
-                  padding: const EdgeInsets.all(2),
-                  child: Icon(
-                    Symbols.star_rounded,
-                    fill: i <= current ? 1 : 0,
-                    size: 22,
-                    color: i <= current
-                        ? PaperHighlightColor.yellow.wash
-                        : c.textMuted,
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
 }

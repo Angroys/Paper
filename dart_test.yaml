@@ -2,3 +2,6 @@ tags:
   # test/offline: the offline-only build (PAPER_OFFLINE_ONLY). CI also runs
   # `flutter test --tags offline --dart-define=PAPER_OFFLINE_ONLY=true`.
   offline:
+  # test/screenshots: web-parity screenshot harness; writes PNGs only with
+  #   flutter test --tags screenshots --dart-define=PAPER_SCREENSHOTS=true test/screenshots
+  screenshots:

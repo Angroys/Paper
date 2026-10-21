@@ -2,21 +2,31 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:material_symbols_icons/symbols.dart';
+import 'package:intl/intl.dart';
 
 import '../../core/core_providers.dart';
+import '../../core/immersive.dart';
 import '../../domain/domain.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/paper_tokens.dart';
 import '../../theme/theme_x.dart';
+import '../../ui/ui.dart';
 import 'ai_states.dart';
-import 'explanation_tab.dart' show StarRating;
 import 'panel_session.dart';
 import 'reader_side_panel.dart';
 
-/// Glossary tab: the open paper's terms (`aiService.glossary`), filter,
-/// expandable tiles with the stored explanation, "Explain again" and
-/// rating.
+const TextStyle _xs = TextStyle(
+  fontFamily: PaperTypography.sans,
+  fontFamilyFallback: PaperTypography.sansFallback,
+  fontSize: 12,
+  height: 16 / 12,
+  leadingDistribution: TextLeadingDistribution.even,
+  color: PaperWeb.gray400,
+);
+
+/// Glossary tab (screens/glossary.md): the web `GlossarySearch` field
+/// (38 tall, no leading icon, `×` clear) and `GlossaryEntryCard`s (`p-5`,
+/// gap 16) with the stored explanation, "Explain again" and rating.
 class GlossaryTab extends ConsumerStatefulWidget {
   const GlossaryTab({super.key, required this.panel});
 
@@ -52,9 +62,50 @@ class _GlossaryTabState extends ConsumerState<GlossaryTab> {
       return AiUnavailableState(onRetry: retry);
     }
 
+    final padding = SafeViewPadding.resolve(
+      context,
+      base: const EdgeInsets.all(PaperSpacing.tw4),
+      left: false,
+      top: false,
+    );
+    Widget search({bool enabled = true}) => PaperSearchField(
+      fieldKey: const ValueKey<String>('glossary-filter'),
+      controller: _filter,
+      hintText: l10n.glossaryFilterHint,
+      clearTooltip: l10n.a11yClearText,
+      enabled: enabled,
+      onChanged: (v) => setState(() => _query = v),
+    );
+
     final Widget body;
     if (result == null) {
-      body = const _SkeletonRows();
+      // Loading: disabled search @ .5, then three skeleton cards.
+      body = ListView(
+        padding: padding,
+        children: <Widget>[
+          Semantics(
+            label: l10n.a11yLoading,
+            child: ExcludeSemantics(child: search(enabled: false)),
+          ),
+          for (var i = 0; i < 3; i++) ...<Widget>[
+            SizedBox(height: i == 0 ? PaperSpacing.tw6 : PaperSpacing.tw4),
+            const PaperCard(
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: FractionallySizedBox(
+                      alignment: AlignmentDirectional.centerStart,
+                      widthFactor: 0.4,
+                      child: PaperSkeleton(),
+                    ),
+                  ),
+                  PaperSkeleton(width: 64, height: 12),
+                ],
+              ),
+            ),
+          ],
+        ],
+      );
     } else {
       switch (result) {
         case AiSuccess(:final value):
@@ -70,45 +121,49 @@ class _GlossaryTabState extends ConsumerState<GlossaryTab> {
                     .toList();
           if (value.isEmpty) {
             body = PanelEmptyState(
-              icon: Symbols.menu_book_rounded,
               title: l10n.glossaryEmptyTitle,
               body: l10n.glossaryEmptyBody,
             );
           } else {
-            body = ListView.separated(
+            body = ListView.builder(
               key: const PageStorageKey<String>('panel-glossary'),
-              padding: const EdgeInsets.symmetric(
-                horizontal: PaperSpacing.panePadding,
-                vertical: PaperSpacing.sm,
-              ),
-              itemCount: terms.length,
-              separatorBuilder: (_, _) =>
-                  const SizedBox(height: PaperSpacing.xs),
-              itemBuilder: (context, i) => GlossaryTermTile(
-                key: ValueKey<String>('glossary-${terms[i].id}'),
-                term: terms[i],
-                online: online,
-                panel: widget.panel,
-              ),
+              padding: padding,
+              itemCount: terms.isEmpty ? 2 : terms.length + 1,
+              itemBuilder: (context, i) {
+                if (i == 0) return search();
+                if (terms.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: PaperSpacing.tw6),
+                    child: EmptyStateCard.compact(
+                      key: const ValueKey<String>('glossary-no-match'),
+                      body: l10n.glossarySearchNoMatch,
+                    ),
+                  );
+                }
+                return Padding(
+                  padding: EdgeInsets.only(
+                    top: i == 1 ? PaperSpacing.tw6 : PaperSpacing.tw4,
+                  ),
+                  child: GlossaryTermTile(
+                    key: ValueKey<String>('glossary-${terms[i - 1].id}'),
+                    term: terms[i - 1],
+                    online: online,
+                    panel: widget.panel,
+                  ),
+                );
+              },
             );
           }
         case AiUnavailable():
           // Offline with nothing cached (the non-offline case returned above
           // when online; offline wins otherwise).
-          body = PanelEmptyState(
-            icon: Symbols.menu_book_rounded,
-            title: l10n.glossaryEmptyTitle,
-            body: l10n.glossaryOfflineUncached,
-          );
+          body = PanelEmptyState(body: l10n.glossaryOfflineUncached);
         case AiFailure(:final retryable):
-          body = Padding(
-            padding: const EdgeInsets.all(PaperSpacing.panePadding),
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: InlineError(
-                message: l10n.glossaryLoadFailed,
-                onRetry: retryable ? retry : null,
-              ),
+          body = SingleChildScrollView(
+            padding: padding,
+            child: InlineError(
+              message: l10n.glossaryLoadFailed,
+              onRetry: retryable ? retry : null,
             ),
           );
       }
@@ -118,69 +173,15 @@ class _GlossaryTabState extends ConsumerState<GlossaryTab> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         if (!online) const AiOfflineStrip(),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            PaperSpacing.panePadding,
-            PaperSpacing.md,
-            PaperSpacing.panePadding,
-            PaperSpacing.xs,
-          ),
-          child: TextField(
-            key: const ValueKey<String>('glossary-filter'),
-            controller: _filter,
-            onChanged: (v) => setState(() => _query = v),
-            decoration: InputDecoration(
-              isDense: true,
-              hintText: l10n.glossaryFilterHint,
-              prefixIcon: const Icon(Symbols.search_rounded, size: 20),
-            ),
-          ),
-        ),
         Expanded(child: body),
       ],
     );
   }
 }
 
-/// Static skeleton rows (motion #42: no shimmer).
-class _SkeletonRows extends StatelessWidget {
-  const _SkeletonRows();
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.paper;
-    final l10n = AppLocalizations.of(context);
-    return Semantics(
-      label: l10n.a11yLoading,
-      child: ListView(
-        padding: const EdgeInsets.all(PaperSpacing.panePadding),
-        children: <Widget>[
-          for (var i = 0; i < 6; i++)
-            Padding(
-              padding: const EdgeInsets.only(bottom: PaperSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  FractionallySizedBox(
-                    widthFactor: 0.6,
-                    child: Container(height: 14, color: c.surfaceVariant),
-                  ),
-                  const SizedBox(height: PaperSpacing.xs),
-                  FractionallySizedBox(
-                    widthFactor: 0.9,
-                    child: Container(height: 10, color: c.surfaceVariant),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-/// `GlossaryTermTile`: body snaps open (no height animation), fades in;
-/// the chevron rotates (motion #45).
+/// `GlossaryEntryCard` (glossary.md §2): `PaperCard p-5`; header row =
+/// chevron 14 (rotates 90° in 150 ms) + term (`sm 600`, accent on hover) and
+/// the `MMM d, yyyy` date; tags; the expanded panel appears instantly.
 class GlossaryTermTile extends ConsumerStatefulWidget {
   const GlossaryTermTile({
     super.key,
@@ -197,28 +198,12 @@ class GlossaryTermTile extends ConsumerStatefulWidget {
   ConsumerState<GlossaryTermTile> createState() => _GlossaryTermTileState();
 }
 
-class _GlossaryTermTileState extends ConsumerState<GlossaryTermTile>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(vsync: this);
+class _GlossaryTermTileState extends ConsumerState<GlossaryTermTile> {
   bool _expanded = false;
   bool _busy = false;
   bool _failed = false;
 
-  @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
-  }
-
-  void _toggle() {
-    setState(() => _expanded = !_expanded);
-    _c.duration = PaperMotion.of(context, PaperMotion.fast);
-    if (_expanded) {
-      unawaited(_c.forward(from: 0));
-    } else {
-      _c.value = 0;
-    }
-  }
+  void _toggle() => setState(() => _expanded = !_expanded);
 
   Future<void> _reexplain() async {
     setState(() {
@@ -239,189 +224,164 @@ class _GlossaryTermTileState extends ConsumerState<GlossaryTermTile>
   Widget build(BuildContext context) {
     final c = context.paper;
     final l10n = AppLocalizations.of(context);
-    final t = Theme.of(context).textTheme;
     final term = widget.term;
-    final summary = term.explanation.split('\n').first;
     final hasExplanation = term.explanation.trim().isNotEmpty;
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final date = DateFormat.yMMMd(locale).format(term.createdAt.toLocal());
 
-    return Material(
-      color: _expanded ? c.surfaceVariant : Colors.transparent,
-      borderRadius: PaperRadii.borderMd,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          InkWell(
-            borderRadius: PaperRadii.borderMd,
-            onTap: _toggle,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: PaperSpacing.lg,
-                vertical: PaperSpacing.md,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Row(
+    final headerRow = PaperPressable(
+      onPressed: _toggle,
+      semanticLabel: term.term,
+      builder: (context, states) {
+        final hover =
+            states.contains(WidgetState.hovered) ||
+            states.contains(WidgetState.pressed);
+        return Semantics(
+          expanded: _expanded,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Expanded(
+                child: PaperFocusRing(
+                  show: states.contains(WidgetState.focused),
+                  radius: PaperRadii.borderMd,
+                  offset: 0,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Expanded(
-                        child: Text(
-                          term.term,
-                          style: PaperTypography.glossaryTerm(c),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 3),
+                        child: PaperRotatingIcon(
+                          PaperIcons.chevronRightSmall,
+                          size: 14,
+                          color: PaperWeb.gray500,
+                          turns: _expanded ? 0.25 : 0,
+                          duration: PaperMotion.of(context, PaperMotion.fast),
                         ),
                       ),
-                      RotationTransition(
-                        turns: Tween<double>(begin: 0, end: 0.25).animate(
-                          CurvedAnimation(
-                            parent: _c,
-                            curve: PaperMotion.standard,
+                      const SizedBox(width: PaperSpacing.tw1_5),
+                      Flexible(
+                        child: Text(
+                          term.term,
+                          style: PaperTypography.glossaryTerm(c).copyWith(
+                            color: hover ? PaperWeb.accent : PaperWeb.gray100,
                           ),
-                        ),
-                        child: Icon(
-                          Symbols.chevron_right_rounded,
-                          size: 20,
-                          color: c.textMuted,
                         ),
                       ),
                     ],
                   ),
-                  if (!_expanded) ...<Widget>[
-                    const SizedBox(height: PaperSpacing.xs),
-                    Wrap(
-                      spacing: PaperSpacing.xs,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: <Widget>[
-                        for (final tag in term.tags.take(2)) _TagChip(tag),
-                        Text(
-                          hasExplanation
-                              ? summary
-                              : l10n.glossaryNoCachedExplanation,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: t.bodySmall?.copyWith(color: c.textSecondary),
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
+                ),
               ),
-            ),
+              const SizedBox(width: PaperSpacing.tw2),
+              // Baseline-aligned with the 14/20 term: 12/16 sits 2 lower.
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(date, style: _xs),
+              ),
+            ],
           ),
-          if (_expanded)
-            FadeTransition(
-              opacity: CurvedAnimation(
-                parent: _c,
-                curve: PaperMotion.decelerate,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  PaperSpacing.lg,
-                  0,
-                  PaperSpacing.lg,
-                  PaperSpacing.md,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    if (hasExplanation)
-                      Text(
-                        term.explanation,
-                        style: PaperTypography.explanationBodyCompact(c),
-                      )
-                    else
-                      Row(
-                        children: <Widget>[
-                          if (!widget.online) ...<Widget>[
-                            Icon(
-                              Symbols.cloud_off_rounded,
-                              size: 16,
-                              color: c.textMuted,
-                            ),
-                            const SizedBox(width: PaperSpacing.xs),
-                          ],
-                          Expanded(
-                            child: Text(
-                              widget.online
-                                  ? l10n.glossaryNoCachedExplanation
-                                  : l10n.glossaryOfflineUncached,
-                              style: t.bodySmall?.copyWith(color: c.textMuted),
-                            ),
-                          ),
-                        ],
-                      ),
-                    if (_failed) ...<Widget>[
-                      const SizedBox(height: PaperSpacing.xs),
-                      Text(
-                        l10n.aiReexplainFailed,
-                        style: t.bodySmall?.copyWith(color: c.error),
-                      ),
-                    ],
-                    const SizedBox(height: PaperSpacing.sm),
-                    Wrap(
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: PaperSpacing.sm,
-                      children: <Widget>[
-                        StarRating(
-                          rating: term.rating,
-                          enabled: widget.online,
-                          onRate: (stars) => unawaited(
-                            ref
-                                .read(
-                                  glossaryProvider(widget.panel.paperId)
-                                      .notifier,
-                                )
-                                .rate(term, stars),
-                          ),
-                        ),
-                        Tooltip(
-                          message: widget.online ? '' : l10n.aiNeedsConnection,
-                          child: TextButton.icon(
-                            onPressed: widget.online && !_busy
-                                ? () => unawaited(_reexplain())
-                                : null,
-                            icon: const Icon(Symbols.refresh_rounded, size: 18),
-                            label: Text(
-                              _busy
-                                  ? l10n.explanationReexplaining
-                                  : l10n.glossaryExplainAgain,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+        );
+      },
+    );
+
+    return PaperCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          headerRow,
+          if (term.tags.isNotEmpty) ...<Widget>[
+            const SizedBox(height: PaperSpacing.tw2),
+            Wrap(
+              spacing: PaperSpacing.tw1,
+              runSpacing: PaperSpacing.tw1,
+              children: <Widget>[
+                for (final tag in term.tags.take(2))
+                  PaperBadge(
+                    label: tag,
+                    tone: isTypeTag(tag)
+                        ? PaperBadgeTone.accent
+                        : PaperBadgeTone.neutral,
+                  ),
+              ],
             ),
+          ],
+          if (_expanded) ...<Widget>[
+            const SizedBox(height: PaperSpacing.tw2),
+            if (hasExplanation)
+              Text(term.explanation, style: PaperTypography.explanationBody(c))
+            else
+              Text(
+                widget.online
+                    ? l10n.glossaryNoCachedExplanation
+                    : l10n.glossaryOfflineUncached,
+                style: PaperTypography.input(c).copyWith(
+                  fontStyle: FontStyle.italic,
+                  color: PaperWeb.gray400,
+                ),
+              ),
+            const SizedBox(height: PaperSpacing.tw3),
+            PaperRating(
+              value: term.rating,
+              label: l10n.explanationRateLabel,
+              valueText: term.rating == null
+                  ? l10n.ratingNotRated
+                  : l10n.ratingValue(term.rating!),
+              semanticValue: term.rating == null
+                  ? l10n.ratingNotRated
+                  : l10n.explanationRated(term.rating!),
+              tooltip: widget.online ? null : l10n.aiNeedsConnection,
+              onRate: widget.online
+                  ? (stars) => unawaited(
+                      ref
+                          .read(glossaryProvider(widget.panel.paperId).notifier)
+                          .rate(term, stars),
+                    )
+                  : null,
+            ),
+            const SizedBox(height: PaperSpacing.tw3),
+            if (widget.online)
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: PaperButton.secondary(
+                  key: const ValueKey<String>('glossary-explain-again'),
+                  label: _busy
+                      ? l10n.explanationReexplaining
+                      : l10n.glossaryExplainAgain,
+                  size: PaperButtonSize.xs,
+                  focusGap: PaperWeb.gray900,
+                  onPressed: _busy ? null : () => unawaited(_reexplain()),
+                ),
+              )
+            else
+              Text(l10n.aiNeedsConnection, style: _xs),
+            if (_failed) ...<Widget>[
+              const SizedBox(height: PaperSpacing.tw1_5),
+              Text(
+                l10n.aiReexplainFailed,
+                style: _xs.copyWith(color: PaperWeb.red400),
+              ),
+            ],
+          ],
         ],
       ),
     );
   }
 }
 
-class _TagChip extends StatelessWidget {
-  const _TagChip(this.label);
+/// The web's closed `TagChip.type` vocabulary (`lib/glossary/tags.ts`
+/// `TYPE_TAGS`); every other tag is a `TagChip.topic`.
+const Set<String> kGlossaryTypeTags = <String>{
+  'dataset',
+  'benchmark',
+  'term',
+  'method',
+  'metric',
+  'model',
+  'architecture',
+  'task',
+  'library',
+  'concept',
+};
 
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.paper;
-    return Container(
-      height: 22,
-      padding: const EdgeInsets.symmetric(horizontal: PaperSpacing.sm),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: c.surfaceVariant,
-        borderRadius: PaperRadii.borderFull,
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: c.textSecondary,
-        ),
-      ),
-    );
-  }
-}
+bool isTypeTag(String tag) =>
+    kGlossaryTypeTags.contains(tag.trim().toLowerCase());

@@ -9,38 +9,14 @@ final sharedPreferencesProvider = Provider<SharedPreferences?>((ref) => null);
 
 /// Preference keys. Never rename: they are persisted.
 abstract final class PrefKeys {
-  static const String themeMode = 'settings.themeMode';
+  // Retired: 'settings.themeMode' (the theme toggle was removed; web
+  // parity is dark-only). Upgraded installs may still hold it; it is never
+  // read or written, so don't reuse that key.
   static const String reduceMotion = 'settings.reduceMotion';
   static const String singleKeyShortcuts = 'settings.reader.singleKeyShortcuts';
   static const String panelStyle = 'settings.reader.panelStyle';
   static const String autoSwitchToPen = 'settings.reader.autoSwitchToPen';
 }
-
-/// Theme mode. Dark by default (web parity); Settings offers System / Light
-/// / Dark. Persisted.
-class ThemeModeController extends Notifier<ThemeMode> {
-  @override
-  ThemeMode build() {
-    final name = ref
-        .watch(sharedPreferencesProvider)
-        ?.getString(PrefKeys.themeMode);
-    return ThemeMode.values.firstWhere(
-      (m) => m.name == name,
-      orElse: () => ThemeMode.dark,
-    );
-  }
-
-  void set(ThemeMode mode) {
-    state = mode;
-    ref
-        .read(sharedPreferencesProvider)
-        ?.setString(PrefKeys.themeMode, mode.name);
-  }
-}
-
-final themeModeProvider = NotifierProvider<ThemeModeController, ThemeMode>(
-  ThemeModeController.new,
-);
 
 /// Settings › Appearance › Reduce motion: System (false) / On (true).
 /// Applied once at the root as `MediaQuery.disableAnimations` (motion.md

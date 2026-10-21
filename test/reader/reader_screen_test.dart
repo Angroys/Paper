@@ -62,6 +62,46 @@ void main() {
     expect(find.byType(ToolDock), findsNothing);
   });
 
+  testWidgets('web-parity geometry at 1280x800 (reader.md §12)', (
+    tester,
+  ) async {
+    final c = await pumpReader(tester, const Size(1280, 800));
+    // Strip 52 + 1, no nav bar above it.
+    expect(
+      tester.getRect(find.byType(ReaderToolbar)),
+      const Rect.fromLTWH(0, 0, 1280, 53),
+    );
+    // Docked panel 384 + its 41-tall header.
+    final panel = tester.getRect(find.byType(ReaderSidePanel));
+    expect(panel.width, 384);
+    expect(panel.right, 1280);
+    expect(panel.top, 53);
+    expect(tester.getSize(find.byType(PanelTabBar)).height, 41);
+    // Zoom pill: 36 tall, top 24 below the strip, centred on the pane.
+    final pill = tester.getRect(find.byType(ReaderPill));
+    expect(pill.height, 36);
+    expect(pill.top, 77);
+    expect(pill.center.dx, closeTo((1280 - 385) / 2, 1));
+    // Selection popover: 40 tall, bottom edge 8 above the selection.
+    ctrl(c).setSelection(
+      const ReaderTextSelection(
+        pageNumber: 2,
+        text: 'multi-head attention',
+        rects: <HighlightRect>[],
+        anchor: ReaderAnchor(
+          pageNumber: 2,
+          rect: Rect.fromLTWH(0.1, 0.3, 0.4, 0.02),
+          local: Rect.fromLTWH(300, 400, 200, 16),
+        ),
+      ),
+    );
+    await tester.pump();
+    final bar = tester.getRect(find.byType(PopoverBar));
+    expect(bar.height, 40);
+    expect(bar.bottom, 53 + 400 - 8);
+    expect(bar.center.dx, closeTo(400, 1));
+  });
+
   testWidgets('deleted paper shows the error state', (tester) async {
     papers.paper = null;
     await pumpReader(tester, const Size(1280, 800));
@@ -81,7 +121,7 @@ void main() {
     expect(c.read(readerControllerProvider('p1')).tool, ReaderTool.pen);
   });
 
-  testWidgets('panel opens in split view with the Highlights tab', (
+  testWidgets('docked panel is open by default; Highlights tab jumps', (
     tester,
   ) async {
     highlights.highlights.add(
@@ -102,16 +142,17 @@ void main() {
       ),
     );
     final c = await pumpReader(tester, const Size(1280, 800));
-    await tester.tap(find.byTooltip('Show or hide side panel'));
-    await tester.pumpAndSettle();
+    // Docked (>= 1024): the panel is open by default.
+    expect(c.read(readerControllerProvider('p1')).panelOpen, isTrue);
     expect(find.byType(ReaderSidePanel), findsOneWidget);
+    expect(find.byTooltip('Show or hide side panel'), findsNothing);
     final tab = find.byKey(const ValueKey<String>('panel-tab-highlights'));
     await tester.ensureVisible(tab);
     await tester.pumpAndSettle();
     await tester.tap(tab);
     await tester.pumpAndSettle();
     expect(find.text('scaled dot-product attention'), findsOneWidget);
-    expect(find.text('p.4'), findsOneWidget);
+    expect(find.text('Page 4'), findsOneWidget);
     await tester.tap(find.text('scaled dot-product attention'));
     await tester.pump();
     final s = c.read(readerControllerProvider('p1'));
@@ -268,17 +309,17 @@ void main() {
     final y = PaperHighlightColor.yellow.wash.toARGB32().toRadixString(16);
     final b = PaperHighlightColor.blue.wash.toARGB32().toRadixString(16);
     expect(calls.take(7), <String>[
-      'layer multiply 0.40',
+      'layer multiply 0.10',
       'rrect $y',
       'rrect $y',
       'restore',
-      'layer multiply 0.40',
+      'layer multiply 0.10',
       'rrect $b',
       'restore',
     ]);
     final painter =
         tester.widget<CustomPaint>(paint).painter! as HighlightWashPainter;
-    expect(painter.colors.restAlpha, 0.40);
+    expect(painter.colors.restAlpha, 0.10);
     expect(painter.colors.blendMode, BlendMode.multiply);
   });
 

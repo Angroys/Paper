@@ -13,6 +13,7 @@ import 'package:paper/features/auth/sign_in_screen.dart';
 import 'package:paper/features/settings/settings_screen.dart';
 import 'package:paper/features/settings/sign_out_dialog.dart';
 import 'package:paper/sync/sync_providers.dart';
+import 'package:paper/ui/ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/fakes.dart';
@@ -60,17 +61,18 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('theme choice persists across launches', (tester) async {
+  testWidgets('no theme selector (dark-only); a legacy theme pref is '
+      'ignored and left alone', (tester) async {
+    // The removed theme toggle's key (never read any more).
+    await prefs.setString('settings.themeMode', 'light');
     await pump(tester);
-    await tester.tap(find.byKey(const ValueKey<String>('theme-light')));
-    await tester.pump();
-    expect(prefs.getString(PrefKeys.themeMode), 'light');
-
-    final next = ProviderContainer(
-      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+    expect(find.byKey(const ValueKey<String>('theme-light')), findsNothing);
+    expect(find.text('Theme'), findsNothing);
+    expect(
+      Theme.of(tester.element(find.byType(SettingsScreen))).brightness,
+      Brightness.dark,
     );
-    addTearDown(next.dispose);
-    expect(next.read(themeModeProvider), ThemeMode.light);
+    expect(prefs.getString('settings.themeMode'), 'light');
   });
 
   testWidgets('reader prefs and reduce motion persist', (tester) async {
@@ -106,10 +108,12 @@ void main() {
     expect(find.text('Sign out of Paper?'), findsOneWidget);
     expect(find.textContaining('stay here, so you can keep reading'), findsOne);
     expect(find.textContaining('only on this device'), findsNothing);
-    final box = tester.widget<CheckboxListTile>(
+    final box = tester.widget<PaperCheckboxRow>(
       find.byKey(SignOutDialog.removeLocalKey),
     );
     expect(box.value, isFalse);
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.byType(PaperDialog), findsOneWidget);
 
     await tester.tap(find.byKey(SignOutDialog.removeLocalKey));
     await tester.pumpAndSettle();
@@ -214,17 +218,53 @@ void main() {
     expect(find.text('Notes copied.'), findsOneWidget);
   });
 
-  testWidgets('expanded+ is master–detail', (tester) async {
-    await pump(tester, size: const Size(1280, 900));
-    expect(
-      find.byKey(const ValueKey<String>('settings-nav-storage')),
-      findsOneWidget,
+  testWidgets('one centred 720 column of section cards at every width', (
+    tester,
+  ) async {
+    await pump(tester, size: const Size(1280, 2400));
+    expect(find.byType(VerticalDivider), findsNothing);
+    expect(find.byType(ListTile), findsNothing);
+    expect(find.byType(Switch), findsNothing);
+    for (final s in SettingsSection.values) {
+      final card = tester.getRect(find.byKey(SettingsScreen.sectionKey(s)));
+      expect(card.left, 280, reason: s.name);
+      expect(card.width, 720, reason: s.name);
+    }
+    final title = tester.getRect(find.text('Settings'));
+    expect(title.top, 64);
+    final account = tester.getRect(
+      find.byKey(SettingsScreen.sectionKey(SettingsSection.account)),
     );
-    await tester.tap(
-      find.byKey(const ValueKey<String>('settings-nav-storage')),
+    expect(account.top - title.bottom, 32);
+    final appearance = tester.getRect(
+      find.byKey(SettingsScreen.sectionKey(SettingsSection.appearance)),
     );
-    await tester.pumpAndSettle();
+    expect(appearance.top - account.bottom, 24);
     expect(find.text('Downloaded papers (1)'), findsOneWidget);
     expect(find.text('Clear cache'), findsOneWidget);
+    // Toggles are 20×20 checkboxes.
+    expect(
+      tester.getSize(find.byKey(const ValueKey<String>('settings-auto-pen'))),
+      const Size(20, 20),
+    );
+
+    await pump(tester, size: const Size(800, 2400));
+    final card = tester.getRect(
+      find.byKey(SettingsScreen.sectionKey(SettingsSection.reader)),
+    );
+    expect(card.left, 40);
+    expect(card.width, 720);
+  });
+
+  testWidgets('clear cache confirms inline', (tester) async {
+    await pump(tester);
+    await tester.ensureVisible(
+      find.byKey(const ValueKey<String>('settings-clear-cache')),
+    );
+    await tester.tap(
+      find.byKey(const ValueKey<String>('settings-clear-cache')),
+    );
+    await tester.pump();
+    expect(find.text('Cache cleared.'), findsOneWidget);
   });
 }

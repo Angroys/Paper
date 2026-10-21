@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:paper/ai/ai_providers.dart';
+import 'package:paper/app/app_commands.dart';
 import 'package:paper/auth/auth_providers.dart';
 import 'package:paper/core/build_flags.dart';
 import 'package:paper/core/core_providers.dart';
@@ -105,8 +106,6 @@ void main() {
     Future<void> importByLink(WidgetTester tester) async {
       await tester.tap(find.byKey(LibraryScreen.importButtonKey));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('From a link').last);
-      await tester.pumpAndSettle();
     }
 
     testWidgets('kept account papers are labelled; no download states', (
@@ -123,9 +122,7 @@ void main() {
       expect(find.textContaining('Uploads when'), findsNothing);
     });
 
-    testWidgets('import by link asks to sign in; Not now closes it', (
-      tester,
-    ) async {
+    testWidgets('the link card asks guests to sign in', (tester) async {
       await pump(tester);
       await importByLink(tester);
       expect(
@@ -133,15 +130,34 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Sign in to import from a link'), findsOneWidget);
-      // No URL field: nothing hard-fails later.
+      // No URL field: nothing hard-fails later. File import still works.
       expect(
         find.byKey(const ValueKey<String>('import-url-field')),
         findsNothing,
       );
-      await tester.tap(find.text('Not now'));
-      await tester.pumpAndSettle();
+      expect(find.byKey(LibraryScreen.chooseFileKey), findsOneWidget);
       expect(find.byType(SignInScreen), findsNothing);
       expect(repo.calls.where((c) => c.startsWith('url ')), isEmpty);
+    });
+
+    testWidgets('the import-from-link command shows the sign-in dialog; '
+        'Not now closes it', (tester) async {
+      await pump(tester);
+      ProviderScope.containerOf(tester.element(find.byType(LibraryScreen)))
+          .read(libraryCommandProvider.notifier)
+          .send(LibraryCommandKind.importUrl);
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(SignInPrompt.keyFor(GuestFeature.importLink)),
+        findsOneWidget,
+      );
+      await tester.tap(find.text('Not now'));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(SignInPrompt.keyFor(GuestFeature.importLink)),
+        findsNothing,
+      );
+      expect(find.byType(SignInScreen), findsNothing);
     });
 
     testWidgets('Sign in opens the sign-in screen, which can be closed', (

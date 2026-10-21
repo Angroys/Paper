@@ -3,7 +3,7 @@
   "$description": "Paper (paper.college) native app design tokens — Flutter (Android tablet, Windows, macOS). Source of truth for the hand-written lib/theme/paper_tokens.dart. Values are mapped 1:1 from the RPR web app (tailwind.config.ts, src/app/globals.css, design/tokens/*.json). Units: dp for sizes, ms for durations. Colors are #RRGGBB or #RRGGBBAA (CSS order; Dart uses 0xAARRGGBB).",
   "meta": {
     "name": "paper.app",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "sourceOfTruth": [
       "research-paper-helper/tailwind.config.ts (neutral hue-free gray ramp, accent family, Geist fonts)",
       "research-paper-helper/src/app/globals.css (:root + .dark CSS vars, reader mark families, motion vars)",
@@ -15,276 +15,976 @@
       "The PDF page stays WHITE in both themes (web parity). Highlights multiply over the white page so glyphs stay dark.",
       "Dark accent flips to indigo-400 with DARK label ink (indigo-950); white on indigo-400 fails AA."
     ],
-    "contrastGate": "Every text-on-background pair below is WCAG AA (>=4.5:1 body, >=3:1 UI/large). Ratios computed with the WCAG 2.x relative-luminance formula; see each token's `contrast` note."
+    "contrastGate": "Parity beats AA where the web itself is below AA. Known web pairs below AA, kept on purpose: outline #404040 on #171717 (1.73:1, input/secondary-button border), textSubtle #737373 on #171717 (3.78:1, small meta text); every accent button uses indigo-950 text (5.36:1). All other text pairs pass AA; see tokens.md section 12.",
+    "theme": "dark-only: the web server-renders <html class=\"dark\"> with no toggle, so color.light was removed and PaperTheme.light()/PaperColors.light alias the dark values.",
+    "webParity": "Every value equals what paper.college renders (RPR tailwind.config.ts, src/app/globals.css, src/components). Full extraction, Tailwind-class table and old->new changes: design/web-parity/tokens.md."
   },
-
   "color": {
     "palette": {
       "$description": "Raw ramps. Do NOT use directly in widgets — use semantic roles.",
       "gray": {
-        "50": "#fafafa", "100": "#f5f5f5", "200": "#e5e5e5", "300": "#d4d4d4", "400": "#a3a3a3",
-        "500": "#737373", "600": "#525252", "700": "#404040", "800": "#262626", "900": "#171717", "950": "#0a0a0a"
+        "50": "#fafafa",
+        "100": "#f5f5f5",
+        "200": "#e5e5e5",
+        "300": "#d4d4d4",
+        "400": "#a3a3a3",
+        "500": "#737373",
+        "600": "#525252",
+        "700": "#404040",
+        "800": "#262626",
+        "900": "#171717",
+        "950": "#0a0a0a"
       },
       "indigo": {
-        "50": "#eef2ff", "200": "#c7d2fe", "300": "#a5b4fc", "400": "#818cf8", "500": "#6366f1",
-        "600": "#4f46e5", "700": "#4338ca", "900": "#312e81", "950": "#1e1b4b"
+        "50": "#eef2ff",
+        "200": "#c7d2fe",
+        "300": "#a5b4fc",
+        "400": "#818cf8",
+        "500": "#6366f1",
+        "600": "#4f46e5",
+        "700": "#4338ca",
+        "900": "#312e81",
+        "950": "#1e1b4b"
       },
-      "white": "#ffffff"
-    },
-
-    "light": {
-      "background":        { "$value": "#fafafa", "$description": "App canvas (web --background, neutral-50)" },
-      "surface":           { "$value": "#ffffff", "$description": "Cards, panels, sheets, dialogs (web .card bg-white)" },
-      "surfaceVariant":    { "$value": "#f5f5f5", "$description": "Hover fills, sidebar, chips, input fill (gray-100)" },
-      "surfaceRaised":     { "$value": "#ffffff", "$description": "Tonal step for menus/popovers (border carries the edge)" },
-      "pdfPage":           { "$value": "#ffffff", "$description": "PDF page fill — white in BOTH themes" },
-      "readerBackdrop":    { "$value": "#e5e5e5", "$description": "Area around PDF pages (gray-200) so white pages read as sheets" },
-      "primary":           { "$value": "#4f46e5", "$description": "web --accent (indigo-600)", "contrast": "white on it 6.29:1; on #fafafa 6.02:1" },
-      "onPrimary":         { "$value": "#ffffff" },
-      "primaryHover":      { "$value": "#4338ca", "$description": "web --accent-hover (indigo-700)" },
-      "primarySoft":       { "$value": "#eef2ff", "$description": "web --accent-soft (indigo-50) — tinted fills, selected nav item" },
-      "onPrimarySoft":     { "$value": "#312e81", "$description": "web --accent-ink (indigo-900)", "contrast": "10.22:1 on #eef2ff" },
-      "secondary":         { "$value": "#404040", "$description": "Neutral secondary action (gray-700); brand has no 2nd hue" },
-      "onSecondary":       { "$value": "#ffffff" },
-      "accent":            { "$value": "#4f46e5", "$description": "Alias of primary — the ONE accent" },
-      "textPrimary":       { "$value": "#171717", "contrast": "17.18:1 on background, 17.93:1 on surface" },
-      "textSecondary":     { "$value": "#525252", "contrast": "7.49:1 on background" },
-      "textMuted":         { "$value": "#737373", "contrast": "4.54:1 on background, 4.74:1 on surface — NOT for body text on surfaceVariant (4.35:1); captions only there if >=14dp bold/18dp" },
-      "textDisabled":      { "$value": "#a3a3a3", "$description": "Disabled labels (exempt from contrast)" },
-      "border":            { "$value": "#e5e5e5", "$description": "Card/panel edge (gray-200), decorative" },
-      "divider":           { "$value": "#e5e5e5" },
-      "outline":           { "$value": "#737373", "$description": "Interactive control boundaries (focused-off inputs, checkboxes)", "contrast": "4.74:1 on surface (>=3:1 UI)" },
-      "outlineVariant":    { "$value": "#d4d4d4", "$description": "Web input border parity (gray-300) — decorative only" },
-      "focusRing":         { "$value": "#4f46e5", "$description": "2dp ring + 2dp offset (web focus-visible:ring-2 ring-accent ring-offset-2)", "contrast": "6.29:1 on white" },
-      "focusRingOnPaper":  { "$value": "#4f46e5", "$description": "PINNED indigo-600 on the white PDF page in both themes (web --mark-focus-ring)" },
-      "scrim":             { "$value": "#17171738", "$description": "Modal scrim (web --focus-lock-tint rgba(23,23,23,0.22))" },
-      "inverseSurface":    { "$value": "#262626", "$description": "Snackbar/tooltip bg" },
-      "onInverseSurface":  { "$value": "#fafafa", "contrast": "14.5:1" },
-      "inversePrimary":    { "$value": "#a5b4fc", "$description": "Action text on inverseSurface (snackbar Undo). Mirrors paper_tokens.dart", "contrast": "7.59:1 on #262626" },
-      "success":           { "$value": "#15803d", "$description": "green-700 (web successText)", "contrast": "5.02:1 on white" },
-      "successSurface":    { "$value": "#f0fdf4" },
-      "warning":           { "$value": "#b45309", "$description": "amber-700", "contrast": "5.02:1 on white" },
-      "warningSurface":    { "$value": "#fffbeb" },
-      "error":             { "$value": "#b91c1c", "$description": "red-700 (web errorText)", "contrast": "6.47:1 on white" },
-      "onError":           { "$value": "#ffffff", "$description": "Text/icons on an error fill. Mirrors paper_tokens.dart" },
-      "errorSurface":      { "$value": "#fef2f2", "$description": "red-50 (web errorSurface)" },
-      "errorBorder":       { "$value": "#fecaca", "$description": "red-200 (web errorBorder)" },
-      "onErrorSurface":    { "$value": "#b91c1c" },
-      "info":              { "$value": "#1d4ed8", "$description": "blue-700 (term family hue)", "contrast": "6.7:1 on white" },
-      "infoSurface":       { "$value": "#eff6ff" },
-      "status": {
-        "online":          { "$value": "#15803d", "$description": "= success" },
-        "offline":         { "$value": "#737373", "$description": "Neutral, NOT an error — reading works offline" },
-        "syncing":         { "$value": "#4f46e5", "$description": "= primary (activity)" },
-        "syncPending":     { "$value": "#b45309", "$description": "Local edits queued (= warning)" },
-        "synced":          { "$value": "#15803d" },
-        "syncError":       { "$value": "#b91c1c" }
+      "white": "#ffffff",
+      "red": {
+        "200": "#fecaca",
+        "300": "#fca5a5",
+        "400": "#f87171",
+        "500": "#ef4444",
+        "700": "#b91c1c",
+        "900": "#7f1d1d",
+        "950": "#450a0a"
       },
-      "selection": {
-        "text":            { "$value": "#4f46e54d", "$description": "Text selection fill over the PDF/inputs (accent @ 30%)" },
-        "cursor":          { "$value": "#4f46e5" },
-        "handle":          { "$value": "#4f46e5" }
-      }
+      "green": {
+        "400": "#4ade80"
+      },
+      "amber": {
+        "400": "#fbbf24"
+      },
+      "yellow": {
+        "900": "#713f12"
+      },
+      "black": "#000000"
     },
-
     "dark": {
-      "background":        { "$value": "#0a0a0a", "$description": "web .dark --background (neutral-950)" },
-      "surface":           { "$value": "#171717", "$description": "web .card dark:bg-gray-900" },
-      "surfaceVariant":    { "$value": "#262626", "$description": "gray-800 — hover fills, sidebar, input fill" },
-      "surfaceRaised":     { "$value": "#262626", "$description": "Tonal elevation step for menus/popovers" },
-      "pdfPage":           { "$value": "#ffffff", "$description": "Stays white (web parity). Optional 'night paper' mode is an app setting, see highlight.darkPaper" },
-      "readerBackdrop":    { "$value": "#0a0a0a" },
-      "primary":           { "$value": "#818cf8", "$description": "web .dark --accent (indigo-400)", "contrast": "6.64:1 on background, 6.01:1 on surface" },
-      "onPrimary":         { "$value": "#1e1b4b", "$description": "indigo-950 (web dark:text-indigo-950)", "contrast": "5.36:1" },
-      "primaryHover":      { "$value": "#a5b4fc", "$description": "web .dark --accent-hover (indigo-300)" },
-      "primarySoft":       { "$value": "#1e1b4b", "$description": "web .dark --accent-soft (indigo-950)" },
-      "onPrimarySoft":     { "$value": "#c7d2fe", "$description": "web .dark --accent-ink (indigo-200)", "contrast": "10.72:1" },
-      "secondary":         { "$value": "#d4d4d4" },
-      "onSecondary":       { "$value": "#171717" },
-      "accent":            { "$value": "#818cf8" },
-      "textPrimary":       { "$value": "#f5f5f5", "contrast": "18.16:1 on background, 16.44:1 on surface" },
-      "textSecondary":     { "$value": "#d4d4d4", "$description": "gray-300 (web mindmap ink dark)", "contrast": "12.1:1 on surface" },
-      "textMuted":         { "$value": "#a3a3a3", "$description": "gray-400 (web dark bodyMuted)", "contrast": "7.11:1 on surface, 6.0:1 on surfaceVariant" },
-      "textDisabled":      { "$value": "#525252" },
-      "border":            { "$value": "#262626", "$description": "web dark:border-gray-800" },
-      "divider":           { "$value": "#262626" },
-      "outline":           { "$value": "#737373", "contrast": "3.78:1 on surface (>=3:1 UI)" },
-      "outlineVariant":    { "$value": "#404040", "$description": "web dark input border (gray-700)" },
-      "focusRing":         { "$value": "#818cf8", "contrast": "6.64:1 on background" },
-      "focusRingOnPaper":  { "$value": "#4f46e5", "$description": "PINNED — #818cf8 is only ~2.2:1 on white paper" },
-      "scrim":             { "$value": "#0a0a0a8c", "$description": "web dark --focus-lock-tint rgba(10,10,10,0.55)" },
-      "inverseSurface":    { "$value": "#e5e5e5" },
-      "onInverseSurface":  { "$value": "#171717", "contrast": "14.23:1" },
-      "inversePrimary":    { "$value": "#4f46e5", "$description": "Action text on inverseSurface (snackbar Undo). Mirrors paper_tokens.dart", "contrast": "4.99:1 on #e5e5e5" },
-      "success":           { "$value": "#4ade80", "$description": "green-400", "contrast": "10.29:1 on surface" },
-      "successSurface":    { "$value": "#052e16" },
-      "warning":           { "$value": "#fbbf24", "$description": "amber-400", "contrast": "10.74:1 on surface" },
-      "warningSurface":    { "$value": "#451a03" },
-      "error":             { "$value": "#f87171", "$description": "red-400", "contrast": "6.48:1 on surface" },
-      "onError":           { "$value": "#450a0a", "$description": "Text/icons on an error fill. Mirrors paper_tokens.dart" },
-      "errorSurface":      { "$value": "#450a0a", "$description": "red-950" },
-      "errorBorder":       { "$value": "#7f1d1d", "$description": "red-900" },
-      "onErrorSurface":    { "$value": "#fca5a5", "$description": "red-300" },
-      "info":              { "$value": "#60a5fa", "$description": "blue-400", "contrast": "7.05:1 on surface" },
-      "infoSurface":       { "$value": "#172554" },
+      "background": {
+        "$value": "#0a0a0a",
+        "$description": "web .dark --background (neutral-950)"
+      },
+      "surface": {
+        "$value": "#171717",
+        "$description": "web .card dark:bg-gray-900"
+      },
+      "surfaceVariant": {
+        "$value": "#262626",
+        "$description": "gray-800 — hover fills, sidebar, input fill"
+      },
+      "surfaceRaised": {
+        "$value": "#171717",
+        "$description": "Popovers/menus: web gray-900 + 1px border + shadow (same fill as surface)"
+      },
+      "pdfPage": {
+        "$value": "#ffffff",
+        "$description": "Stays white (web parity). Optional 'night paper' mode is an app setting, see highlight.darkPaper"
+      },
+      "readerBackdrop": {
+        "$value": "#0a0a0a"
+      },
+      "primary": {
+        "$value": "#818cf8",
+        "$description": "web .dark --accent (indigo-400)",
+        "contrast": "6.64:1 on background, 6.01:1 on surface"
+      },
+      "onPrimary": {
+        "$value": "#1e1b4b",
+        "$description": "indigo-950 (web dark:text-indigo-950)",
+        "contrast": "5.36:1"
+      },
+      "primaryHover": {
+        "$value": "#a5b4fc",
+        "$description": "web .dark --accent-hover (indigo-300)"
+      },
+      "primarySoft": {
+        "$value": "#1e1b4b",
+        "$description": "web .dark --accent-soft (indigo-950)"
+      },
+      "onPrimarySoft": {
+        "$value": "#c7d2fe",
+        "$description": "web .dark --accent-ink (indigo-200)",
+        "contrast": "10.72:1"
+      },
+      "secondary": {
+        "$value": "#e5e5e5",
+        "$description": ".btn-secondary label (dark:text-gray-200)"
+      },
+      "onSecondary": {
+        "$value": "#171717"
+      },
+      "accent": {
+        "$value": "#818cf8"
+      },
+      "textPrimary": {
+        "$value": "#f5f5f5",
+        "contrast": "18.16:1 on background, 16.44:1 on surface"
+      },
+      "textSecondary": {
+        "$value": "#d4d4d4",
+        "$description": "gray-300: labels, explanation prose (dark:text-gray-300)",
+        "contrast": "12.1:1 on surface"
+      },
+      "textMuted": {
+        "$value": "#a3a3a3",
+        "$description": "gray-400: descriptions, captions, ghost buttons (dark:text-gray-400, the most used text colour: 91 uses)",
+        "contrast": "7.11:1 on surface, 6.0:1 on surfaceVariant"
+      },
+      "textDisabled": {
+        "$value": "#525252"
+      },
+      "border": {
+        "$value": "#262626",
+        "$description": "web dark:border-gray-800"
+      },
+      "divider": {
+        "$value": "#262626"
+      },
+      "outline": {
+        "$value": "#404040",
+        "$description": "Control border: .field-input / .btn-secondary dark:border-gray-700 (web parity, 1.73:1 on surface)"
+      },
+      "outlineVariant": {
+        "$value": "#525252",
+        "$description": "Stronger neutral edge: HUD pill border, hover ring (gray-600)"
+      },
+      "focusRing": {
+        "$value": "#818cf8",
+        "contrast": "6.64:1 on background"
+      },
+      "focusRingOnPaper": {
+        "$value": "#4f46e5",
+        "$description": "PINNED — #818cf8 is only ~2.2:1 on white paper"
+      },
+      "scrim": {
+        "$value": "#0a0a0a99",
+        "$description": "Dialog backdrop dark:bg-[rgba(10,10,10,0.60)]"
+      },
+      "inverseSurface": {
+        "$value": "#171717",
+        "$description": "No inverted surfaces on the web: toasts are gray-900(/90) cards with a gray-800 border"
+      },
+      "onInverseSurface": {
+        "$value": "#f5f5f5"
+      },
+      "inversePrimary": {
+        "$value": "#818cf8",
+        "$description": "Action text in toasts = accent"
+      },
+      "success": {
+        "$value": "#4ade80",
+        "$description": "green-400",
+        "contrast": "10.29:1 on surface"
+      },
+      "successSurface": {
+        "$value": "#052e16"
+      },
+      "warning": {
+        "$value": "#fbbf24",
+        "$description": "amber-400",
+        "contrast": "10.74:1 on surface"
+      },
+      "warningSurface": {
+        "$value": "#451a03"
+      },
+      "error": {
+        "$value": "#f87171",
+        "$description": "red-400",
+        "contrast": "6.48:1 on surface"
+      },
+      "onError": {
+        "$value": "#450a0a",
+        "$description": "Text/icons on an error fill. Mirrors paper_tokens.dart"
+      },
+      "errorSurface": {
+        "$value": "#450a0a",
+        "$description": "red-950"
+      },
+      "errorBorder": {
+        "$value": "#7f1d1d",
+        "$description": "red-900"
+      },
+      "onErrorSurface": {
+        "$value": "#fca5a5",
+        "$description": "red-300"
+      },
+      "info": {
+        "$value": "#60a5fa",
+        "$description": "blue-400",
+        "contrast": "7.05:1 on surface"
+      },
+      "infoSurface": {
+        "$value": "#172554"
+      },
       "status": {
-        "online":          { "$value": "#4ade80" },
-        "offline":         { "$value": "#a3a3a3" },
-        "syncing":         { "$value": "#818cf8" },
-        "syncPending":     { "$value": "#fbbf24" },
-        "synced":          { "$value": "#4ade80" },
-        "syncError":       { "$value": "#f87171" }
+        "online": {
+          "$value": "#4ade80"
+        },
+        "offline": {
+          "$value": "#a3a3a3"
+        },
+        "syncing": {
+          "$value": "#818cf8"
+        },
+        "syncPending": {
+          "$value": "#fbbf24"
+        },
+        "synced": {
+          "$value": "#4ade80"
+        },
+        "syncError": {
+          "$value": "#f87171"
+        }
       },
       "selection": {
-        "text":            { "$value": "#818cf859", "$description": "accent @ 35% (inputs on dark surfaces). Over the white PDF page use light.selection.text" },
-        "cursor":          { "$value": "#818cf8" },
-        "handle":          { "$value": "#818cf8" }
+        "text": {
+          "$value": "#4f46e54d",
+          "$description": "PDF text-layer ::selection (indigo-600 @ 30%), white paper in both themes"
+        },
+        "cursor": {
+          "$value": "#818cf8"
+        },
+        "handle": {
+          "$value": "#818cf8"
+        }
+      },
+      "textSubtle": {
+        "$value": "#737373",
+        "$description": "dark:text-gray-500 (chevrons, rare meta). Dart: PaperWeb.gray500",
+        "contrast": "3.78:1 on surface — web parity, not AA for small text"
       }
     },
-
     "highlight": {
       "$description": "User highlight palette (text + figure highlights, stylus ink). Web ships one user color (amber); the app adds 5 hues built with the SAME recipe: wash = Tailwind-400 hue, reveal = 500 @ 0.55, active = 500 @ 0.68, ring = 600 opaque (>=3:1 on white). `whitePaper` values paint with BlendMode.multiply over the white PDF (glyphs stay dark; same-color overlaps must be painted in ONE layer with a single alpha — web no-stacking contract). `darkPaper` values are for the optional inverted/night page mode where multiply would go black: paint srcOver at the given alpha.",
-      "blendMode": { "whitePaper": "multiply", "darkPaper": "srcOver" },
+      "blendMode": {
+        "whitePaper": "multiply",
+        "darkPaper": "srcOver"
+      },
       "alpha": {
-        "whitePaper": { "rest": 0.40, "hover": 0.55, "active": 0.68, "note": "rest = web --highlight-mark-pending (0.40), the 'present' user mark; web AI-mark rest wash is 0.10 (see readerMarks)" },
-        "darkPaper":  { "rest": 0.32, "hover": 0.45, "active": 0.55 },
-        "stylusInk":  { "whitePaper": 0.45, "darkPaper": 0.36, "note": "Pen-highlighter strokes; one layer per color per page (no self-darkening)" }
+        "whitePaper": {
+          "rest": 0.1,
+          "hover": 0.55,
+          "active": 0.68,
+          "note": "rest = web --highlight-wash-opacity 0.10 (opaque wash, one layer per hue, multiply); hover 0.55 / active 0.68 = --highlight-mark-full / -active"
+        },
+        "darkPaper": {
+          "rest": 0.32,
+          "hover": 0.45,
+          "active": 0.55
+        },
+        "stylusInk": {
+          "whitePaper": 0.45,
+          "darkPaper": 0.36,
+          "note": "Pen-highlighter strokes; one layer per color per page (no self-darkening)"
+        }
       },
       "colors": {
-        "yellow": { "wash": "#fbbf24", "reveal": "#f59e0b", "ring": "#d97706", "ringContrastOnWhite": "3.19:1", "default": true, "label": "Yellow" },
-        "green":  { "wash": "#4ade80", "reveal": "#22c55e", "ring": "#16a34a", "ringContrastOnWhite": "3.30:1", "label": "Green" },
-        "blue":   { "wash": "#60a5fa", "reveal": "#3b82f6", "ring": "#2563eb", "ringContrastOnWhite": "5.17:1", "label": "Blue" },
-        "pink":   { "wash": "#f472b6", "reveal": "#ec4899", "ring": "#db2777", "ringContrastOnWhite": "4.60:1", "label": "Pink" },
-        "purple": { "wash": "#a78bfa", "reveal": "#8b5cf6", "ring": "#7c3aed", "ringContrastOnWhite": "5.70:1", "label": "Purple" },
-        "orange": { "wash": "#fb923c", "reveal": "#f97316", "ring": "#ea580c", "ringContrastOnWhite": "3.56:1", "label": "Orange" }
+        "yellow": {
+          "wash": "#fbbf24",
+          "reveal": "#f59e0b",
+          "ring": "#d97706",
+          "ringContrastOnWhite": "3.19:1",
+          "default": true,
+          "label": "Yellow"
+        },
+        "green": {
+          "wash": "#4ade80",
+          "reveal": "#22c55e",
+          "ring": "#16a34a",
+          "ringContrastOnWhite": "3.30:1",
+          "label": "Green"
+        },
+        "blue": {
+          "wash": "#60a5fa",
+          "reveal": "#3b82f6",
+          "ring": "#2563eb",
+          "ringContrastOnWhite": "5.17:1",
+          "label": "Blue"
+        },
+        "pink": {
+          "wash": "#f472b6",
+          "reveal": "#ec4899",
+          "ring": "#db2777",
+          "ringContrastOnWhite": "4.60:1",
+          "label": "Pink"
+        },
+        "purple": {
+          "wash": "#a78bfa",
+          "reveal": "#8b5cf6",
+          "ring": "#7c3aed",
+          "ringContrastOnWhite": "5.70:1",
+          "label": "Purple"
+        },
+        "orange": {
+          "wash": "#fb923c",
+          "reveal": "#f97316",
+          "ring": "#ea580c",
+          "ringContrastOnWhite": "3.56:1",
+          "label": "Orange"
+        }
       },
       "precomputed": {
         "$description": "Ready #RRGGBBAA values (wash @ rest alpha).",
-        "whitePaper": { "yellow": "#fbbf2466", "green": "#4ade8066", "blue": "#60a5fa66", "pink": "#f472b666", "purple": "#a78bfa66", "orange": "#fb923c66" },
-        "darkPaper":  { "yellow": "#fbbf2452", "green": "#4ade8052", "blue": "#60a5fa52", "pink": "#f472b652", "purple": "#a78bfa52", "orange": "#fb923c52" }
+        "whitePaper": {
+          "yellow": "#fbbf241a",
+          "green": "#4ade801a",
+          "blue": "#60a5fa1a",
+          "pink": "#f472b61a",
+          "purple": "#a78bfa1a",
+          "orange": "#fb923c1a"
+        },
+        "darkPaper": {
+          "yellow": "#fbbf2452",
+          "green": "#4ade8052",
+          "blue": "#60a5fa52",
+          "pink": "#f472b652",
+          "purple": "#a78bfa52",
+          "orange": "#fb923c52"
+        }
       },
-      "pending": { "$value": "#fbbf2466", "$description": "Just-created selection awaiting action (web --highlight-mark-pending, frozen)" },
+      "pending": {
+        "$value": "#fbbf2466",
+        "$description": "Just-created selection awaiting action (web --highlight-mark-pending, frozen)"
+      },
       "cornerRadius": 2,
       "hoverRingWidth": 1.5,
       "focusRingWidth": 2,
       "hoverScale": 1.02
     },
-
     "readerMarks": {
       "$description": "AI-generated reader marks — exact web values (globals.css). Rest wash = opaque `wash` color in a per-family layer at `restAlpha`, multiply over white paper. Hover = `full`, pressed = `active`, ring = opaque `ring` 1.5dp; keyboard focus uses focusRingOnPaper 2dp.",
-      "restAlpha": 0.10,
-      "term":     { "wash": "#60a5fa", "full": "#3b82f68c", "active": "#3b82f6ad", "ring": "#2563eb", "underline": "#2563eb", "role": "Known cached glossary term (blue)" },
-      "citation": { "wash": "#818cf8", "full": "#6366f18c", "active": "#6366f1ad", "ring": "#4f46e5", "role": "Citation (indigo)" },
-      "appendix": { "wash": "#2dd4bf", "full": "#14b8a68c", "active": "#14b8a6ad", "ring": "#0d9488", "role": "Appendix / in-doc jump (teal)" },
-      "mention":  { "wash": "#a3a3a3", "full": "#7373738c", "active": "#737373ad", "ring": "#525252", "role": "External mention (gray)" }
+      "restAlpha": 0.1,
+      "term": {
+        "wash": "#60a5fa",
+        "full": "#3b82f68c",
+        "active": "#3b82f6ad",
+        "ring": "#2563eb",
+        "underline": "#2563eb",
+        "role": "Known cached glossary term (blue)"
+      },
+      "citation": {
+        "wash": "#818cf8",
+        "full": "#6366f18c",
+        "active": "#6366f1ad",
+        "ring": "#4f46e5",
+        "role": "Citation (indigo)"
+      },
+      "appendix": {
+        "wash": "#2dd4bf",
+        "full": "#14b8a68c",
+        "active": "#14b8a6ad",
+        "ring": "#0d9488",
+        "role": "Appendix / in-doc jump (teal)"
+      },
+      "mention": {
+        "wash": "#a3a3a3",
+        "full": "#7373738c",
+        "active": "#737373ad",
+        "ring": "#525252",
+        "role": "External mention (gray)"
+      }
+    },
+    "web": {
+      "$description": "Exact web colours by Tailwind/CSS-var name (dark theme). Dart: PaperWeb.*",
+      "cssVariables": {
+        "--background": "#0a0a0a",
+        "--foreground": "#f5f5f5",
+        "--accent": "#818cf8",
+        "--accent-hover": "#a5b4fc",
+        "--accent-soft": "#1e1b4b",
+        "--accent-ink": "#c7d2fe",
+        "--mark-focus-ring": "#4f46e5",
+        "--popover-bg": "#111827",
+        "--popover-border": "#374151",
+        "--popover-text": "#d1d5db",
+        "--popover-accent": "#818cf8",
+        "--highlight-mark-pending": "#fbbf2466"
+      },
+      "composited": {
+        "gray800Half": "#1f1f1f",
+        "gray900Toast": "#161616",
+        "yellow900Hover": "#3b2715",
+        "white10": "#ffffff1a",
+        "scrimGradientFrom": "#0a0a0ae6",
+        "scrimGradientVia": "#0a0a0abf",
+        "dialogBackdrop": "#0a0a0a99",
+        "pdfSelection": "#4f46e54d"
+      }
     }
   },
-
   "typography": {
     "families": {
-      "sans": { "$value": "Geist", "fallback": ["Segoe UI", "SF Pro Text", "Roboto", "sans-serif"], "source": "web --font-geist-sans (src/app/fonts/GeistVF.woff)", "license": "SIL OFL 1.1" },
-      "mono": { "$value": "GeistMono", "fallback": ["Consolas", "Menlo", "monospace"], "source": "web --font-geist-mono", "license": "SIL OFL 1.1" }
+      "sans": {
+        "$value": "Geist",
+        "fallback": [
+          "Segoe UI",
+          "SF Pro Text",
+          "Roboto",
+          "sans-serif"
+        ],
+        "source": "Exact web files: src/app/fonts/GeistVF.woff (Geist v1.200, wght 100-900). Static instances in design/web-parity/fonts/Geist-{Regular,Medium,SemiBold,Bold}.ttf",
+        "license": "SIL OFL 1.1",
+        "metrics": "unitsPerEm 1000, hhea ascender 920 / descender -220 / lineGap 100 (v1.801 used before: 1005/-295/0)"
+      },
+      "mono": {
+        "$value": "GeistMono",
+        "fallback": [
+          "Consolas",
+          "Menlo",
+          "monospace"
+        ],
+        "source": "src/app/fonts/GeistMonoVF.woff (Geist Mono v1.200). Static instances in design/web-parity/fonts/GeistMono-{Regular,Medium,SemiBold}.ttf",
+        "license": "SIL OFL 1.1"
+      }
     },
-    "weights": { "regular": 400, "medium": 500, "semibold": 600, "bold": 700 },
+    "weights": {
+      "regular": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700
+    },
     "$description": "Scale mirrors Tailwind's text-* sizes/line-heights used by the web app (xs 12/16, sm 14/20, base 16/24, lg 18/28, xl 20/28, 2xl 24/32, 3xl 30/36, 4xl 36/40). lineHeight is the absolute dp; Flutter `height` = lineHeight / fontSize. letterSpacing in dp (tracking-tight = -0.025em).",
     "scale": {
-      "displayLarge":   { "fontSize": 36, "lineHeight": 40, "fontWeight": 600, "letterSpacing": -0.9,  "family": "sans" },
-      "displayMedium":  { "fontSize": 30, "lineHeight": 36, "fontWeight": 600, "letterSpacing": -0.75, "family": "sans" },
-      "displaySmall":   { "fontSize": 24, "lineHeight": 32, "fontWeight": 600, "letterSpacing": -0.6,  "family": "sans" },
-      "headlineLarge":  { "fontSize": 24, "lineHeight": 32, "fontWeight": 600, "letterSpacing": -0.6,  "family": "sans" },
-      "headlineMedium": { "fontSize": 20, "lineHeight": 28, "fontWeight": 600, "letterSpacing": -0.5,  "family": "sans" },
-      "headlineSmall":  { "fontSize": 18, "lineHeight": 28, "fontWeight": 600, "letterSpacing": -0.45, "family": "sans" },
-      "titleLarge":     { "fontSize": 18, "lineHeight": 28, "fontWeight": 600, "letterSpacing": -0.45, "family": "sans" },
-      "titleMedium":    { "fontSize": 16, "lineHeight": 24, "fontWeight": 600, "letterSpacing": 0,     "family": "sans" },
-      "titleSmall":     { "fontSize": 14, "lineHeight": 20, "fontWeight": 600, "letterSpacing": 0,     "family": "sans" },
-      "bodyLarge":      { "fontSize": 16, "lineHeight": 24, "fontWeight": 400, "letterSpacing": 0,     "family": "sans" },
-      "bodyMedium":     { "fontSize": 14, "lineHeight": 20, "fontWeight": 400, "letterSpacing": 0,     "family": "sans" },
-      "bodySmall":      { "fontSize": 12, "lineHeight": 16, "fontWeight": 400, "letterSpacing": 0,     "family": "sans" },
-      "labelLarge":     { "fontSize": 14, "lineHeight": 20, "fontWeight": 500, "letterSpacing": 0,     "family": "sans", "role": "Buttons (web btn text-sm font-medium)" },
-      "labelMedium":    { "fontSize": 12, "lineHeight": 16, "fontWeight": 500, "letterSpacing": 0,     "family": "sans" },
-      "labelSmall":     { "fontSize": 11, "lineHeight": 16, "fontWeight": 600, "letterSpacing": 0.44,  "family": "sans", "role": "Overline/eyebrow (web hero card title 11px/600/0.04em uppercase)" },
-      "caption":        { "fontSize": 12, "lineHeight": 16, "fontWeight": 400, "letterSpacing": 0,     "family": "sans", "color": "textMuted" }
+      "displayLarge": {
+        "fontSize": 36,
+        "lineHeight": 40,
+        "fontWeight": 600,
+        "letterSpacing": -0.9,
+        "family": "sans"
+      },
+      "displayMedium": {
+        "fontSize": 30,
+        "lineHeight": 36,
+        "fontWeight": 600,
+        "letterSpacing": -0.75,
+        "family": "sans"
+      },
+      "displaySmall": {
+        "fontSize": 24,
+        "lineHeight": 32,
+        "fontWeight": 600,
+        "letterSpacing": -0.6,
+        "family": "sans"
+      },
+      "headlineLarge": {
+        "fontSize": 24,
+        "lineHeight": 32,
+        "fontWeight": 600,
+        "letterSpacing": -0.6,
+        "family": "sans"
+      },
+      "headlineMedium": {
+        "fontSize": 20,
+        "lineHeight": 28,
+        "fontWeight": 600,
+        "letterSpacing": -0.5,
+        "family": "sans"
+      },
+      "headlineSmall": {
+        "fontSize": 18,
+        "lineHeight": 28,
+        "fontWeight": 600,
+        "letterSpacing": -0.45,
+        "family": "sans"
+      },
+      "titleLarge": {
+        "fontSize": 18,
+        "lineHeight": 28,
+        "fontWeight": 600,
+        "letterSpacing": -0.45,
+        "family": "sans"
+      },
+      "titleMedium": {
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 600,
+        "letterSpacing": 0,
+        "family": "sans"
+      },
+      "titleSmall": {
+        "fontSize": 14,
+        "lineHeight": 20,
+        "fontWeight": 600,
+        "letterSpacing": 0,
+        "family": "sans"
+      },
+      "bodyLarge": {
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 400,
+        "letterSpacing": 0,
+        "family": "sans"
+      },
+      "bodyMedium": {
+        "fontSize": 14,
+        "lineHeight": 20,
+        "fontWeight": 400,
+        "letterSpacing": 0,
+        "family": "sans"
+      },
+      "bodySmall": {
+        "fontSize": 12,
+        "lineHeight": 16,
+        "fontWeight": 400,
+        "letterSpacing": 0,
+        "family": "sans"
+      },
+      "labelLarge": {
+        "fontSize": 14,
+        "lineHeight": 20,
+        "fontWeight": 500,
+        "letterSpacing": 0,
+        "family": "sans",
+        "role": "Buttons (web btn text-sm font-medium)"
+      },
+      "labelMedium": {
+        "fontSize": 12,
+        "lineHeight": 16,
+        "fontWeight": 500,
+        "letterSpacing": 0,
+        "family": "sans"
+      },
+      "labelSmall": {
+        "fontSize": 11,
+        "lineHeight": 16,
+        "fontWeight": 500,
+        "letterSpacing": 0,
+        "family": "sans",
+        "role": "Badges/chips: text-[11px] font-medium"
+      },
+      "caption": {
+        "fontSize": 12,
+        "lineHeight": 16,
+        "fontWeight": 400,
+        "letterSpacing": 0,
+        "family": "sans",
+        "color": "textMuted"
+      }
     },
     "reader": {
       "$description": "Reader chrome + AI side panel. PDF text itself is rendered by pdfium, not themed.",
-      "explanationBody": { "fontSize": 16, "lineHeight": 26, "fontWeight": 400, "letterSpacing": 0, "family": "sans", "role": "AI explanation / note prose in side panel (65ch max measure)" },
-      "explanationBodyCompact": { "fontSize": 14, "lineHeight": 22, "fontWeight": 400, "letterSpacing": 0, "family": "sans", "role": "Popover body" },
-      "popoverTitle":    { "fontSize": 11, "lineHeight": 16, "fontWeight": 600, "letterSpacing": 0.44, "family": "sans", "transform": "uppercase", "color": "primary" },
-      "glossaryTerm":    { "fontSize": 15, "lineHeight": 22, "fontWeight": 600, "letterSpacing": 0, "family": "sans" },
-      "noteBody":        { "fontSize": 15, "lineHeight": 24, "fontWeight": 400, "letterSpacing": 0, "family": "sans" },
-      "pageIndicator":   { "fontSize": 12, "lineHeight": 16, "fontWeight": 500, "letterSpacing": 0, "family": "mono", "tabularFigures": true },
-      "code":            { "fontSize": 13, "lineHeight": 20, "fontWeight": 400, "letterSpacing": 0, "family": "mono" },
+      "explanationBody": {
+        "fontSize": 14,
+        "lineHeight": 22.75,
+        "fontWeight": 400,
+        "letterSpacing": 0,
+        "family": "sans",
+        "role": "Explanation prose: text-sm leading-relaxed gray-300"
+      },
+      "explanationBodyCompact": {
+        "fontSize": 14,
+        "lineHeight": 22.75,
+        "fontWeight": 400,
+        "letterSpacing": 0,
+        "family": "sans",
+        "role": "Citation popover body: text-sm leading-relaxed gray-200"
+      },
+      "popoverTitle": {
+        "fontSize": 11,
+        "lineHeight": 16,
+        "fontWeight": 600,
+        "letterSpacing": 0.275,
+        "family": "sans",
+        "transform": "uppercase",
+        "color": "primary"
+      },
+      "glossaryTerm": {
+        "fontSize": 14,
+        "lineHeight": 20,
+        "fontWeight": 600,
+        "letterSpacing": 0,
+        "family": "sans"
+      },
+      "noteBody": {
+        "fontSize": 14,
+        "lineHeight": 22.75,
+        "fontWeight": 400,
+        "letterSpacing": 0,
+        "family": "sans"
+      },
+      "pageIndicator": {
+        "fontSize": 12,
+        "lineHeight": 16,
+        "fontWeight": 400,
+        "letterSpacing": 0,
+        "family": "sans",
+        "tabularFigures": true,
+        "role": "Zoom % label: text-xs tabular-nums"
+      },
+      "code": {
+        "fontSize": 12.6,
+        "lineHeight": 22.75,
+        "fontWeight": 400,
+        "letterSpacing": 0,
+        "family": "mono"
+      },
       "measureMaxCh": 65
+    },
+    "tailwind": {
+      "$description": "Tailwind text-* used in scope: size / line-height (px). tracking-tight -0.025em, tracking-wide 0.025em; leading-relaxed 1.625, snug 1.375, tight 1.25, none 1.",
+      "xs": [
+        12,
+        16
+      ],
+      "sm": [
+        14,
+        20
+      ],
+      "base": [
+        16,
+        24
+      ],
+      "lg": [
+        18,
+        28
+      ],
+      "xl": [
+        20,
+        28
+      ],
+      "2xl": [
+        24,
+        32
+      ],
+      "3xl": [
+        30,
+        36
+      ],
+      "4xl": [
+        36,
+        40
+      ],
+      "5xl": [
+        48,
+        48
+      ],
+      "6xl": [
+        60,
+        60
+      ],
+      "[11px]": [
+        11,
+        "inherit"
+      ],
+      "[0.7rem]": [
+        11.2,
+        "inherit"
+      ],
+      "[0.65rem]": [
+        10.4,
+        "inherit"
+      ]
     }
   },
-
   "spacing": {
     "$description": "4dp grid (web design/tokens meta.spacing unitPx 4).",
-    "none": 0, "xxs": 2, "xs": 4, "sm": 8, "md": 12, "lg": 16, "xl": 24, "xxl": 32, "xxxl": 48, "huge": 64,
-    "gutter": { "compact": 8, "medium": 16, "expanded": 24, "large": 24, "extraLarge": 24 },
-    "margin": { "compact": 16, "medium": 24, "expanded": 24, "large": 32, "extraLarge": 40 },
-    "columns": { "compact": 4, "medium": 8, "expanded": 12, "large": 12, "extraLarge": 12 },
-    "contentMaxWidth": { "extraLarge": 1440, "note": "Library/Settings content is centred at max 1440 on extraLarge; the reader is never capped." },
+    "none": 0,
+    "xxs": 2,
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "xxl": 32,
+    "xxxl": 48,
+    "huge": 64,
+    "gutter": {
+      "compact": 8,
+      "medium": 16,
+      "expanded": 24,
+      "large": 24,
+      "extraLarge": 24
+    },
+    "margin": {
+      "compact": 16,
+      "medium": 24,
+      "expanded": 24,
+      "large": 32,
+      "extraLarge": 40
+    },
+    "columns": {
+      "compact": 4,
+      "medium": 8,
+      "expanded": 12,
+      "large": 12,
+      "extraLarge": 12
+    },
+    "contentMaxWidth": {
+      "extraLarge": 1440,
+      "note": "Library/Settings content is centred at max 1440 on extraLarge; the reader is never capped."
+    },
     "panePadding": 16,
-    "notes": "xxs (2) is only for hairline insets (focus ring offset, mark padding)."
+    "notes": "xxs (2) is only for hairline insets (focus ring offset, mark padding).",
+    "tailwind": {
+      "$description": "Tailwind spacing: N -> N*4 px. Steps used in scope",
+      "steps": {
+        "0.5": 2,
+        "1": 4,
+        "1.5": 6,
+        "2": 8,
+        "2.5": 10,
+        "3": 12,
+        "4": 16,
+        "5": 20,
+        "6": 24,
+        "8": 32,
+        "10": 40,
+        "12": 48,
+        "16": 64,
+        "20": 80,
+        "24": 96
+      }
+    }
   },
-
   "radius": {
     "$description": "Tailwind parity: rounded-sm 2 (reader marks), rounded 4, rounded-md 6 (buttons, inputs), rounded-lg 8 (cards), rounded-xl 12 (popovers/dialogs), full = pills.",
-    "none": 0, "xs": 2, "sm": 4, "md": 6, "lg": 8, "xl": 12, "xxl": 16, "full": 9999
+    "none": 0,
+    "xs": 2,
+    "sm": 4,
+    "md": 6,
+    "lg": 8,
+    "xl": 12,
+    "xxl": 16,
+    "full": 9999
   },
-
   "elevation": {
-    "$description": "Perf-first: NO blurred shadows on scrolling content. Elevation is tonal (surface → surfaceRaised) + 1dp border. Shadows only on transient overlays (menus, popovers, dialogs) — never in list items or on PDF pages during scroll.",
-    "level0": { "dp": 0, "border": "border", "shadow": "none", "use": "Canvas, list rows" },
-    "level1": { "dp": 0, "border": "border", "shadow": "none", "use": "Cards, panels (web .card)" },
-    "level2": { "dp": 2, "border": "border", "shadow": { "light": "0 1 3 0 #0000001a", "dark": "none" }, "use": "Menus, popovers, tooltips" },
-    "level3": { "dp": 6, "border": "border", "shadow": { "light": "0 4 6 -1 #0000001a", "dark": "none" }, "use": "Dialogs, bottom sheets" },
-    "pdfPage": { "dp": 0, "border": { "light": "#e5e5e5", "dark": "#262626" }, "shadow": "none", "use": "Page sheets — border only (cache-friendly)" }
+    "$description": "Tailwind shadows; the web keeps them in dark mode (same black alphas). Borders carry most of the edge.",
+    "level0": {
+      "dp": 0,
+      "border": "border",
+      "shadow": "none",
+      "use": "Canvas, list rows"
+    },
+    "level1": {
+      "dp": 0,
+      "border": "border",
+      "shadow": "none",
+      "use": "Cards, panels (web .card)"
+    },
+    "level2": {
+      "dp": 2,
+      "border": "border",
+      "shadow": {
+        "value": "lg",
+        "use": "selection popover"
+      },
+      "use": "Menus, popovers, tooltips"
+    },
+    "level3": {
+      "dp": 6,
+      "border": "border",
+      "shadow": {
+        "value": "xl",
+        "use": "dialogs, citation popover, floating explanation"
+      },
+      "use": "Dialogs, bottom sheets"
+    },
+    "pdfPage": {
+      "dp": 0,
+      "border": {
+        "light": "#e5e5e5",
+        "dark": "#262626"
+      },
+      "shadow": "none",
+      "use": "Page sheets — border only (cache-friendly)"
+    },
+    "shadows": {
+      "sm": "0 1 2 0 #0000000d",
+      "md": "0 4 6 -1 #0000001a, 0 2 4 -2 #0000001a",
+      "lg": "0 10 15 -3 #0000001a, 0 4 6 -4 #0000001a",
+      "xl": "0 20 25 -5 #0000001a, 0 8 10 -6 #0000001a",
+      "2xl": "0 25 50 -12 #00000040"
+    }
   },
-
   "breakpoints": {
     "$description": "Window width in logical dp (MediaQuery.sizeOf(context).width). Material 3 window-size-class aligned. Min-width, mobile-first.",
     "$specNames": "design/specs/layout-system.md uses the same ranges as PaperWindowClass: compact <600, medium 600-839, expanded 840-1199, large 1200-1599, extraLarge >=1600.",
-    "compact":    { "min": 0,    "max": 599,  "target": "Split-screen / narrow window / phone", "layout": "Single pane; bottom NavigationBar; side panel as modal bottom sheet (snap 40% / 90%)" },
-    "medium":     { "min": 600,  "max": 839,  "target": "Tablet portrait", "layout": "NavigationRail 72dp; side panel as overlay side sheet (360dp, scrim, PDF does not resize)" },
-    "expanded":   { "min": 840,  "max": 1199, "target": "Tablet landscape / small laptop window", "layout": "NavigationRail 72dp; reader + resizable split panel (360dp)" },
-    "large":      { "min": 1200, "max": 1599, "target": "Laptop", "layout": "Sidebar 240dp (collapsible to rail); split panel 380dp" },
-    "extraLarge": { "min": 1600, "max": null, "target": "Large desktop", "layout": "Sidebar 256dp; split panel 420dp; library/settings content max 1440 centred" },
+    "compact": {
+      "min": 0,
+      "max": 599,
+      "target": "Split-screen / narrow window / phone",
+      "layout": "Single pane; bottom NavigationBar; side panel as modal bottom sheet (snap 40% / 90%)"
+    },
+    "medium": {
+      "min": 600,
+      "max": 839,
+      "target": "Tablet portrait",
+      "layout": "NavigationRail 72dp; side panel as overlay side sheet (360dp, scrim, PDF does not resize)"
+    },
+    "expanded": {
+      "min": 840,
+      "max": 1199,
+      "target": "Tablet landscape / small laptop window",
+      "layout": "NavigationRail 72dp; reader + resizable split panel (360dp)"
+    },
+    "large": {
+      "min": 1200,
+      "max": 1599,
+      "target": "Laptop",
+      "layout": "Sidebar 240dp (collapsible to rail); split panel 380dp"
+    },
+    "extraLarge": {
+      "min": 1600,
+      "max": null,
+      "target": "Large desktop",
+      "layout": "Sidebar 256dp; split panel 420dp; library/settings content max 1440 centred"
+    },
     "hysteresisDp": 8,
     "sidePanel": {
       "$description": "ReaderSidePanel per window class. maxFraction is of the window width. A split that would leave the PDF narrower than pdfViewportMin falls back to overlay. compact = bottom sheet (full width, no width tokens).",
-      "medium":     { "mode": "overlay", "default": 360, "min": 320, "maxFraction": 0.85 },
-      "expanded":   { "mode": "split",   "default": 360, "min": 300, "maxFraction": 0.50 },
-      "large":      { "mode": "split",   "default": 380, "min": 300, "maxFraction": 0.50 },
-      "extraLarge": { "mode": "split",   "default": 420, "min": 320, "maxFraction": 0.45 },
-      "closeSnapBelowMin": 48
+      "medium": {
+        "mode": "overlay",
+        "default": 384,
+        "min": 320,
+        "maxFraction": 0.85
+      },
+      "expanded": {
+        "mode": "split",
+        "default": 384,
+        "min": 300,
+        "maxFraction": 0.5
+      },
+      "large": {
+        "mode": "split",
+        "default": 384,
+        "min": 300,
+        "maxFraction": 0.5
+      },
+      "extraLarge": {
+        "mode": "split",
+        "default": 384,
+        "min": 320,
+        "maxFraction": 0.45
+      },
+      "closeSnapBelowMin": 48,
+      "webWidth": 384
     },
     "pdfViewportMin": 480,
-    "pdfViewportMinExtraLarge": 720
+    "pdfViewportMinExtraLarge": 720,
+    "tailwind": {
+      "sm": 640,
+      "md": 768,
+      "lg": 1024,
+      "xl": 1280,
+      "2xl": 1536,
+      "$description": "Web layout switches happen here; mirror web sm:/md:/lg:/xl: changes with these"
+    },
+    "containers": {
+      "max-w-xs": 320,
+      "max-w-sm": 384,
+      "max-w-md": 448,
+      "max-w-lg": 512,
+      "max-w-2xl": 672,
+      "max-w-3xl": 768,
+      "max-w-5xl": 1024,
+      "max-w-6xl": 1152,
+      "max-w-7xl": 1280
+    }
   },
-
   "motion": {
     "$description": "Web parity: --mark-press-duration 80, --mark-reveal-duration 150, --mark-settle-duration 200, --focus-lock-dur-backdrop 300, --focus-lock-dur-enter 420. Animate only opacity/transform (compositor-cheap). Respect MediaQuery.disableAnimations → use `instant` or Duration.zero.",
     "duration": {
-      "instant":  { "$value": 80,  "use": "Press/active deepen, toggles" },
-      "fast":     { "$value": 150, "use": "Hover/focus reveal, tooltips, small fades" },
-      "base":     { "$value": 200, "use": "Settle/out, color changes, panel content swaps" },
-      "slow":     { "$value": 300, "use": "Scrims, side panel open/close, sheets" },
-      "page":     { "$value": 300, "use": "Route transitions (fade)" },
-      "emphasis": { "$value": 420, "use": "One-off hero moves (focus-lock lift); never on scroll paths" },
-      "hoverDelay": { "$value": 40, "use": "Pointer hover-in anti-strobe delay (not keyboard focus)" }
+      "instant": {
+        "$value": 80,
+        "use": "Press/active deepen, toggles"
+      },
+      "fast": {
+        "$value": 150,
+        "use": "Hover/focus reveal, tooltips, small fades"
+      },
+      "base": {
+        "$value": 200,
+        "use": "Settle/out, color changes, panel content swaps"
+      },
+      "slow": {
+        "$value": 300,
+        "use": "Scrims, side panel open/close, sheets"
+      },
+      "page": {
+        "$value": 300,
+        "use": "Route transitions. The web has none (instant navigation); kept for the app shell, see tokens.md"
+      },
+      "emphasis": {
+        "$value": 420,
+        "use": "One-off hero moves (focus-lock lift); never on scroll paths"
+      },
+      "hoverDelay": {
+        "$value": 40,
+        "use": "Pointer hover-in anti-strobe delay (not keyboard focus)"
+      },
+      "colors": {
+        "$value": 150,
+        "use": "Tailwind transition-colors/-transform default (ease = standard)"
+      },
+      "backdrop": {
+        "$value": 300
+      },
+      "spin": {
+        "$value": 1000,
+        "use": "animate-spin, linear"
+      },
+      "pulse": {
+        "$value": 2000,
+        "use": "animate-pulse, cubic-bezier(0.4,0,0.6,1), opacity 1 -> .5"
+      },
+      "progressIndeterminate": {
+        "$value": 1200,
+        "use": "ease-in-out, translateX -100% -> 300%"
+      }
     },
     "easing": {
-      "standard":   { "$value": [0.4, 0.0, 0.2, 1.0], "use": "In-place changes, departures (web --mark-ease-settle)" },
-      "decelerate": { "$value": [0.0, 0.0, 0.2, 1.0], "use": "Arrivals/reveals (web --mark-ease-reveal)" },
-      "accelerate": { "$value": [0.4, 0.0, 1.0, 1.0], "use": "Exits off-screen" },
-      "linear":     { "$value": [0.0, 0.0, 1.0, 1.0], "use": "Progress, opacity crossfades in lists" }
+      "standard": {
+        "$value": [
+          0.4,
+          0.0,
+          0.2,
+          1.0
+        ],
+        "use": "In-place changes, departures (web --mark-ease-settle)"
+      },
+      "decelerate": {
+        "$value": [
+          0.0,
+          0.0,
+          0.2,
+          1.0
+        ],
+        "use": "Arrivals/reveals (web --mark-ease-reveal)"
+      },
+      "accelerate": {
+        "$value": [
+          0.4,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "use": "Exits off-screen"
+      },
+      "linear": {
+        "$value": [
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "use": "Progress, opacity crossfades in lists"
+      }
     },
-    "scale": { "markHover": 1.02, "termHover": 1.04, "press": 0.98 },
+    "scale": {
+      "markHover": 1.02,
+      "termHover": 1.04,
+      "press": 0.98
+    },
     "reducedMotion": "Durations collapse to 0 except opacity fades capped at `fast`; no scale/translate."
   },
-
   "zIndex": {
     "$description": "Logical layer order (Stack children order / Overlay entries), lowest → highest. Mirrors the web reader contract 2/10/20/30 + focus layers.",
     "pdfPage": 0,
@@ -300,38 +1000,178 @@
     "hud": 45,
     "toast": 46,
     "dialog": 50,
-    "tooltip": 60
+    "tooltip": 60,
+    "selectionPopover": 10,
+    "citationPopover": 30,
+    "floatingExplanation": 40
   },
-
-  "iconSize": { "xs": 14, "sm": 16, "md": 20, "lg": 24, "xl": 32, "appBar": 20, "navigation": 24 },
-
+  "iconSize": {
+    "xxs": 12,
+    "xs": 14,
+    "sm": 16,
+    "md": 20,
+    "lg": 24,
+    "xl": 32,
+    "appBar": 20,
+    "navigation": 16,
+    "$description": "Web icon boxes h-3/h-3.5/h-4/h-5. Sidebar nav glyphs are h-4 (16)."
+  },
   "hitTarget": {
-    "touchMin": 48,
+    "touchMin": 32,
     "pointerMin": 32,
-    "stylusMin": 40,
-    "$description": "Touch (Android tablet) 48dp min; precise pointer (Windows/macOS mouse/trackpad) 32dp min via VisualDensity.compact. Visual size may be smaller; pad the hit area."
+    "stylusMin": 32,
+    "$description": "Web sizes on every platform (brief: no forced touch-target enlargement). Smallest web target: 24 (popover close)."
   },
-
-  "focus": { "ringWidth": 2, "ringOffset": 2, "markRingWidth": 2 },
-  "border": { "hairline": 1, "strong": 1.5, "focus": 2 },
-
+  "focus": {
+    "ringWidth": 2,
+    "ringOffset": 2,
+    "markRingWidth": 2,
+    "ringColor": "#818cf8",
+    "ringOffsetColor": "#0a0a0a (gray-950; gray-900 inside cards/popovers)"
+  },
+  "border": {
+    "hairline": 1,
+    "strong": 1.5,
+    "focus": 2
+  },
   "component": {
-    "button":   { "height": { "touch": 48, "pointer": 36 }, "paddingH": 16, "radius": "md", "label": "labelLarge", "disabledOpacity": 0.5 },
-    "input":    { "height": { "touch": 48, "pointer": 36 }, "paddingH": 12, "radius": "md", "focusBorderWidth": 1.5 },
-    "card":     { "radius": "lg", "border": 1, "padding": 16 },
-    "dialog":   { "radius": "xl", "maxWidth": 560, "padding": 24 },
-    "popover":  { "radius": "xl", "maxWidth": 360, "padding": "12 14 12 18", "accentBarWidth": 3 },
-    "tooltip":  { "radius": "sm", "paddingH": 8, "paddingV": 4, "waitMs": 500 },
-    "navRail":  { "width": 72 },
-    "sidebar":  { "width": { "large": 240, "extraLarge": 256 } },
-    "appBar":   { "height": { "touch": 56, "pointer": 48 } },
-    "readerToolbar": { "height": { "compact": 56, "touch": 64, "pointer": 48 }, "note": "touch = medium+ with touch/stylus input; pointer = expanded+ with mouse/trackpad last input. Height changes only on window-class change, never mid-gesture." },
-    "splitDragHandle": { "dividerWidth": 1, "grabberWidth": 24, "grabberHeight": 48, "hitWidth": { "touch": 24, "pointer": 16 }, "keyStep": 16, "keyStepLarge": 64 },
-    "windowChrome": {
-      "macosTitleBarHeight": 52, "macosTrafficLightReserve": { "width": 78, "height": 52 }, "macosTrafficLightInset": { "x": 20, "y": 18 }, "macosReaderBackX": 86,
-      "windowsTitleBarHeight": 40, "windowsTitleBarMergedHeight": 48, "windowsCaptionButton": { "width": 46, "height": 32 }, "windowsCaptionReserve": 138,
-      "windowMin": { "width": 480, "height": 560 }, "windowDefault": { "width": 1280, "height": 800 }
+    "button": {
+      "height": {
+        "touch": 36,
+        "pointer": 36,
+        "bordered": 38,
+        "small": 26
+      },
+      "paddingH": 16,
+      "paddingV": 8,
+      "radius": "md",
+      "label": "labelLarge",
+      "disabledOpacity": 0.5,
+      "web": ".btn-primary / .btn-secondary / .btn-ghost (globals.css)"
     },
-    "scrollbar":{ "thickness": 6, "thicknessHover": 10, "radius": "full" }
+    "input": {
+      "height": {
+        "touch": 38,
+        "pointer": 38
+      },
+      "paddingH": 12,
+      "paddingV": 8,
+      "radius": "md",
+      "focusBorderWidth": 2,
+      "textStyle": "PaperTypography.input (14/20)",
+      "web": ".field-input"
+    },
+    "card": {
+      "radius": "lg",
+      "border": 1,
+      "padding": 20,
+      "web": ".card p-5 (some cards p-4 / p-6 / p-8)"
+    },
+    "dialog": {
+      "radius": "lg",
+      "maxWidth": 448,
+      "padding": 20,
+      "shadow": "xl",
+      "web": "ObsidianDisconnectDialog: card max-w-md p-5 shadow-xl"
+    },
+    "popover": {
+      "radius": "lg",
+      "width": 320,
+      "maxHeight": 320,
+      "padding": 16,
+      "shadow": "xl",
+      "web": "CitationPopover: w-80 max-h-80 rounded-lg border gray-700 bg gray-900 p-4 shadow-xl; selection popover: rounded-md bg gray-900 p-1 shadow-lg"
+    },
+    "tooltip": {
+      "radius": "md",
+      "paddingH": 8,
+      "paddingV": 4,
+      "waitMs": 500,
+      "note": "web uses native title tooltips only"
+    },
+    "navRail": {
+      "width": 72
+    },
+    "sidebar": {
+      "width": {
+        "large": 240,
+        "extraLarge": 256
+      }
+    },
+    "appBar": {
+      "height": {
+        "touch": 52,
+        "pointer": 52
+      },
+      "web": "reader header px-4 py-3 border-b gray-800, title text-lg"
+    },
+    "readerToolbar": {
+      "height": {
+        "compact": 52,
+        "touch": 52,
+        "pointer": 52
+      },
+      "note": "Web reader header: px-4 py-3, text-lg title, 1px gray-800 bottom border (not included). Same on every platform."
+    },
+    "splitDragHandle": {
+      "dividerWidth": 1,
+      "grabberWidth": 24,
+      "grabberHeight": 48,
+      "hitWidth": {
+        "touch": 24,
+        "pointer": 16
+      },
+      "keyStep": 16,
+      "keyStepLarge": 64
+    },
+    "windowChrome": {
+      "macosTitleBarHeight": 52,
+      "macosTrafficLightReserve": {
+        "width": 78,
+        "height": 52
+      },
+      "macosTrafficLightInset": {
+        "x": 20,
+        "y": 18
+      },
+      "macosReaderBackX": 86,
+      "windowsTitleBarHeight": 40,
+      "windowsTitleBarMergedHeight": 48,
+      "windowsCaptionButton": {
+        "width": 46,
+        "height": 32
+      },
+      "windowsCaptionReserve": 138,
+      "windowMin": {
+        "width": 480,
+        "height": 560
+      },
+      "windowDefault": {
+        "width": 1280,
+        "height": 800
+      }
+    },
+    "scrollbar": {
+      "thickness": 6,
+      "thicknessHover": 10,
+      "radius": "full",
+      "note": "web uses native dark scrollbars (color-scheme: dark)"
+    }
+  },
+  "size": {
+    "$description": "Web control sizes, every platform (no touch enlargement)",
+    "buttonHeight": 36,
+    "borderedControlHeight": 38,
+    "smallButtonHeight": 26,
+    "iconButton": 32,
+    "iconButtonLarge": 36,
+    "iconButtonSmall": 24,
+    "icon": {
+      "xxs": 12,
+      "xs": 14,
+      "sm": 16,
+      "md": 20
+    },
+    "readerHeaderHeight": 52
   }
 }

@@ -2,16 +2,17 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/build_flags.dart';
 import '../../core/format.dart';
+import '../../core/immersive.dart';
 import '../../data/data_providers.dart';
 import '../../domain/domain.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/paper_tokens.dart';
 import '../../theme/theme_x.dart';
+import '../../ui/ui.dart';
 import '../reader/reader_controller.dart';
 import 'ai_states.dart';
 import 'panel_session.dart';
@@ -98,6 +99,7 @@ class _NotesTabState extends ConsumerState<NotesTab> {
 
   @override
   void dispose() {
+    _toast?.dismiss();
     _composer.dispose();
     super.dispose();
   }
@@ -121,23 +123,22 @@ class _NotesTabState extends ConsumerState<NotesTab> {
         );
   }
 
+  PaperToastHandle? _toast;
+
   Future<void> _delete(Note note) async {
     final repo = ref.read(noteRepositoryProvider);
-    final messenger = ScaffoldMessenger.maybeOf(context);
     final l10n = AppLocalizations.of(context);
     if (_draft?.id == note.id) setState(() => _draft = null);
     await repo.deleteNote(note.id);
-    messenger
-      ?..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(l10n.noteDeletedUndo),
-          action: SnackBarAction(
-            label: l10n.undo,
-            onPressed: () => unawaited(repo.restoreNote(note)),
-          ),
-        ),
-      );
+    if (!mounted) return;
+    _toast = showPaperToast(
+      context,
+      message: l10n.noteDeletedUndo,
+      dismissTooltip: l10n.commonDismiss,
+      actionLabel: l10n.undo,
+      onAction: () => unawaited(repo.restoreNote(note)),
+      duration: const Duration(seconds: 5),
+    );
   }
 
   List<Note> _sorted(List<Note> notes) {
@@ -157,8 +158,6 @@ class _NotesTabState extends ConsumerState<NotesTab> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final c = context.paper;
-    final t = Theme.of(context).textTheme;
     final async = ref.watch(paperNotesProvider(_paperId));
     final highlights = {
       for (final h
@@ -166,133 +165,137 @@ class _NotesTabState extends ConsumerState<NotesTab> {
               const <Highlight>[])
         h.id: h,
     };
+    final offlineOnly = ref.watch(offlineOnlyProvider);
+
+    // Toolbar: the sort as a small segmented control (replaces the popup).
+    final toolbar = Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: PaperSegmented<NotesSort>(
+        size: PaperSegmentedSize.sm,
+        selected: _sort,
+        onChanged: (s) => setState(() => _sort = s),
+        segments: <PaperSegment<NotesSort>>[
+          PaperSegment(
+            key: const ValueKey<String>('notes-sort-page'),
+            value: NotesSort.pageOrder,
+            label: l10n.notesSortPageOrder,
+          ),
+          PaperSegment(
+            key: const ValueKey<String>('notes-sort-recent'),
+            value: NotesSort.recent,
+            label: l10n.notesSortRecent,
+          ),
+        ],
+      ),
+    );
+
+    final composer = PaperCard(
+      padding: const EdgeInsets.all(PaperSpacing.tw4),
+      child: ValueListenableBuilder<TextEditingValue>(
+        valueListenable: _composer,
+        builder: (context, value, _) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            PaperTextField(
+              fieldKey: const ValueKey<String>('notes-composer'),
+              controller: _composer,
+              minLines: 1,
+              maxLines: 6,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => unawaited(_addPageNote()),
+              hintText: l10n.notesComposerPlaceholder(widget.panel.currentPage),
+            ),
+            const SizedBox(height: PaperSpacing.tw2),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: PaperButton.primary(
+                key: const ValueKey<String>('notes-composer-save'),
+                label: l10n.commonSave,
+                size: PaperButtonSize.xs,
+                focusGap: PaperWeb.gray900,
+                onPressed: value.text.trim().isEmpty
+                    ? null
+                    : () => unawaited(_addPageNote()),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
 
     final draft = _draft;
-    final Widget body;
+    final children = <Widget>[
+      toolbar,
+      const SizedBox(height: PaperSpacing.tw3),
+    ];
     if (async.hasError && !async.hasValue) {
-      body = Padding(
-        padding: const EdgeInsets.all(PaperSpacing.panePadding),
-        child: Align(
-          alignment: Alignment.topCenter,
-          child: InlineError(
-            message: l10n.notesLoadFailed,
-            onRetry: () => ref.invalidate(paperNotesProvider(_paperId)),
-          ),
+      children.add(
+        InlineError(
+          message: l10n.notesLoadFailed,
+          onRetry: () => ref.invalidate(paperNotesProvider(_paperId)),
         ),
       );
-    } else if (!async.hasValue) {
-      body = const SizedBox.shrink();
-    } else {
+    } else if (async.hasValue) {
       final notes = _sorted(
         async.value!.where((n) => n.id != draft?.id).toList(),
       );
+      children.add(composer);
       if (notes.isEmpty && draft == null) {
-        body = PanelEmptyState(
-          icon: Symbols.sticky_note_2_rounded,
-          title: l10n.notesEmptyTitle,
-          body: l10n.notesEmptyBody,
+        children.add(
+          PanelEmptyState(
+            title: l10n.notesEmptyTitle,
+            body: l10n.notesEmptyBody,
+            scrollable: false,
+          ),
         );
       } else {
         final cards = <Note>[?draft, ...notes];
-        body = ListView.separated(
-          key: const PageStorageKey<String>('panel-notes'),
-          padding: const EdgeInsets.all(PaperSpacing.panePadding),
-          itemCount: cards.length,
-          separatorBuilder: (_, _) => const SizedBox(height: PaperSpacing.md),
-          itemBuilder: (context, i) {
-            final note = cards[i];
-            final isDraft = identical(note, draft);
-            return NoteCard(
-              key: ValueKey<String>('note-${note.id}'),
-              note: note,
-              highlight: highlights[note.highlightId],
-              autofocus: isDraft || note.id == _focusNoteId,
-              onJumpToHighlight: widget.panel.onJumpToHighlight,
-              onDelete: () => unawaited(_delete(note)),
-              onEditingDone: isDraft
-                  ? () => setState(() {
-                      if (_draft?.id == note.id) _draft = null;
-                    })
-                  : null,
+        for (final note in cards) {
+          final isDraft = identical(note, draft);
+          children
+            ..add(const SizedBox(height: PaperSpacing.tw3))
+            ..add(
+              NoteCard(
+                key: ValueKey<String>('note-${note.id}'),
+                note: note,
+                highlight: highlights[note.highlightId],
+                autofocus: isDraft || note.id == _focusNoteId,
+                onJumpToHighlight: widget.panel.onJumpToHighlight,
+                onDelete: () => unawaited(_delete(note)),
+                onEditingDone: isDraft
+                    ? () => setState(() {
+                        if (_draft?.id == note.id) _draft = null;
+                      })
+                    : null,
+              ),
             );
-          },
-        );
+        }
+        final anyLocal =
+            !offlineOnly &&
+            cards.any((n) => n.syncState == SyncState.localOnly);
+        if (anyLocal) {
+          children
+            ..add(const SizedBox(height: PaperSpacing.tw3))
+            ..add(
+              Text(
+                l10n.syncLocalOnlyExplainer,
+                textAlign: TextAlign.center,
+                style: PaperTypography.caption(context.paper),
+              ),
+            );
+        }
       }
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            PaperSpacing.panePadding,
-            PaperSpacing.sm,
-            PaperSpacing.sm,
-            0,
-          ),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  '${l10n.librarySortLabel}: ${_sort == NotesSort.pageOrder ? l10n.notesSortPageOrder : l10n.notesSortRecent}',
-                  style: t.bodySmall?.copyWith(color: c.textMuted),
-                ),
-              ),
-              PopupMenuButton<NotesSort>(
-                tooltip: l10n.librarySortLabel,
-                icon: const Icon(Symbols.sort_rounded, size: 20),
-                initialValue: _sort,
-                onSelected: (s) => setState(() => _sort = s),
-                itemBuilder: (context) => <PopupMenuEntry<NotesSort>>[
-                  PopupMenuItem(
-                    value: NotesSort.pageOrder,
-                    child: Text(l10n.notesSortPageOrder),
-                  ),
-                  PopupMenuItem(
-                    value: NotesSort.recent,
-                    child: Text(l10n.notesSortRecent),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        Expanded(child: body),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            border: Border(top: BorderSide(color: c.border)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(PaperSpacing.md),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: TextField(
-                    key: const ValueKey<String>('notes-composer'),
-                    controller: _composer,
-                    minLines: 1,
-                    maxLines: 4,
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => unawaited(_addPageNote()),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      hintText: l10n.notesComposerPlaceholder(
-                        widget.panel.currentPage,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: PaperSpacing.sm),
-                IconButton.filled(
-                  tooltip: l10n.commonSave,
-                  onPressed: () => unawaited(_addPageNote()),
-                  icon: const Icon(Symbols.add_rounded, size: 20),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+    return ListView(
+      key: const PageStorageKey<String>('panel-notes'),
+      padding: SafeViewPadding.resolve(
+        context,
+        base: const EdgeInsets.all(PaperSpacing.tw4),
+        left: false,
+        top: false,
+      ),
+      children: children,
     );
   }
 }
@@ -403,7 +406,6 @@ class _NoteCardState extends ConsumerState<NoteCard> {
   Widget build(BuildContext context) {
     final c = context.paper;
     final l10n = AppLocalizations.of(context);
-    final t = Theme.of(context).textTheme;
     final note = widget.note;
     final h = widget.highlight;
     final page = note.pageNumber ?? h?.position?.pageNumber ?? h?.pageNumber;
@@ -416,165 +418,125 @@ class _NoteCardState extends ConsumerState<NoteCard> {
     final syncState = ref.watch(offlineOnlyProvider)
         ? SyncState.synced
         : note.syncState;
-    final Widget status = switch (syncState) {
+    final edited = _justSaved
+        ? l10n.noteSaved
+        : l10n.notesEditedAgo(formatWhen(context, note.updatedAt));
+    final Widget? chip = switch (syncState) {
       SyncState.localOnly => Tooltip(
         message: l10n.syncLocalOnlyExplainer,
-        child: _Footer(
-          icon: Symbols.devices_rounded,
-          color: c.textMuted,
-          text: _justSaved
-              ? '${l10n.noteSaved} · ${l10n.syncLocalOnlyBadge}'
-              : l10n.syncLocalOnlyBadge,
+        child: PaperBadge(
+          label: l10n.syncLocalOnlyBadge,
+          tone: PaperBadgeTone.neutral,
         ),
       ),
       SyncState.pendingCreate ||
       SyncState.pendingUpdate ||
-      SyncState.pendingDelete => _Footer(
-        icon: Symbols.cloud_upload_rounded,
-        color: c.statusSyncPending,
-        text: l10n.notesPendingSync,
+      SyncState.pendingDelete => PaperBadge(
+        label: l10n.notesPendingSync,
+        tone: PaperBadgeTone.neutral,
       ),
-      SyncState.failed => _Footer(
-        icon: Symbols.warning_rounded,
-        color: c.error,
-        text: l10n.notesSyncFailed,
+      SyncState.failed => PaperBadge(
+        label: l10n.notesSyncFailed,
+        tone: PaperBadgeTone.error,
       ),
-      SyncState.synced => _Footer(
-        icon: Symbols.check_rounded,
-        color: c.textMuted,
-        text: _justSaved
-            ? l10n.noteSaved
-            : l10n.notesEditedAgo(formatWhen(context, note.updatedAt)),
-      ),
+      SyncState.synced => null,
     };
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: c.surface,
-        border: Border.all(color: c.border),
-        borderRadius: PaperRadii.borderLg,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          PaperSpacing.lg,
-          PaperSpacing.sm,
-          PaperSpacing.xs,
-          PaperSpacing.md,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                Expanded(
+    return PaperCard(
+      padding: const EdgeInsets.all(PaperSpacing.tw4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          if (quote != null && quote.isNotEmpty) ...<Widget>[
+            Semantics(
+              button: h != null,
+              hint: h != null ? l10n.noteJumpToHighlight : null,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: h == null ? null : () => widget.onJumpToHighlight(h),
+                child: Container(
+                  padding: const EdgeInsets.only(left: PaperSpacing.tw2),
+                  decoration: BoxDecoration(
+                    border: Border(left: BorderSide(color: hue.ring, width: 2)),
+                  ),
                   child: Text(
-                    page == null ? '' : 'p. $page',
-                    style: PaperTypography.pageIndicator(c)
-                        .copyWith(color: c.textMuted),
+                    quote,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: PaperTypography.caption(c)
+                        .copyWith(height: PaperTypography.relaxed),
                   ),
                 ),
-                PopupMenuButton<String>(
-                  tooltip: l10n.commonMore,
-                  icon: const Icon(Symbols.more_vert_rounded, size: 18),
-                  onSelected: (v) {
-                    if (v == 'jump' && h != null) widget.onJumpToHighlight(h);
-                    if (v == 'delete') widget.onDelete();
-                  },
-                  itemBuilder: (context) => <PopupMenuEntry<String>>[
-                    if (h != null)
-                      PopupMenuItem(
-                        value: 'jump',
-                        child: Text(l10n.noteJumpToHighlight),
-                      ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: Text(
-                        l10n.noteDelete,
-                        style: TextStyle(color: c.error),
-                      ),
+              ),
+            ),
+            const SizedBox(height: PaperSpacing.tw2),
+          ],
+          TextField(
+            key: ValueKey<String>('note-body-${note.id}'),
+            controller: _text,
+            focusNode: _focus,
+            maxLines: null,
+            onChanged: _onChanged,
+            style: PaperTypography.noteBody(c),
+            cursorColor: PaperWeb.accent,
+            decoration: InputDecoration(
+              isDense: true,
+              hintText: l10n.noteInlinePlaceholder,
+              hintStyle: PaperTypography.noteBody(c)
+                  .copyWith(color: PaperWeb.gray500),
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              filled: false,
+              contentPadding: EdgeInsets.zero,
+            ),
+          ),
+          const SizedBox(height: PaperSpacing.tw3),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Wrap(
+                  spacing: PaperSpacing.tw2,
+                  runSpacing: PaperSpacing.tw1,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: <Widget>[
+                    Text(
+                      page == null
+                          ? edited
+                          : '${l10n.highlightPageLabel(page)} · $edited',
+                      style: PaperTypography.caption(c),
                     ),
+                    ?chip,
                   ],
                 ),
-              ],
-            ),
-            if (quote != null && quote.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(
-                  right: PaperSpacing.md,
-                  bottom: PaperSpacing.sm,
-                ),
-                child: Semantics(
-                  button: h != null,
-                  hint: h != null ? l10n.noteJumpToHighlight : null,
-                  child: InkWell(
-                    onTap: h == null ? null : () => widget.onJumpToHighlight(h),
-                    child: Container(
-                      padding: const EdgeInsets.only(left: PaperSpacing.sm),
-                      decoration: BoxDecoration(
-                        border: Border(
-                          left: BorderSide(color: hue.wash, width: 3),
-                        ),
-                      ),
-                      child: Text(
-                        quote,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: t.bodyMedium?.copyWith(
-                          fontSize: 13,
-                          color: c.textSecondary,
-                        ),
-                      ),
+              ),
+              MenuAnchor(
+                alignmentOffset: const Offset(0, 4),
+                menuChildren: <Widget>[
+                  if (h != null)
+                    PaperMenuItem(
+                      label: l10n.noteJumpToHighlight,
+                      onPressed: () => widget.onJumpToHighlight(h),
                     ),
+                  PaperMenuItem(
+                    label: l10n.noteDelete,
+                    destructive: true,
+                    onPressed: widget.onDelete,
                   ),
+                ],
+                builder: (context, menu, _) => PaperButton.ghost(
+                  label: '···',
+                  size: PaperButtonSize.xs,
+                  tooltip: l10n.commonMore,
+                  open: menu.isOpen,
+                  focusGap: PaperWeb.gray900,
+                  onPressed: () => menu.isOpen ? menu.close() : menu.open(),
                 ),
               ),
-            Padding(
-              padding: const EdgeInsets.only(right: PaperSpacing.md),
-              child: TextField(
-                key: ValueKey<String>('note-body-${note.id}'),
-                controller: _text,
-                focusNode: _focus,
-                maxLines: null,
-                onChanged: _onChanged,
-                style: PaperTypography.noteBody(c),
-                decoration: InputDecoration(
-                  isDense: true,
-                  hintText: l10n.noteInlinePlaceholder,
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  filled: false,
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-            ),
-            const SizedBox(height: PaperSpacing.sm),
-            status,
-          ],
-        ),
+            ],
+          ),
+        ],
       ),
     );
   }
-}
-
-class _Footer extends StatelessWidget {
-  const _Footer({required this.icon, required this.color, required this.text});
-
-  final IconData icon;
-  final Color color;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) => Row(
-    children: <Widget>[
-      Icon(icon, size: 16, color: color),
-      const SizedBox(width: PaperSpacing.xs),
-      Flexible(
-        child: Text(
-          text,
-          style: Theme.of(context).textTheme.bodySmall
-              ?.copyWith(color: context.paper.textMuted),
-        ),
-      ),
-    ],
-  );
 }

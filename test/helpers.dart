@@ -11,21 +11,21 @@ void setWindowSize(WidgetTester tester, Size size) {
   addTearDown(tester.view.reset);
 }
 
-/// Minimal themed + localised MaterialApp for widget tests.
-Widget testApp(Widget home, {ThemeMode themeMode = ThemeMode.dark}) =>
-    MaterialApp(
-      theme: PaperTheme.light(),
-      darkTheme: PaperTheme.dark(),
-      themeMode: themeMode,
-      localizationsDelegates: const <LocalizationsDelegate<Object?>>[
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: home,
-    );
+/// Minimal themed + localised MaterialApp for widget tests (dark-only,
+/// like the app).
+Widget testApp(Widget home) => MaterialApp(
+  debugShowCheckedModeBanner: false,
+  theme: PaperTheme.dark(),
+  themeMode: ThemeMode.dark,
+  localizationsDelegates: const <LocalizationsDelegate<Object?>>[
+    AppLocalizations.delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+  ],
+  supportedLocales: AppLocalizations.supportedLocales,
+  home: home,
+);
 
 /// Unmounts the tree (disposing the ProviderScope) inside the test, then
 /// lets drift's zero-duration stream-close timers run, so no timer is left
