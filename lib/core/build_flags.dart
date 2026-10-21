@@ -2,10 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Offline-only build: `--dart-define=PAPER_OFFLINE_ONLY=true`.
 ///
-/// The v0.x test releases are built with it. Such a build has no sign-in,
-/// no Supabase client, no sync and no AI: it opens straight into the
-/// library as a local user, and every network service is replaced at the
-/// provider level, so none is ever constructed. The online code stays in
+/// Releases are the online build (sign-in optional); this variant is built
+/// only on request (CI `workflow_dispatch` input `offline_only`, or locally).
+/// Such a build has no sign-in, no Supabase client, no sync and no AI: it
+/// opens straight into the library as a local user, and every network
+/// service is replaced at the provider level, so none is ever constructed. The online code stays in
 /// the repo and in normal builds.
 ///
 /// `main()` branches on this constant (so the Supabase init is compiled

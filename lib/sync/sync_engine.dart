@@ -54,8 +54,13 @@
 ///    Discard) and the round continues.
 /// 6. **Triggers**: `start()`, reconnect (connectivity + ping), every
 ///    5 min, app resume, 2 s after a local write, `syncNow()`.
-/// 7. **Accounts**: the DB remembers its owner; when a different user signs
-///    in, local data and the outbox are wiped first.
+/// 7. **Accounts**: sign-in is optional. Without an account, writes are
+///    owned by the guest (`kGuestUserId`) and wait in the outbox; nothing
+///    is pushed. Before every round with a signed-in user the DB is made
+///    theirs (`GuestDataMerge`, lib/sync/guest_merge.dart): another
+///    account's rows are removed, guest rows and queued payloads are
+///    re-owned (`<user_id>/...` storage paths) and queued. The DB remembers
+///    its last owner (`db_owner_user_id`).
 library;
 
 import 'dart:async';
@@ -73,6 +78,7 @@ import '../data/mappers.dart';
 import '../data/remote/remote_data_source.dart';
 import '../domain/domain.dart';
 import '../domain/models/json.dart';
+import 'guest_merge.dart';
 
 class SyncEngine implements SyncService {
   SyncEngine({
@@ -309,16 +315,30 @@ class SyncEngine implements SyncService {
       return;
     }
     _authExpired = false;
-    final owner = await _db.readKv(_ownerKey);
-    if (owner != null && owner != user.id) {
-      // Different account: never mix data or push someone else's outbox.
-      await _db.clearAll();
-      await _store.files.clear();
-      _lastSyncedAt = null;
-    }
-    await _db.writeKv(_ownerKey, user.id);
+    await _prepareOwner(user.id);
     await _publish();
     if (_started) unawaited(syncNow());
+  }
+
+  /// Serialises [_adopt] (auth events and sync rounds may overlap).
+  Future<void> _ownerWork = Future<void>.value();
+
+  /// Makes the local DB [userId]'s before anything is pushed (rule 7).
+  /// Idempotent and cheap when there is nothing to merge.
+  Future<void> _prepareOwner(String userId) {
+    final run = _ownerWork.then((_) => _adopt(userId));
+    _ownerWork = run.then<void>((_) {}, onError: (Object _) {});
+    return run;
+  }
+
+  Future<void> _adopt(String userId) async {
+    if (isGuestUserId(userId)) return;
+    final owner = await _db.readKv(_ownerKey);
+    await GuestDataMerge(_store).prepareFor(userId, previousOwner: owner);
+    if (owner != null && owner != userId && !isGuestUserId(owner)) {
+      _lastSyncedAt = null;
+    }
+    await _db.writeKv(_ownerKey, userId);
   }
 
   // ------------------------------------------------------------------
@@ -326,7 +346,10 @@ class SyncEngine implements SyncService {
 
   Future<void> _sync() async {
     final auth = _currentAuth();
-    if (!auth.isSignedIn) return;
+    final user = auth.user;
+    if (!auth.isSignedIn || user == null) return;
+    // Guest rows are re-owned before the first push (rule 7).
+    await _prepareOwner(user.id);
     _online = await _connectivity.check();
     if (!_online) {
       await _publish();
@@ -356,7 +379,10 @@ class SyncEngine implements SyncService {
 
   /// Pull only (library refresh). Throws `OfflineException` offline.
   Future<void> pull() async {
-    if (!_currentAuth().isSignedIn) return;
+    final auth = _currentAuth();
+    final user = auth.user;
+    if (!auth.isSignedIn || user == null) return;
+    await _prepareOwner(user.id);
     await _pull();
   }
 
@@ -384,6 +410,9 @@ class SyncEngine implements SyncService {
       )..where((t) => t.id.equals(op.id))).getSingleOrNull();
       if (current == null || current.failed) continue;
       if (await _isHeld(current)) continue;
+      // Written by the guest after this round's merge (e.g. a highlight on
+      // a paper opened before sign-in): the next round re-owns it first.
+      if (current.payload.contains(kGuestUserId)) continue;
       try {
         await _pushOp(current);
         await _store.removeOp(current.id);

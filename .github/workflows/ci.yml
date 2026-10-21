@@ -6,6 +6,11 @@ on:
     tags: ["v*"]
   pull_request:
   workflow_dispatch:
+    inputs:
+      offline_only:
+        description: "Build the offline-only variant (PAPER_OFFLINE_ONLY=true: no sign-in, sync or AI)"
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -20,9 +25,11 @@ env:
   SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
   SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
   PAPER_API_BASE_URL: ${{ secrets.PAPER_API_BASE_URL }}
-  # Tag/release builds (v*) are offline-only test builds: no sign-in, sync
-  # or AI (lib/core/build_flags.dart). PR and main builds stay online.
-  PAPER_OFFLINE_ONLY: ${{ startsWith(github.ref, 'refs/tags/v') && 'true' || 'false' }}
+  # Every build, tag releases (v*) included, is the online variant with
+  # optional sign-in: it opens on the library as a guest; signing in adds
+  # sync and AI. The offline-only variant (lib/core/build_flags.dart) is
+  # built only on request: Actions > CI > Run workflow > offline_only.
+  PAPER_OFFLINE_ONLY: ${{ inputs.offline_only && 'true' || 'false' }}
 
 jobs:
   analyze-test:
@@ -50,7 +57,8 @@ jobs:
       - name: Test
         run: flutter test
 
-      # The same offline tests, compiled with the flag the release uses.
+      # The offline-only variant stays supported: its tests, compiled with
+      # the flag.
       - name: Test (offline-only build flag)
         run: flutter test --tags offline --dart-define=PAPER_OFFLINE_ONLY=true
 
@@ -242,15 +250,16 @@ jobs:
         with:
           draft: false
           prerelease: true
-          name: Paper ${{ github.ref_name }} (offline test build)
+          name: Paper ${{ github.ref_name }} (test build)
           body: |
-            **Offline build — no sign-in, sync or AI.**
+            **Sign-in optional — use locally, sign in for sync and AI.**
 
-            This test release is built with `--dart-define=PAPER_OFFLINE_ONLY=true`:
-            it opens straight into your library, keeps everything on this device and
-            makes no network calls. Import PDFs from files; highlights, notes and the
-            split view work as usual. Builds are unsigned (see the README,
-            "Installing test builds").
+            Paper opens straight into your library. Without an account, everything
+            stays on this device: import PDFs from files, read, highlight and take
+            notes. Sign in (Settings › Account, or "Sign in" in the library) to sync
+            your library and use explanations, the glossary, visual aids and import
+            by link; what you made before signing in moves into your account.
+            Builds are unsigned (see the README, "Installing test builds").
           generate_release_notes: true
           fail_on_unmatched_files: true
           files: |

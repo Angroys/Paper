@@ -5,9 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../app/routes.dart';
 import '../../auth/auth_providers.dart';
 import '../../core/core_providers.dart';
 import '../../core/env.dart';
@@ -61,6 +63,7 @@ class SignInScreen extends ConsumerStatefulWidget {
   static const Key pasteLinkFieldKey = Key('signIn.pasteLink');
   static const Key pasteLinkSubmitKey = Key('signIn.pasteLinkSubmit');
   static const Key bannerKey = Key('signIn.banner');
+  static const Key closeKey = Key('signIn.close');
 
   @override
   ConsumerState<SignInScreen> createState() => _SignInScreenState();
@@ -103,6 +106,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     if (widget.sessionExpired) {
       _banner = const _Banner('');
     }
+    // Sign-in is optional and pushed on top of where the user was: once
+    // signed in (form, Google return or magic link), go back there.
+    ref.listenManual<AsyncValue<AuthState>>(authStateProvider, (prev, next) {
+      final was = prev?.value?.isSignedIn ?? false;
+      if (!was && (next.value?.isSignedIn ?? false)) _close();
+    });
     ref.listenManual<AsyncValue<AuthFailedException>>(authErrorsProvider, (
       _,
       next,
@@ -127,6 +136,19 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
   }
 
   AppLocalizations get _l10n => AppLocalizations.of(context);
+
+  /// Leaves sign-in: back to the previous route, or the library when the
+  /// screen was opened directly (e.g. a restored `/sign-in` location).
+  void _close() {
+    if (!mounted) return;
+    _leaveWait();
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+      return;
+    }
+    GoRouter.maybeOf(context)?.go(AppRoutes.library);
+  }
 
   bool get _desktop =>
       !kIsWeb &&
@@ -464,43 +486,61 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final wc = PaperWindowClass.of(constraints.maxWidth);
-            final column = Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(PaperSpacing.xl),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 400),
-                  child: AutofillGroup(child: form),
-                ),
+        child: Stack(
+          children: <Widget>[
+            Positioned.fill(child: _layout(form)),
+            // Sign-in is optional: it can always be dismissed (also with
+            // the system back gesture).
+            Positioned(
+              top: PaperSpacing.sm,
+              left: PaperSpacing.sm,
+              child: IconButton(
+                key: SignInScreen.closeKey,
+                tooltip: l10n.signInCloseTooltip,
+                onPressed: _close,
+                icon: const Icon(Symbols.close_rounded),
               ),
-            );
-            final showBrand =
-                wc.index >= PaperWindowClass.expanded.index &&
-                constraints.maxHeight >= 560;
-            if (!showBrand) return column;
-            return Padding(
-              padding: EdgeInsets.all(PaperSpacing.margin(wc)),
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    flex: wc == PaperWindowClass.extraLarge ? 6 : 5,
-                    child: const _BrandPanel(),
-                  ),
-                  SizedBox(width: PaperSpacing.gutter(wc)),
-                  Expanded(
-                    flex: wc == PaperWindowClass.extraLarge ? 6 : 7,
-                    child: column,
-                  ),
-                ],
-              ),
-            );
-          },
+            ),
+          ],
         ),
       ),
     );
   }
+
+  Widget _layout(Widget form) => LayoutBuilder(
+    builder: (context, constraints) {
+      final wc = PaperWindowClass.of(constraints.maxWidth);
+      final column = Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(PaperSpacing.xl),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: AutofillGroup(child: form),
+          ),
+        ),
+      );
+      final showBrand =
+          wc.index >= PaperWindowClass.expanded.index &&
+          constraints.maxHeight >= 560;
+      if (!showBrand) return column;
+      return Padding(
+        padding: EdgeInsets.all(PaperSpacing.margin(wc)),
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              flex: wc == PaperWindowClass.extraLarge ? 6 : 5,
+              child: const _BrandPanel(),
+            ),
+            SizedBox(width: PaperSpacing.gutter(wc)),
+            Expanded(
+              flex: wc == PaperWindowClass.extraLarge ? 6 : 7,
+              child: column,
+            ),
+          ],
+        ),
+      );
+    },
+  );
 
   Widget _buildForm(BuildContext context, {required bool disabled}) {
     final l10n = _l10n;

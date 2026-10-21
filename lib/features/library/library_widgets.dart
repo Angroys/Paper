@@ -199,7 +199,49 @@ class PaperSyncChip extends StatelessWidget {
   }
 }
 
-/// [localOnly] (offline-only builds) never mentions uploads.
+/// Chip for a paper kept on this device from an account that signed out
+/// (guest mode). It is readable here and syncs again when that account
+/// signs back in.
+class PaperKeptChip extends StatelessWidget {
+  const PaperKeptChip({super.key});
+
+  static const Key chipKey = ValueKey<String>('paper-kept-chip');
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.paper;
+    final l10n = AppLocalizations.of(context);
+    return Tooltip(
+      message: l10n.libraryKeptFromAccountTooltip,
+      child: Container(
+        key: chipKey,
+        height: 20,
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        decoration: BoxDecoration(
+          color: c.surfaceVariant,
+          borderRadius: PaperRadii.borderFull,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(Symbols.person_rounded, size: 12, color: c.textSecondary),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                l10n.libraryKeptFromAccount,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 11, color: c.textSecondary),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// [localOnly] (offline-only builds, guests) never mentions uploads.
 String paperMeta(BuildContext context, Paper paper, {bool localOnly = false}) {
   final l10n = AppLocalizations.of(context);
   if (!localOnly && paper.syncState == SyncState.pendingCreate) {
@@ -403,7 +445,10 @@ class PaperCard extends StatelessWidget {
                         style: t.bodySmall?.copyWith(color: c.textMuted),
                       ),
                     ),
-                    if (!localOnly) PaperSyncChip(paper: paper),
+                    if (!localOnly)
+                      PaperSyncChip(paper: paper)
+                    else if (!isGuestUserId(paper.userId))
+                      const Flexible(child: PaperKeptChip()),
                     SizedBox(
                       width: 32,
                       height: 32,
@@ -486,6 +531,10 @@ class PaperRow extends StatelessWidget {
                 ],
               ),
             ),
+            if (badge == null && !isGuestUserId(paper.userId)) ...<Widget>[
+              const PaperKeptChip(),
+              const SizedBox(width: PaperSpacing.sm),
+            ],
             if (badge != null) ...<Widget>[
               PaperSyncChip(paper: paper),
               const SizedBox(width: PaperSpacing.sm),

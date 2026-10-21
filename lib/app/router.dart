@@ -1,12 +1,7 @@
-import 'dart:async';
-
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../auth/auth_providers.dart';
 import '../core/build_flags.dart';
-import '../domain/domain.dart';
 import '../features/auth/sign_in_screen.dart';
 import '../features/library/library_screen.dart';
 import '../features/reader/reader_route.dart';
@@ -14,36 +9,15 @@ import '../features/settings/settings_screen.dart';
 import 'app_shell.dart';
 import 'routes.dart';
 
-/// Auth gate for go_router. Pure so it can be unit tested.
-///
-/// - not configured: everything is reachable (dev / tests).
-/// - unknown (session restore running): stay put; the splash covers it.
-/// - signed out: only /sign-in.
-/// - signed in: /sign-in bounces to /library.
-String? authRedirect(AuthState auth, String location) {
-  final atSignIn = location == AppRoutes.signIn;
-  switch (auth.status) {
-    case AuthStatus.notConfigured:
-    case AuthStatus.unknown:
-      return null;
-    case AuthStatus.signedOut:
-      return atSignIn ? null : AppRoutes.signIn;
-    case AuthStatus.signedIn:
-      return atSignIn ? AppRoutes.library : null;
-  }
-}
-
+/// The app router. There is no auth gate: sign-in is optional, so the app
+/// always opens on the library (as a guest when nobody is signed in) and
+/// nothing redirects to `/sign-in`. Sign-in is pushed on top of the current
+/// route (`openSignIn`) and pops itself once signed in, so the user lands
+/// where they were. Offline-only builds have no sign-in route at all.
 final routerProvider = Provider<GoRouter>((ref) {
-  final auth = ref.watch(authRepositoryProvider);
-  // Offline-only builds have no sign-in route at all (the local user is
-  // always signed in, so the redirect never asks for it).
   final offline = ref.watch(offlineOnlyProvider);
-  final refresh = _StreamListenable(auth.watchAuthState());
   final router = GoRouter(
     initialLocation: AppRoutes.library,
-    refreshListenable: refresh,
-    redirect: (context, state) =>
-        authRedirect(auth.currentState, state.matchedLocation),
     routes: <RouteBase>[
       GoRoute(path: '/', redirect: (_, _) => AppRoutes.library),
       if (!offline)
@@ -88,24 +62,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
-  ref.onDispose(() {
-    router.dispose();
-    refresh.dispose();
-  });
+  ref.onDispose(router.dispose);
   return router;
 });
-
-/// Bridges a stream to the [Listenable] go_router re-evaluates on.
-class _StreamListenable extends ChangeNotifier {
-  _StreamListenable(Stream<Object?> stream) {
-    _sub = stream.listen((_) => notifyListeners());
-  }
-
-  late final StreamSubscription<Object?> _sub;
-
-  @override
-  void dispose() {
-    unawaited(_sub.cancel());
-    super.dispose();
-  }
-}

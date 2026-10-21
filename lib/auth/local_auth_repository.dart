@@ -7,11 +7,9 @@ import '../domain/domain.dart';
 class LocalAuthRepository implements AuthRepository {
   const LocalAuthRepository();
 
-  /// The device's only user. A fixed nil UUID, so local rows keep a
-  /// UUID-shaped `user_id`.
-  static const AppUser localUser = AppUser(
-    id: '00000000-0000-0000-0000-000000000000',
-  );
+  /// The device's only user ([kGuestUserId], a fixed nil UUID, so local
+  /// rows keep a UUID-shaped `user_id`).
+  static const AppUser localUser = AppUser(id: kGuestUserId);
 
   static const AuthState _state = AuthState.signedIn(localUser);
 

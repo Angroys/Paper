@@ -7,21 +7,20 @@ import '../core/core_providers.dart';
 import '../core/paper_api_client.dart';
 import '../data/data_providers.dart';
 import '../domain/domain.dart';
+import '../sync/guest_merge.dart';
 import '../sync/sync_providers.dart';
 import 'local_auth_repository.dart';
 import 'supabase_auth_repository.dart';
 import 'unconfigured_auth_repository.dart';
-import 'windows_protocol_registration.dart';
 
 /// Auth: [SupabaseAuthRepository] once Supabase is initialised, else
-/// [UnconfiguredAuthRepository]. On Windows the `paper://` handler is
-/// (re-)registered under HKCU the first time this is read.
+/// [UnconfiguredAuthRepository]. (On Windows `main()` registers the
+/// `paper://` handler under HKCU at startup.)
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   // Offline-only builds: a local user, no sign-in screen.
   if (ref.watch(offlineOnlyProvider)) return const LocalAuthRepository();
   final client = ref.watch(supabaseClientProvider);
   if (client == null) return const UnconfiguredAuthRepository();
-  unawaited(registerWindowsProtocolHandler());
   final repo = SupabaseAuthRepository(client.auth);
   ref.onDispose(() => unawaited(repo.dispose()));
   return repo;
@@ -47,16 +46,41 @@ final freshSessionJsonProvider = Provider<FreshSessionJson>((ref) {
   return () async => null;
 });
 
-/// Signs out and wipes this device's data (DB, outbox, cached PDFs).
-/// Show `SignOutDialog` first: local-only notes are lost
-/// (`NoteRepository.countLocalOnlyNotes`).
-final signOutProvider = Provider<Future<void> Function()>((ref) {
-  return () async {
+/// Online build with Supabase configured and nobody signed in: the app
+/// runs as a guest (sign-in is optional). Online-only features (sync, AI,
+/// import by link) then show a "Sign in to use …" prompt instead of
+/// running. Always false in offline-only and unconfigured builds.
+final isGuestProvider = Provider<bool>((ref) {
+  if (ref.watch(offlineOnlyProvider)) return false;
+  final auth =
+      ref.watch(authStateProvider).value ??
+      ref.watch(authRepositoryProvider).currentState;
+  return auth.status == AuthStatus.signedOut;
+});
+
+/// Signs out; the app carries on as a guest. Show `SignOutDialog` first.
+///
+/// * [keepLocalData] true (the default): papers on this device stay
+///   readable, labelled as kept from the account (`PaperKeptChip`); papers
+///   that are only in the cloud are removed. The account's queued changes
+///   stay and sync if the same account signs in again; another account
+///   signing in removes them (lib/sync/guest_merge.dart).
+/// * false: wipes this device's data (DB, outbox, cached PDFs). Local-only
+///   notes are lost (`NoteRepository.countLocalOnlyNotes`).
+final signOutProvider = Provider<Future<void> Function({bool keepLocalData})>((
+  ref,
+) {
+  return ({bool keepLocalData = true}) async {
     final offline = ref.read(offlineOnlyProvider);
     if (!offline) await ref.read(syncEngineProvider).stop();
     await ref.read(authRepositoryProvider).signOut();
-    await ref.read(appDatabaseProvider).clearAll();
-    await ref.read(fileStoreProvider).clear();
+    if (keepLocalData) {
+      await GuestDataMerge(ref.read(localStoreProvider))
+          .keepDeviceCopiesForGuest();
+    } else {
+      await ref.read(appDatabaseProvider).clearAll();
+      await ref.read(fileStoreProvider).clear();
+    }
     if (!offline) ref.invalidate(syncEngineProvider);
   };
 });

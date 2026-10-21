@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../auth/auth_providers.dart';
 import '../../core/format.dart';
 import '../../domain/domain.dart';
 import '../../l10n/app_localizations.dart';
@@ -11,6 +12,7 @@ import '../../sync/sync_providers.dart';
 import '../../theme/motion_extras.dart';
 import '../../theme/paper_tokens.dart';
 import '../../theme/theme_x.dart';
+import '../auth/sign_in_prompt.dart';
 import 'sync_sheet.dart';
 
 /// The three SyncBadge forms (components.md §2).
@@ -124,6 +126,9 @@ class _SyncBadgeState extends ConsumerState<SyncBadge> {
 
   @override
   Widget build(BuildContext context) {
+    // Guests (no account): the badge is the library chrome's small
+    // "Sign in" affordance instead of a sync state.
+    if (ref.watch(isGuestProvider)) return GuestSignInBadge(form: widget.form);
     final l10n = AppLocalizations.of(context);
     final c = context.paper;
     final status = ref.watch(syncStatusProvider).value ?? SyncStatus.idle;
@@ -223,6 +228,94 @@ class _SyncBadgeState extends ConsumerState<SyncBadge> {
               ? PaperRadii.borderMd
               : PaperRadii.borderFull,
           onTap: () => unawaited(showSyncSheet(context)),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+/// [SyncBadge] in guest mode: a calm "Sign in" affordance in the same slot
+/// (rail bottom, sidebar row, compact top bar, reader toolbar, Settings ›
+/// Sync). Opens the sign-in screen, which can be dismissed.
+class GuestSignInBadge extends StatelessWidget {
+  const GuestSignInBadge({super.key, this.form = SyncBadgeForm.icon});
+
+  static const Key badgeKey = ValueKey<String>('guest-sign-in-badge');
+
+  final SyncBadgeForm form;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final c = context.paper;
+    final t = Theme.of(context).textTheme;
+    final glyph = Icon(
+      Symbols.account_circle_rounded,
+      size: form == SyncBadgeForm.short ? 18 : PaperIconSize.md,
+      color: c.textSecondary,
+    );
+    final Widget child = switch (form) {
+      SyncBadgeForm.icon => SizedBox(
+        width: 40,
+        height: 40,
+        child: Center(child: glyph),
+      ),
+      SyncBadgeForm.short => Container(
+        height: 28,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: c.surfaceVariant,
+          borderRadius: PaperRadii.borderFull,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            glyph,
+            const SizedBox(width: 6),
+            Text(
+              l10n.commonSignIn,
+              style: t.labelMedium?.copyWith(color: c.textPrimary),
+            ),
+          ],
+        ),
+      ),
+      SyncBadgeForm.long => Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: PaperSpacing.md,
+          vertical: PaperSpacing.sm,
+        ),
+        child: Row(
+          children: <Widget>[
+            glyph,
+            const SizedBox(width: PaperSpacing.sm),
+            Expanded(
+              child: Text(
+                l10n.guestSyncTitle,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: t.labelLarge?.copyWith(
+                  fontSize: 13,
+                  color: c.textPrimary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    };
+    return Semantics(
+      button: true,
+      label: l10n.guestBadgeSemantics,
+      excludeSemantics: true,
+      child: Tooltip(
+        message: l10n.guestSyncTitle,
+        child: InkWell(
+          key: badgeKey,
+          borderRadius: form == SyncBadgeForm.long
+              ? PaperRadii.borderMd
+              : PaperRadii.borderFull,
+          onTap: () => unawaited(openSignIn(context)),
           child: child,
         ),
       ),

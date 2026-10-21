@@ -97,9 +97,15 @@ class AppShortcuts extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // The top-most route: sign-in is pushed on top of the current route,
+    // which a push does not change in `currentConfiguration.uri`.
     String location() {
-      final router = ref.read(routerProvider);
-      return router.routerDelegate.currentConfiguration.uri.path;
+      final config = ref
+          .read(routerProvider)
+          .routerDelegate
+          .currentConfiguration;
+      if (config.isEmpty) return config.uri.path;
+      return Uri.parse(config.last.matchedLocation).path;
     }
 
     bool inLibrary() => location().startsWith(AppRoutes.library);

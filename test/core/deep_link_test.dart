@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:paper/app/router.dart';
+import 'package:paper/app/deep_link_listener.dart';
 import 'package:paper/core/app_links_deep_link_service.dart';
+import 'package:paper/core/env.dart';
 import 'package:paper/domain/domain.dart';
 
 void main() {
@@ -35,24 +36,39 @@ void main() {
     expect(AppLinksDeepLinkService.linkFromArgs(<String>['foo']), isNull);
   });
 
-  group('authRedirect', () {
-    const user = AppUser(id: 'u1');
-    test('not configured allows everything', () {
-      expect(authRedirect(const AuthState.notConfigured(), '/library'), isNull);
+  test('OAuth redirectTo is exactly paper://auth-callback', () {
+    expect(Env.authCallbackUrl, 'paper://auth-callback');
+    final uri = Uri.parse(Env.authCallbackUrl);
+    expect(uri.scheme, 'paper');
+    expect(uri.host, 'auth-callback');
+    expect(
+      DeepLinkTarget.parse(Uri.parse('${Env.authCallbackUrl}?code=c')),
+      isA<AuthCallbackLink>(),
+    );
+  });
+
+  group('DeepLinkDeduper', () {
+    test('an OAuth code is handled once (initial link + stream + argv)', () {
+      final d = DeepLinkDeduper();
+      final uri = Uri.parse('paper://auth-callback?code=abc');
+      expect(d.accept(uri), isTrue);
+      expect(d.accept(uri), isFalse);
+      expect(d.accept(Uri.parse('paper://auth-callback?code=abc')), isFalse);
+      expect(d.accept(Uri.parse('paper://auth-callback?code=other')), isTrue);
     });
-    test('signed out goes to sign-in', () {
-      expect(authRedirect(const AuthState.signedOut(), '/library'), '/sign-in');
-      expect(authRedirect(const AuthState.signedOut(), '/sign-in'), isNull);
-    });
-    test('signed in leaves sign-in', () {
-      expect(
-        authRedirect(const AuthState.signedIn(user), '/sign-in'),
-        '/library',
-      );
-      expect(authRedirect(const AuthState.signedIn(user), '/reader/x'), isNull);
-    });
-    test('unknown stays put', () {
-      expect(authRedirect(const AuthState.unknown(), '/library'), isNull);
+
+    test('other links repeat only after the window', () {
+      var now = DateTime(2026);
+      final d = DeepLinkDeduper(clock: () => now);
+      final uri = Uri.parse('paper://paper/p-1');
+      expect(d.accept(uri), isTrue);
+      expect(d.accept(uri), isFalse);
+      now = now.add(const Duration(seconds: 6));
+      expect(d.accept(uri), isTrue);
+      // An error return (no code) is not single-use either.
+      final err = Uri.parse('paper://auth-callback?error=access_denied');
+      expect(d.accept(err), isTrue);
+      expect(d.accept(err), isFalse);
     });
   });
 }

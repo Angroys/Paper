@@ -37,9 +37,11 @@ DefaultDirName={autopf}\Paper
 DefaultGroupName=Paper
 DisableProgramGroupPage=yes
 PrivilegesRequired=admin
-; The paper:// handler is written per-user (HKCU), matching what the app
-; itself writes at runtime (lib/auth/windows_protocol_registration.dart).
-UsedUserAreasWarning=no
+; The paper:// handler is registered under HKA: HKLM\Software\Classes for
+; this admin install (every user), so it is not written into the hive of
+; whichever admin account approved the UAC prompt. At runtime the app also
+; writes it per-user (HKCU, lib/auth/windows_protocol_registration.dart),
+; pointing at the same exe; HKCU wins over HKLM when both exist.
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 SetupIconFile=..\..\windows\runner\resources\app_icon.ico
@@ -67,10 +69,10 @@ Name: "{autodesktop}\Paper"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon
 
 [Registry]
 ; paper:// URL protocol -> "{app}\paper.exe" "%1"
-Root: HKCU; Subkey: "Software\Classes\paper"; ValueType: string; ValueName: ""; ValueData: "URL:Paper Protocol"; Flags: uninsdeletekey
-Root: HKCU; Subkey: "Software\Classes\paper"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""
-Root: HKCU; Subkey: "Software\Classes\paper\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#AppExeName},0"
-Root: HKCU; Subkey: "Software\Classes\paper\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExeName}"" ""%1"""
+Root: HKA; Subkey: "Software\Classes\paper"; ValueType: string; ValueName: ""; ValueData: "URL:Paper"; Flags: uninsdeletekey
+Root: HKA; Subkey: "Software\Classes\paper"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""
+Root: HKA; Subkey: "Software\Classes\paper\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#AppExeName},0"
+Root: HKA; Subkey: "Software\Classes\paper\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#AppExeName}"" ""%1"""
 
 [Run]
 Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,Paper}"; Flags: nowait postinstall skipifsilent

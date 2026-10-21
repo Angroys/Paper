@@ -108,8 +108,11 @@ final remoteDataSourceProvider = Provider<RemoteDataSource>((ref) {
   );
 });
 
-String? _currentUserId(Ref ref) =>
-    ref.read(authRepositoryProvider).currentState.user?.id;
+/// Owner of new local rows: the signed-in account, else the guest
+/// ([kGuestUserId]; sign-in is optional). Guest rows are re-owned on
+/// sign-in (lib/sync/guest_merge.dart).
+String _currentUserId(Ref ref) =>
+    ref.read(authRepositoryProvider).currentState.user?.id ?? kGuestUserId;
 
 final paperRepositoryProvider = Provider<PaperRepository>(
   (ref) => LocalPaperRepository(

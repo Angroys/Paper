@@ -5,12 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../auth/auth_providers.dart';
 import '../../../core/build_flags.dart';
 import '../../../core/core_providers.dart';
 import '../../../data/data_providers.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../theme/paper_tokens.dart';
 import '../../../theme/theme_x.dart';
+import '../../auth/sign_in_prompt.dart';
 import '../reader_controller.dart';
 import 'popover.dart';
 
@@ -37,6 +39,10 @@ class _CitationPopoverState extends ConsumerState<CitationPopover> {
   _ImportState _import = _ImportState.idle;
 
   Future<void> _importPaper(Uri url) async {
+    // Guests: importing fetches the paper on the server; ask to sign in.
+    if (ref.read(isGuestProvider)) {
+      return showSignInPromptDialog(context, GuestFeature.importLink);
+    }
     setState(() => _import = _ImportState.importing);
     try {
       await ref.read(paperRepositoryProvider).importFromUrl(url);

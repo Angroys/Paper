@@ -330,7 +330,8 @@ Future<void> signInAgain(BuildContext context, WidgetRef ref) async {
   } on Object {
     // Best effort: the session is already dead.
   }
-  router?.go('${AppRoutes.signIn}?expired=1');
+  // Pushed: closing sign-in (or signing in) returns to where the user was.
+  await router?.push<void>('${AppRoutes.signIn}?expired=1');
 }
 
 Future<void> showSyncHowItWorks(BuildContext context) {

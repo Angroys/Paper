@@ -1711,9 +1711,9 @@
   "@signOutConfirmTitle": {
     "description": "SignOutDialog title, nothing pending. Max 32 chars."
   },
-  "signOutConfirmBody": "Downloaded papers are removed from this device. Your library stays in your account.",
+  "signOutConfirmBody": "Papers on this device stay here, so you can keep reading. Sign in again to sync them.",
   "@signOutConfirmBody": {
-    "description": "SignOutDialog body, nothing pending. Max 120 chars."
+    "description": "SignOutDialog body, nothing pending, papers kept (default). Max 120 chars."
   },
   "signOutPendingTitle": "Sign out with unsynced changes?",
   "@signOutPendingTitle": {
@@ -2423,5 +2423,84 @@
   "settingsNotesCopied": "Notes copied.",
   "@settingsNotesCopied": {
     "description": "Snackbar after settingsExportNotes. Max 40 chars."
+  },
+  "signOutRemoveBody": "Papers are removed from this device. Your library stays in your account.",
+  "@signOutRemoveBody": {
+    "description": "SignOutDialog body when \"remove papers\" is ticked, nothing pending. Max 120 chars."
+  },
+  "signOutPendingKeptBody": "{n, plural, =1{1 change hasn’t synced yet. It syncs when you sign in again.} other{{n} changes haven’t synced yet. They sync when you sign in again.}}",
+  "@signOutPendingKeptBody": {
+    "description": "SignOutDialog body when changes are pending and papers are kept (default). Max 100 chars.",
+    "placeholders": {
+      "n": {
+        "type": "int",
+        "example": "3",
+        "description": "Unsynced changes"
+      }
+    }
+  },
+  "signOutRemoveLocal": "Remove papers from this device",
+  "@signOutRemoveLocal": {
+    "description": "SignOutDialog checkbox (off by default). Max 32 chars."
+  },
+  "libraryKeptFromAccount": "From account",
+  "@libraryKeptFromAccount": {
+    "description": "Library card chip, guest mode: paper kept on this device after its account signed out. Status chip, max 12 chars."
+  },
+  "libraryKeptFromAccountTooltip": "Sign in to sync",
+  "@libraryKeptFromAccountTooltip": {
+    "description": "Tooltip of the From account chip. Max 18 chars."
+  },
+  "guestNotNow": "Not now",
+  "@guestNotNow": {
+    "description": "Sign-in prompt dialog: dismiss button. Max 18 chars."
+  },
+  "guestSyncTitle": "Sign in to sync",
+  "@guestSyncTitle": {
+    "description": "Sign-in prompt (Settings › Sync, sync sheet), guest mode. Max 32 chars."
+  },
+  "guestSyncBody": "Your papers, highlights and notes stay on this device. Sign in to sync them to your account.",
+  "@guestSyncBody": {
+    "description": "Sign-in prompt body for sync, guest mode. Max 120 chars."
+  },
+  "guestExplainTitle": "Sign in to use explanations",
+  "@guestExplainTitle": {
+    "description": "Sign-in prompt, Explanation tab, guest mode. Max 32 chars."
+  },
+  "guestExplainBody": "Explanations are made online on paper.college. Your highlights and notes work without an account.",
+  "@guestExplainBody": {
+    "description": "Sign-in prompt body, Explanation tab. Max 120 chars."
+  },
+  "guestGlossaryTitle": "Sign in to use the glossary",
+  "@guestGlossaryTitle": {
+    "description": "Sign-in prompt, Glossary tab, guest mode. Max 32 chars."
+  },
+  "guestGlossaryBody": "Glossary terms are explained online on paper.college. Your highlights and notes work without an account.",
+  "@guestGlossaryBody": {
+    "description": "Sign-in prompt body, Glossary tab. Max 120 chars."
+  },
+  "guestImportLinkTitle": "Sign in to import from a link",
+  "@guestImportLinkTitle": {
+    "description": "Sign-in prompt dialog for import by link, guest mode. Max 32 chars."
+  },
+  "guestImportLinkBody": "Paper fetches links through your paper.college account. You can still add PDFs from this device.",
+  "@guestImportLinkBody": {
+    "description": "Sign-in prompt body for import by link. Max 120 chars."
+  },
+  "guestAccountTitle": "Not signed in",
+  "@guestAccountTitle": {
+    "description": "Settings › Account header row, guest mode. Max 32 chars."
+  },
+  "guestAccountBody": "Everything stays on this device. Sign in to sync your library and use explanations.",
+  "@guestAccountBody": {
+    "description": "Settings › Account body, guest mode. Max 120 chars."
+  },
+  "guestBadgeSemantics": "Not signed in. Sign in to sync.",
+  "@guestBadgeSemantics": {
+    "description": "Sync badge in guest mode: screen-reader label. Max 40 chars."
+  },
+  "signInCloseTooltip": "Close sign-in",
+  "@signInCloseTooltip": {
+    "description": "Sign-in screen close button tooltip (returns to where you were). Max 18 chars."
   }
 }
