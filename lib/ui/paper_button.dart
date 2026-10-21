@@ -368,7 +368,10 @@ class PaperButton extends StatelessWidget {
           radius: radius,
           constraints: BoxConstraints.tightFor(height: height),
           padding: EdgeInsets.symmetric(horizontal: s.paddingX),
-          alignment: Alignment.center,
+          // An alignment would make the box fill loose constraints (e.g.
+          // inside an Align); without one it hugs its label like the web's
+          // inline-flex buttons. The Row still centres the label.
+          alignment: expand ? Alignment.center : null,
           child: content,
         );
         if (expand) box = SizedBox(width: double.infinity, child: box);

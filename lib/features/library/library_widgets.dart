@@ -307,7 +307,9 @@ abstract final class LibraryTableColumns {
   static const double nameMin = 200;
   static const double nameContentMax = 288;
   static const double rate = 72;
-  static const double status = 104;
+  // 104 in the spec; 120 lets the two-word chips ("Not downloaded",
+  // "Available offline") wrap between words instead of mid-word.
+  static const double status = 120;
   static const double opened = 96;
   static const double action = 180;
 

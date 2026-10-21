@@ -609,10 +609,13 @@ class _SplitDragHandleState extends State<SplitDragHandle> {
             child: Stack(
               alignment: Alignment.center,
               children: <Widget>[
-                // The divider is the panel's 1px gray-800 left border.
-                const Positioned(
+                // The divider is the panel's 1px gray-800 left border, on
+                // the whole pixel just left of the panel (centring it in
+                // the hit area put it on a half pixel: a blurred 2px line).
+                Positioned(
                   top: 0,
                   bottom: 0,
+                  left: widget.hitWidth / 2,
                   width: PaperChrome.splitDividerWidth,
                   child: ColoredBox(color: PaperWeb.gray800),
                 ),
