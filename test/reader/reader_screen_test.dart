@@ -268,17 +268,17 @@ void main() {
     final y = PaperHighlightColor.yellow.wash.toARGB32().toRadixString(16);
     final b = PaperHighlightColor.blue.wash.toARGB32().toRadixString(16);
     expect(calls.take(7), <String>[
-      'layer multiply 0.40',
+      'layer multiply 0.10',
       'rrect $y',
       'rrect $y',
       'restore',
-      'layer multiply 0.40',
+      'layer multiply 0.10',
       'rrect $b',
       'restore',
     ]);
     final painter =
         tester.widget<CustomPaint>(paint).painter! as HighlightWashPainter;
-    expect(painter.colors.restAlpha, 0.40);
+    expect(painter.colors.restAlpha, 0.10);
     expect(painter.colors.blendMode, BlendMode.multiply);
   });
 

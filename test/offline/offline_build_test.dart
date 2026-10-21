@@ -320,8 +320,9 @@ void main() {
         find.byKey(const ValueKey<String>('settings-sign-out')),
         findsNothing,
       );
-      // Opens on Appearance (the first section).
-      expect(find.text('Theme'), findsOneWidget);
+      // Opens on Appearance (the first section); dark-only, so no theme
+      // selector.
+      expect(find.text('Reduce motion'), findsOneWidget);
 
       await tester.tap(
         find.byKey(const ValueKey<String>('settings-nav-storage')),

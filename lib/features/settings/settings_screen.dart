@@ -8,7 +8,6 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/app_settings.dart';
-import '../../app/app_shell.dart';
 import '../../auth/auth_providers.dart';
 import '../../core/build_flags.dart';
 import '../../core/core_providers.dart';
@@ -118,7 +117,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                 ),
               ),
-              const ShellSyncBadge(),
             ],
           ),
         );
@@ -351,23 +349,12 @@ class _AppearanceSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final mode = ref.watch(themeModeProvider);
     final reduce = ref.watch(reduceMotionProvider);
     return Padding(
       padding: const EdgeInsets.all(PaperSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(
-            l10n.settingsTheme,
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
-          const SizedBox(height: PaperSpacing.sm),
-          ThemeSelector(
-            mode: mode,
-            onChanged: ref.read(themeModeProvider.notifier).set,
-          ),
-          const SizedBox(height: PaperSpacing.xl),
           Text(
             l10n.settingsReduceMotion,
             style: Theme.of(context).textTheme.labelLarge,
@@ -395,103 +382,6 @@ class _AppearanceSection extends ConsumerWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// `ThemeSelector`: System / Light / Dark tiles (radio group, labelled by
-/// name, never by swatch). Switching is instant (motion #53).
-class ThemeSelector extends StatelessWidget {
-  const ThemeSelector({super.key, required this.mode, required this.onChanged});
-
-  final ThemeMode mode;
-  final ValueChanged<ThemeMode> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final c = context.paper;
-    Widget tile(ThemeMode m, String label, Color bg) {
-      final selected = m == mode;
-      return Semantics(
-        inMutuallyExclusiveGroup: true,
-        checked: selected,
-        button: true,
-        label: label,
-        excludeSemantics: true,
-        child: InkWell(
-          key: ValueKey<String>('theme-${m.name}'),
-          borderRadius: PaperRadii.borderLg,
-          onTap: () => onChanged(m),
-          child: Column(
-            children: <Widget>[
-              Container(
-                width: 120,
-                height: 88,
-                decoration: BoxDecoration(
-                  color: bg,
-                  borderRadius: PaperRadii.borderLg,
-                  border: Border.all(
-                    color: selected ? c.primary : c.border,
-                    width: selected ? 2 : 1,
-                  ),
-                ),
-                child: Stack(
-                  children: <Widget>[
-                    Positioned(
-                      left: 24,
-                      top: 16,
-                      right: 24,
-                      bottom: 0,
-                      child: Container(
-                        color: Colors.white,
-                        padding: const EdgeInsets.all(8),
-                        alignment: Alignment.topLeft,
-                        child: Container(
-                          height: 4,
-                          width: 40,
-                          color: PaperHighlightColor.blue.wash,
-                        ),
-                      ),
-                    ),
-                    if (selected)
-                      Positioned(
-                        right: 6,
-                        top: 6,
-                        child: CircleAvatar(
-                          radius: 10,
-                          backgroundColor: c.primary,
-                          child: Icon(
-                            Symbols.check_rounded,
-                            size: 14,
-                            color: c.onPrimary,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: PaperSpacing.xs),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Wrap(
-      spacing: PaperSpacing.md,
-      runSpacing: PaperSpacing.md,
-      children: <Widget>[
-        tile(ThemeMode.system, l10n.themeSystem, const Color(0xFF737373)),
-        tile(ThemeMode.light, l10n.themeLight, const Color(0xFFFAFAFA)),
-        tile(ThemeMode.dark, l10n.themeDark, const Color(0xFF0A0A0A)),
-      ],
     );
   }
 }

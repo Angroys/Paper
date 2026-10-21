@@ -60,17 +60,17 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('theme choice persists across launches', (tester) async {
+  testWidgets('no theme selector (dark-only); a legacy theme pref is '
+      'ignored and left alone', (tester) async {
+    await prefs.setString(PrefKeys.themeMode, 'light');
     await pump(tester);
-    await tester.tap(find.byKey(const ValueKey<String>('theme-light')));
-    await tester.pump();
-    expect(prefs.getString(PrefKeys.themeMode), 'light');
-
-    final next = ProviderContainer(
-      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+    expect(find.byKey(const ValueKey<String>('theme-light')), findsNothing);
+    expect(find.text('Theme'), findsNothing);
+    expect(
+      Theme.of(tester.element(find.byType(SettingsScreen))).brightness,
+      Brightness.dark,
     );
-    addTearDown(next.dispose);
-    expect(next.read(themeModeProvider), ThemeMode.light);
+    expect(prefs.getString(PrefKeys.themeMode), 'light');
   });
 
   testWidgets('reader prefs and reduce motion persist', (tester) async {

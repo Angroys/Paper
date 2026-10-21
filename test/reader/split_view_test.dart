@@ -77,7 +77,7 @@ void main() {
         windowClass: PaperWindowClass.medium,
       );
       expect(medium.mode, PaperSidePanelMode.overlay);
-      expect(medium.defaultWidth, 360);
+      expect(medium.defaultWidth, PaperBreakpoints.sidePanelMedium);
       expect(medium.maxWidth, closeTo(595, 1e-9));
     });
 
@@ -88,7 +88,7 @@ void main() {
         windowClass: PaperWindowClass.large,
       );
       expect(large.mode, PaperSidePanelMode.split);
-      expect(large.defaultWidth, 380);
+      expect(large.defaultWidth, PaperBreakpoints.sidePanelLarge);
       expect(large.minWidth, 300);
       expect(large.maxWidth, 640);
       final xl = resolvePanelLayout(
@@ -96,7 +96,7 @@ void main() {
         height: 1000,
         windowClass: PaperWindowClass.extraLarge,
       );
-      expect(xl.defaultWidth, 420);
+      expect(xl.defaultWidth, PaperBreakpoints.sidePanelExtraLarge);
       expect(xl.maxWidth, 720, reason: '45% of 1600; PDF keeps >= 720');
       expect(xl.clampWidth(10), 320);
       expect(xl.clampWidth(5000), 720);
@@ -138,8 +138,14 @@ void main() {
       expect(find.byKey(panelKey), findsOneWidget);
       expect(readerWidth(tester), 1280);
       await tester.pumpAndSettle();
-      expect(readerWidth(tester), 1280 - 380 - PaperChrome.splitDividerWidth);
-      expect(tester.getSize(find.byKey(panelKey)).width, 380);
+      expect(
+        readerWidth(tester),
+        1280 - PaperBreakpoints.sidePanelLarge - PaperChrome.splitDividerWidth,
+      );
+      expect(
+        tester.getSize(find.byKey(panelKey)).width,
+        PaperBreakpoints.sidePanelLarge,
+      );
 
       open.value = false;
       await tester.pump();
@@ -154,7 +160,10 @@ void main() {
       tester,
     ) async {
       await pumpSplit(tester, const Size(1280, 800), open: true);
-      const committed = 1280 - 380 - PaperChrome.splitDividerWidth;
+      const committed =
+          1280 -
+          PaperBreakpoints.sidePanelLarge -
+          PaperChrome.splitDividerWidth;
       expect(readerWidth(tester), committed);
 
       final handle = find.byKey(const ValueKey<String>('split-drag-handle'));
@@ -165,16 +174,17 @@ void main() {
       await tester.pump();
       // Panel follows the pointer; the PDF keeps its pre-drag layout width
       // and is drawn scaled.
-      expect(tester.getSize(find.byKey(panelKey)).width, closeTo(480, 1));
+      const dragged = PaperBreakpoints.sidePanelLarge + 100;
+      expect(tester.getSize(find.byKey(panelKey)).width, closeTo(dragged, 1));
       expect(readerWidth(tester), committed);
       expect(
         tester.getRect(find.byKey(readerKey)).width,
-        closeTo(1280 - 480 - 1, 1),
+        closeTo(1280 - dragged - 1, 1),
       );
 
       await gesture.up();
       await tester.pump();
-      expect(readerWidth(tester), closeTo(1280 - 480 - 1, 1));
+      expect(readerWidth(tester), closeTo(1280 - dragged - 1, 1));
       await tester.pumpAndSettle(kDoubleTapTimeout);
     });
 
@@ -184,7 +194,7 @@ void main() {
       final open = await pumpSplit(tester, const Size(1280, 800), open: true);
       final handle = find.byKey(const ValueKey<String>('split-drag-handle'));
       final gesture = await tester.startGesture(tester.getCenter(handle));
-      await gesture.moveBy(const Offset(200, 0)); // 380 -> 180 < 300 - 48
+      await gesture.moveBy(const Offset(200, 0)); // 384 -> 184 < 300 - 48
       await tester.pump();
       await gesture.up();
       await tester.pumpAndSettle();
@@ -206,7 +216,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(layout?.mode, PaperSidePanelMode.overlay);
       expect(readerWidth(tester), 700);
-      expect(tester.getSize(find.byKey(panelKey)).width, 360);
+      expect(
+        tester.getSize(find.byKey(panelKey)).width,
+        PaperBreakpoints.sidePanelMedium,
+      );
       // Scrim tap closes.
       await tester.tapAt(const Offset(50, 450));
       await tester.pumpAndSettle();
@@ -239,8 +252,14 @@ void main() {
       open.value = true;
       await tester.pump();
       expect(tester.hasRunningAnimations, isFalse);
-      expect(readerWidth(tester), 1280 - 380 - PaperChrome.splitDividerWidth);
-      expect(tester.getRect(find.byKey(panelKey)).left, 1280 - 380);
+      expect(
+        readerWidth(tester),
+        1280 - PaperBreakpoints.sidePanelLarge - PaperChrome.splitDividerWidth,
+      );
+      expect(
+        tester.getRect(find.byKey(panelKey)).left,
+        1280 - PaperBreakpoints.sidePanelLarge,
+      );
       open.value = false;
       await tester.pump();
       expect(find.byKey(panelKey), findsNothing);

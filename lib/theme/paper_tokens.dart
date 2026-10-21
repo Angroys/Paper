@@ -5,14 +5,19 @@
 // design/tokens/paper-tokens.json, which is mapped 1:1 from the RPR web app
 // (tailwind.config.ts + src/app/globals.css). Keep the two files in lockstep.
 //
+// v2 (web parity): every value equals what paper.college renders. The web
+// is DARK-ONLY (layout.tsx server-renders <html class="dark">), so the app
+// is dark-only too: there is no light theme and no theme toggle. Exact web
+// colours by Tailwind name are in [PaperWeb]; the full mapping is
+// design/web-parity/tokens.md.
+//
 // Requires Flutter >= 3.35 (uses AppBarThemeData / InputDecorationThemeData /
 // CardThemeData / DialogThemeData and WidgetStateProperty).
 //
 // Usage:
 //   MaterialApp(
-//     theme: PaperTheme.light(),
-//     darkTheme: PaperTheme.dark(),
-//     themeMode: ThemeMode.system,
+//     theme: PaperTheme.dark(),
+//     themeMode: ThemeMode.dark,
 //   );
 //   final colors = Theme.of(context).extension<PaperColors>()!;
 //   final hl = Theme.of(context).extension<PaperHighlightColors>()!;
@@ -23,8 +28,7 @@ import 'package:flutter/material.dart';
 // Colors
 // ---------------------------------------------------------------------------
 
-/// Semantic app colors. Light/dark pairs live in [PaperColors.light] and
-/// [PaperColors.dark]. Brand rule: one indigo accent, everything else
+/// Semantic app colors (dark-only, [PaperColors.dark]). Brand rule: one indigo accent, everything else
 /// hue-free neutral gray.
 @immutable
 class PaperColors extends ThemeExtension<PaperColors> {
@@ -87,7 +91,8 @@ class PaperColors extends ThemeExtension<PaperColors> {
   /// Hover fills, sidebar, chips.
   final Color surfaceVariant;
 
-  /// Tonal elevation step for menus/popovers.
+  /// Popovers and menus. The web draws them gray-900 + border + shadow,
+  /// i.e. the same fill as [surface].
   final Color surfaceRaised;
 
   /// PDF page fill: white in BOTH themes (web parity).
@@ -115,10 +120,11 @@ class PaperColors extends ThemeExtension<PaperColors> {
   final Color border;
   final Color divider;
 
-  /// Interactive control boundary (>= 3:1).
+  /// Control boundary: inputs, secondary buttons (web dark:border-gray-700).
+  /// Web parity, NOT 3:1 (1.73:1 on [surface]); see tokens.md.
   final Color outline;
 
-  /// Web input-border parity; decorative only.
+  /// Stronger neutral edge: HUD pills, hover rings (web gray-600).
   final Color outlineVariant;
 
   /// Focus ring on app chrome.
@@ -155,66 +161,17 @@ class PaperColors extends ThemeExtension<PaperColors> {
   final Color statusSynced;
   final Color statusSyncError;
 
-  /// Text selection fill.
+  /// Text selection over the white PDF page (web .textLayer ::selection,
+  /// indigo-600 @ 30%).
   final Color selection;
   final Color cursor;
   final Color selectionHandle;
-
-  static const PaperColors light = PaperColors(
-    background: Color(0xFFFAFAFA),
-    surface: Color(0xFFFFFFFF),
-    surfaceVariant: Color(0xFFF5F5F5),
-    surfaceRaised: Color(0xFFFFFFFF),
-    pdfPage: Color(0xFFFFFFFF),
-    readerBackdrop: Color(0xFFE5E5E5),
-    primary: Color(0xFF4F46E5),
-    onPrimary: Color(0xFFFFFFFF),
-    primaryHover: Color(0xFF4338CA),
-    primarySoft: Color(0xFFEEF2FF),
-    onPrimarySoft: Color(0xFF312E81),
-    secondary: Color(0xFF404040),
-    onSecondary: Color(0xFFFFFFFF),
-    textPrimary: Color(0xFF171717),
-    textSecondary: Color(0xFF525252),
-    textMuted: Color(0xFF737373),
-    textDisabled: Color(0xFFA3A3A3),
-    border: Color(0xFFE5E5E5),
-    divider: Color(0xFFE5E5E5),
-    outline: Color(0xFF737373),
-    outlineVariant: Color(0xFFD4D4D4),
-    focusRing: Color(0xFF4F46E5),
-    focusRingOnPaper: Color(0xFF4F46E5),
-    scrim: Color(0x38171717),
-    inverseSurface: Color(0xFF262626),
-    onInverseSurface: Color(0xFFFAFAFA),
-    inversePrimary: Color(0xFFA5B4FC),
-    success: Color(0xFF15803D),
-    successSurface: Color(0xFFF0FDF4),
-    warning: Color(0xFFB45309),
-    warningSurface: Color(0xFFFFFBEB),
-    error: Color(0xFFB91C1C),
-    onError: Color(0xFFFFFFFF),
-    errorSurface: Color(0xFFFEF2F2),
-    errorBorder: Color(0xFFFECACA),
-    onErrorSurface: Color(0xFFB91C1C),
-    info: Color(0xFF1D4ED8),
-    infoSurface: Color(0xFFEFF6FF),
-    statusOnline: Color(0xFF15803D),
-    statusOffline: Color(0xFF737373),
-    statusSyncing: Color(0xFF4F46E5),
-    statusSyncPending: Color(0xFFB45309),
-    statusSynced: Color(0xFF15803D),
-    statusSyncError: Color(0xFFB91C1C),
-    selection: Color(0x4D4F46E5),
-    cursor: Color(0xFF4F46E5),
-    selectionHandle: Color(0xFF4F46E5),
-  );
 
   static const PaperColors dark = PaperColors(
     background: Color(0xFF0A0A0A),
     surface: Color(0xFF171717),
     surfaceVariant: Color(0xFF262626),
-    surfaceRaised: Color(0xFF262626),
+    surfaceRaised: Color(0xFF171717),
     pdfPage: Color(0xFFFFFFFF),
     readerBackdrop: Color(0xFF0A0A0A),
     primary: Color(0xFF818CF8),
@@ -222,7 +179,7 @@ class PaperColors extends ThemeExtension<PaperColors> {
     primaryHover: Color(0xFFA5B4FC),
     primarySoft: Color(0xFF1E1B4B),
     onPrimarySoft: Color(0xFFC7D2FE),
-    secondary: Color(0xFFD4D4D4),
+    secondary: Color(0xFFE5E5E5),
     onSecondary: Color(0xFF171717),
     textPrimary: Color(0xFFF5F5F5),
     textSecondary: Color(0xFFD4D4D4),
@@ -230,14 +187,14 @@ class PaperColors extends ThemeExtension<PaperColors> {
     textDisabled: Color(0xFF525252),
     border: Color(0xFF262626),
     divider: Color(0xFF262626),
-    outline: Color(0xFF737373),
-    outlineVariant: Color(0xFF404040),
+    outline: Color(0xFF404040),
+    outlineVariant: Color(0xFF525252),
     focusRing: Color(0xFF818CF8),
     focusRingOnPaper: Color(0xFF4F46E5),
-    scrim: Color(0x8C0A0A0A),
-    inverseSurface: Color(0xFFE5E5E5),
-    onInverseSurface: Color(0xFF171717),
-    inversePrimary: Color(0xFF4F46E5),
+    scrim: Color(0x990A0A0A),
+    inverseSurface: Color(0xFF171717),
+    onInverseSurface: Color(0xFFF5F5F5),
+    inversePrimary: Color(0xFF818CF8),
     success: Color(0xFF4ADE80),
     successSurface: Color(0xFF052E16),
     warning: Color(0xFFFBBF24),
@@ -255,7 +212,7 @@ class PaperColors extends ThemeExtension<PaperColors> {
     statusSyncPending: Color(0xFFFBBF24),
     statusSynced: Color(0xFF4ADE80),
     statusSyncError: Color(0xFFF87171),
-    selection: Color(0x59818CF8),
+    selection: Color(0x4D4F46E5),
     cursor: Color(0xFF818CF8),
     selectionHandle: Color(0xFF818CF8),
   );
@@ -417,6 +374,72 @@ class PaperColors extends ThemeExtension<PaperColors> {
   }
 }
 
+/// Every colour the in-scope web components paint, by Tailwind / CSS-var
+/// name, resolved for the web's dark-only theme. Use these when a spec in
+/// design/web-parity cites a Tailwind class (e.g. `dark:bg-gray-800` ->
+/// [PaperWeb.gray800]). Opacity variants are pre-composited where the web
+/// always paints them over a known surface; see tokens.md for the table.
+abstract final class PaperWeb {
+  // Neutral ramp (tailwind.config.ts overrides gray with hue-free R=G=B).
+  static const Color gray50 = Color(0xFFFAFAFA);
+  static const Color gray100 = Color(0xFFF5F5F5);
+  static const Color gray200 = Color(0xFFE5E5E5);
+  static const Color gray300 = Color(0xFFD4D4D4);
+  static const Color gray400 = Color(0xFFA3A3A3);
+  static const Color gray500 = Color(0xFF737373);
+  static const Color gray600 = Color(0xFF525252);
+  static const Color gray700 = Color(0xFF404040);
+  static const Color gray800 = Color(0xFF262626);
+  static const Color gray900 = Color(0xFF171717);
+  static const Color gray950 = Color(0xFF0A0A0A);
+  static const Color white = Color(0xFFFFFFFF);
+  static const Color black = Color(0xFF000000);
+
+  // CSS variables (.dark block of globals.css).
+  static const Color background = gray950; // --background
+  static const Color foreground = gray100; // --foreground
+  static const Color accent = Color(0xFF818CF8); // --accent (indigo-400)
+  static const Color accentHover = Color(0xFFA5B4FC); // --accent-hover
+  static const Color accentSoft = Color(0xFF1E1B4B); // --accent-soft
+  static const Color accentInk = Color(0xFFC7D2FE); // --accent-ink
+  static const Color markFocusRing = Color(0xFF4F46E5); // --mark-focus-ring
+  static const Color indigo950 = Color(0xFF1E1B4B); // dark:text-indigo-950
+
+  // Status hues used by the components (dark: variants).
+  static const Color red200 = Color(0xFFFECACA);
+  static const Color red300 = Color(0xFFFCA5A5);
+  static const Color red400 = Color(0xFFF87171);
+  static const Color red500 = Color(0xFFEF4444);
+  static const Color red900 = Color(0xFF7F1D1D);
+  static const Color red950 = Color(0xFF450A0A);
+  static const Color green400 = Color(0xFF4ADE80);
+  static const Color amber400 = Color(0xFFFBBF24);
+
+  // Opacity variants, composited over the surface they sit on.
+  /// `dark:bg-gray-800/50` over gray-900 (table expanded row / hover).
+  static const Color gray800Half = Color(0xFF1F1F1F);
+
+  /// `dark:bg-gray-900/90` (toast) over gray-950.
+  static const Color gray900Toast = Color(0xFF161616);
+
+  /// `dark:hover:bg-yellow-900/40` (Highlight button hover) over gray-900.
+  static const Color yellow900Hover = Color(0xFF3B2715);
+
+  /// `dark:ring-white/10` (avatar / thumbnail hairline).
+  static const Color white10 = Color(0x1AFFFFFF);
+
+  /// `bg-white/5`-style translucent fills are not used in scope; text over
+  /// thumbnails uses `from-gray-950/90 via-gray-950/75 to-transparent`.
+  static const Color scrimGradientFrom = Color(0xE60A0A0A);
+  static const Color scrimGradientVia = Color(0xBF0A0A0A);
+
+  /// Dialog backdrop `dark:bg-[rgba(10,10,10,0.60)]`.
+  static const Color dialogBackdrop = Color(0x990A0A0A);
+
+  /// PDF text-layer selection (indigo-600 @ 30%).
+  static const Color pdfSelection = Color(0x4D4F46E5);
+}
+
 // ---------------------------------------------------------------------------
 // Highlights + reader marks
 // ---------------------------------------------------------------------------
@@ -534,7 +557,8 @@ class PaperHighlightColors extends ThemeExtension<PaperHighlightColors> {
   static const double hoverScale = 1.02;
 
   static const PaperHighlightColors whitePaper = PaperHighlightColors(
-    restAlpha: 0.40,
+    // Web --highlight-wash-opacity (rest wash, multiply on white paper).
+    restAlpha: 0.10,
     hoverAlpha: 0.55,
     activeAlpha: 0.68,
     stylusInkAlpha: 0.45,
@@ -629,6 +653,26 @@ abstract final class PaperSpacing {
 
   static const double panePadding = 16;
 
+  /// Tailwind spacing unit: `p-N` / `gap-N` / `w-N` = N * 4 logical px.
+  static double tw(double n) => n * 4;
+
+  // Tailwind steps used by the in-scope web components (N -> px).
+  static const double tw0_5 = 2;
+  static const double tw1 = 4;
+  static const double tw1_5 = 6;
+  static const double tw2 = 8;
+  static const double tw2_5 = 10;
+  static const double tw3 = 12;
+  static const double tw4 = 16;
+  static const double tw5 = 20;
+  static const double tw6 = 24;
+  static const double tw8 = 32;
+  static const double tw10 = 40;
+  static const double tw12 = 48;
+  static const double tw16 = 64;
+  static const double tw20 = 80;
+  static const double tw24 = 96;
+
   /// Space between grid columns for a window class.
   static double gutter(PaperWindowClass windowClass) => switch (windowClass) {
     PaperWindowClass.compact => 8,
@@ -677,9 +721,9 @@ abstract final class PaperRadii {
   );
 }
 
-/// Perf-first elevation: tonal surfaces + 1dp borders. Shadows only on
-/// transient overlays (menus, popovers, dialogs), never on scrolling content
-/// or PDF pages. Dark mode uses no shadows at all.
+/// Elevation = Tailwind shadows (they stay on in the web's dark mode, with
+/// the same black alphas; on #0A0A0A they read as a faint darkening).
+/// Borders do most of the work. Never shadow scrolling content or PDF pages.
 abstract final class PaperElevation {
   static const double level0 = 0;
   static const double level1 = 0;
@@ -691,49 +735,116 @@ abstract final class PaperElevation {
   static const double focusRingWidth = 2;
   static const double focusRingOffset = 2;
 
-  /// Menus, popovers, tooltips (light only).
-  static const List<BoxShadow> shadow2Light = <BoxShadow>[
-    BoxShadow(color: Color(0x1A000000), offset: Offset(0, 1), blurRadius: 3),
+  /// Tailwind `shadow-sm`: 0 1px 2px 0 rgb(0 0 0 / .05).
+  static const List<BoxShadow> shadowSm = <BoxShadow>[
+    BoxShadow(color: Color(0x0D000000), offset: Offset(0, 1), blurRadius: 2),
   ];
 
-  /// Dialogs, sheets (light only).
-  static const List<BoxShadow> shadow3Light = <BoxShadow>[
+  /// Tailwind `shadow-md`: 0 4px 6px -1px / .1, 0 2px 4px -2px / .1.
+  static const List<BoxShadow> shadowMd = <BoxShadow>[
     BoxShadow(
       color: Color(0x1A000000),
       offset: Offset(0, 4),
       blurRadius: 6,
       spreadRadius: -1,
     ),
+    BoxShadow(
+      color: Color(0x1A000000),
+      offset: Offset(0, 2),
+      blurRadius: 4,
+      spreadRadius: -2,
+    ),
   ];
 
-  static List<BoxShadow> shadow2(Brightness b) =>
-      b == Brightness.light ? shadow2Light : const <BoxShadow>[];
+  /// Tailwind `shadow-lg`: 0 10px 15px -3px / .1, 0 4px 6px -4px / .1.
+  static const List<BoxShadow> shadowLg = <BoxShadow>[
+    BoxShadow(
+      color: Color(0x1A000000),
+      offset: Offset(0, 10),
+      blurRadius: 15,
+      spreadRadius: -3,
+    ),
+    BoxShadow(
+      color: Color(0x1A000000),
+      offset: Offset(0, 4),
+      blurRadius: 6,
+      spreadRadius: -4,
+    ),
+  ];
 
-  static List<BoxShadow> shadow3(Brightness b) =>
-      b == Brightness.light ? shadow3Light : const <BoxShadow>[];
+  /// Tailwind `shadow-xl`: 0 20px 25px -5px / .1, 0 8px 10px -6px / .1.
+  static const List<BoxShadow> shadowXl = <BoxShadow>[
+    BoxShadow(
+      color: Color(0x1A000000),
+      offset: Offset(0, 20),
+      blurRadius: 25,
+      spreadRadius: -5,
+    ),
+    BoxShadow(
+      color: Color(0x1A000000),
+      offset: Offset(0, 8),
+      blurRadius: 10,
+      spreadRadius: -6,
+    ),
+  ];
+
+  /// Tailwind `shadow-2xl`: 0 25px 50px -12px rgb(0 0 0 / .25).
+  static const List<BoxShadow> shadow2xl = <BoxShadow>[
+    BoxShadow(
+      color: Color(0x40000000),
+      offset: Offset(0, 25),
+      blurRadius: 50,
+      spreadRadius: -12,
+    ),
+  ];
+
+  /// Popovers (selection popover = lg). Prefer [shadowLg]; the brightness
+  /// argument is ignored (dark-only) and kept for existing call sites.
+  static List<BoxShadow> shadow2(Brightness b) => shadowLg;
+
+  /// Dialogs / citation popover (= xl). Prefer [shadowXl].
+  static List<BoxShadow> shadow3(Brightness b) => shadowXl;
 }
 
+/// Web icon boxes: h-3 12, h-3.5 14, h-4 16 (default), h-5 20.
 abstract final class PaperIconSize {
+  static const double xxs = 12;
   static const double xs = 14;
   static const double sm = 16;
   static const double md = 20;
   static const double lg = 24;
   static const double xl = 32;
+
+  /// Reader header back chevron / panel toggles (h-5).
   static const double appBar = 20;
-  static const double navigation = 24;
+
+  /// Sidebar nav glyphs (h-4).
+  static const double navigation = 16;
 }
 
-/// Minimum interactive sizes.
+/// Interactive sizes = the web's rendered sizes on every platform (brief:
+/// no forced touch-target enlargement).
 abstract final class PaperHitTarget {
-  /// Touch (Android tablets).
-  static const double touchMin = 48;
-
-  /// Precise pointer (mouse/trackpad on Windows/macOS).
+  /// Web icon buttons are h-8 (32); the smallest close button is h-6 (24).
+  static const double touchMin = 32;
   static const double pointerMin = 32;
-  static const double stylusMin = 40;
+  static const double stylusMin = 32;
 
-  static const double buttonHeightTouch = 48;
+  /// `.btn-primary`: text-sm (20) + py-2 (16) = 36.
+  static const double buttonHeightTouch = 36;
   static const double buttonHeightPointer = 36;
+
+  /// `.btn-secondary` / `.field-input`: 36 + 1px border top and bottom.
+  static const double borderedControlHeight = 38;
+
+  /// Compact actions (`px-2.5 py-1 text-xs` + border): 16 + 8 + 2.
+  static const double smallButtonHeight = 26;
+
+  /// Icon buttons: h-8 (panel toggle, toast close), h-9 (show panel), h-6
+  /// (popover / card close).
+  static const double iconButton = 32;
+  static const double iconButtonLarge = 36;
+  static const double iconButtonSmall = 24;
 }
 
 /// Logical layer order (lowest first) for Stack/Overlay ordering. Mirrors the
@@ -743,12 +854,21 @@ abstract final class PaperLayer {
   static const int highlightWash = 2;
   static const int markInteractive = 5;
   static const int citationHotspot = 10;
+
+  /// Web: selection popover sits at z-10 with the hotspots.
+  static const int selectionPopover = 10;
   static const int selectionHandles = 15;
   static const int readerChrome = 20;
   static const int focusBackdrop = 25;
   static const int popover = 30;
+
+  /// Web z-30.
+  static const int citationPopover = 30;
   static const int focusCard = 32;
   static const int sidePanelOverlay = 40;
+
+  /// Web z-40 (mobile-OS floating explanation).
+  static const int floatingExplanation = 40;
   static const int hud = 45;
   static const int toast = 46;
   static const int dialog = 50;
@@ -792,6 +912,23 @@ abstract final class PaperMotion {
   static const Cubic accelerate = Cubic(0.4, 0.0, 1.0, 1.0);
   static const Curve linear = Curves.linear;
 
+  /// Tailwind `transition-colors` / `transition-transform` default: 150ms
+  /// [standard]. Every hover/press colour change on the web uses this.
+  static const Duration colors = fast;
+
+  /// Focus-lock backdrop fade.
+  static const Duration backdrop = Duration(milliseconds: 300);
+
+  /// `animate-spin` (spinners): one turn per second, linear.
+  static const Duration spin = Duration(seconds: 1);
+
+  /// `animate-pulse` (skeletons): 2s, opacity 1 -> .5 -> 1.
+  static const Duration pulse = Duration(seconds: 2);
+  static const Cubic pulseCurve = Cubic(0.4, 0.0, 0.6, 1.0);
+
+  /// `.animate-progress-indeterminate`: 1.2s ease-in-out, translateX -100% -> 300%.
+  static const Duration progressIndeterminate = Duration(milliseconds: 1200);
+
   static const double markHoverScale = 1.02;
   static const double termHoverScale = 1.04;
   static const double pressScale = 0.98;
@@ -822,17 +959,39 @@ abstract final class PaperBreakpoints {
   /// A class change commits only once the width is this far past a boundary.
   static const double hysteresis = 8;
 
+  // Tailwind breakpoints (min widths). Web layouts change exactly here;
+  // mirror a web `sm:` / `md:` / `lg:` / `xl:` switch with these.
+  static const double twSm = 640;
+  static const double twMd = 768;
+  static const double twLg = 1024;
+  static const double twXl = 1280;
+  static const double tw2xl = 1536;
+
+  // Tailwind max-w-* containers used by in-scope pages.
+  static const double maxWXs = 320;
+  static const double maxWSm = 384;
+  static const double maxWMd = 448;
+  static const double maxWLg = 512;
+  static const double maxW2xl = 672;
+  static const double maxW3xl = 768;
+  static const double maxW5xl = 1024;
+  static const double maxW6xl = 1152;
+  static const double maxW7xl = 1280;
+
+  /// Web reader explanation panel: `w-96`, fixed.
+  static const double readerPanelWeb = 384;
+
   // ReaderSidePanel default / min widths and max fraction of window width.
-  static const double sidePanelMedium = 360; // overlay
+  static const double sidePanelMedium = 384; // overlay
   static const double sidePanelMediumMin = 320;
   static const double sidePanelMediumMaxFraction = 0.85;
-  static const double sidePanelExpanded = 360; // split
+  static const double sidePanelExpanded = 384; // split
   static const double sidePanelExpandedMin = 300;
   static const double sidePanelExpandedMaxFraction = 0.50;
-  static const double sidePanelLarge = 380; // split
+  static const double sidePanelLarge = 384; // split
   static const double sidePanelLargeMin = 300;
   static const double sidePanelLargeMaxFraction = 0.50;
-  static const double sidePanelExtraLarge = 420; // split
+  static const double sidePanelExtraLarge = 384; // split
   static const double sidePanelExtraLargeMin = 320;
   static const double sidePanelExtraLargeMaxFraction = 0.45;
 
@@ -853,9 +1012,11 @@ abstract final class PaperBreakpoints {
 
 /// Fixed chrome sizes (reader toolbar, split handle, desktop title bars).
 abstract final class PaperChrome {
-  static const double readerToolbarCompact = 56;
-  static const double readerToolbarTouch = 64;
-  static const double readerToolbarPointer = 48;
+  // Web reader header: px-4 py-3 + text-lg title (28) = 52, plus the 1px
+  // gray-800 bottom border. Same on every platform.
+  static const double readerToolbarCompact = 52;
+  static const double readerToolbarTouch = 52;
+  static const double readerToolbarPointer = 52;
 
   static const double splitDividerWidth = 1;
   static const double splitGrabberWidth = 24;
@@ -1054,43 +1215,94 @@ abstract final class PaperTypography {
       bodySmall: _s(12, 16, FontWeight.w400, 0, s),
       labelLarge: _s(14, 20, FontWeight.w500, 0, p),
       labelMedium: _s(12, 16, FontWeight.w500, 0, s),
-      labelSmall: _s(11, 16, FontWeight.w600, 0.44, s),
+      // Web badges/chips: text-[11px] font-medium.
+      labelSmall: _s(11, 16, FontWeight.w500, 0, s),
     );
   }
 
-  /// Captions / metadata.
+  // Tailwind text-* (size / line-height). Letter spacing: tracking-tight
+  // = -0.025em (size * -0.025), tracking-wide = +0.025em.
+  static const double textXs = 12, leadingXs = 16;
+  static const double textSm = 14, leadingSm = 20;
+  static const double textBase = 16, leadingBase = 24;
+  static const double textLg = 18, leadingLg = 28;
+  static const double textXl = 20, leadingXl = 28;
+  static const double text2xl = 24, leading2xl = 32;
+  static const double text3xl = 30, leading3xl = 36;
+  static const double text4xl = 36, leading4xl = 40;
+  static const double text5xl = 48;
+  static const double text6xl = 60;
+  static const double text11 = 11;
+  static const double text0_7rem = 11.2;
+  static const double text0_65rem = 10.4;
+
+  /// `leading-relaxed` multiplier (explanation prose).
+  static const double relaxed = 1.625;
+  static const double snug = 1.375;
+  static const double tight = 1.25;
+  static const double trackingTight = -0.025;
+  static const double trackingWide = 0.025;
+
+  /// Page title: text-2xl font-semibold tracking-tight.
+  static TextStyle pageTitle(PaperColors c) =>
+      _s(24, 32, FontWeight.w600, -0.6, c.textPrimary);
+
+  /// Section / reader-header title: text-lg font-semibold tracking-tight.
+  static TextStyle sectionTitle(PaperColors c) =>
+      _s(18, 28, FontWeight.w600, -0.45, c.textPrimary);
+
+  /// Card title: text-sm font-semibold.
+  static TextStyle cardTitle(PaperColors c) =>
+      _s(14, 20, FontWeight.w600, 0, c.textPrimary);
+
+  /// Eyebrow: text-xs font-semibold uppercase tracking-wide (uppercase the
+  /// string yourself).
+  static TextStyle eyebrow(PaperColors c) =>
+      _s(12, 16, FontWeight.w600, 0.3, c.textMuted);
+
+  /// `.field-input` text: text-sm gray-100. Pass it as `TextField.style`;
+  /// Material's default (bodyLarge, 16/24) would make inputs 42px tall
+  /// instead of the web's 38px.
+  static TextStyle input(PaperColors c) =>
+      _s(14, 20, FontWeight.w400, 0, c.textPrimary);
+
+  /// Captions / metadata: text-xs gray-400.
   static TextStyle caption(PaperColors c) =>
       _s(12, 16, FontWeight.w400, 0, c.textMuted);
 
-  /// AI explanation / note prose in the side panel (cap at 65ch).
+  /// Explanation prose (side panel card, glossary entry): text-sm
+  /// leading-relaxed gray-300.
   static TextStyle explanationBody(PaperColors c) =>
-      _s(16, 26, FontWeight.w400, 0, c.textPrimary);
+      _s(14, 22.75, FontWeight.w400, 0, c.textSecondary);
 
-  /// Popover body.
+  /// Citation popover body: text-sm leading-relaxed gray-200.
   static TextStyle explanationBodyCompact(PaperColors c) =>
-      _s(14, 22, FontWeight.w400, 0, c.textSecondary);
+      _s(14, 22.75, FontWeight.w400, 0, const Color(0xFFE5E5E5));
 
-  /// Uppercase eyebrow in popovers (apply toUpperCase to the string).
+  /// Uppercase eyebrow in popovers / focus card: text-[11px] font-semibold
+  /// uppercase tracking-wide accent (apply toUpperCase to the string).
   static TextStyle popoverTitle(PaperColors c) =>
-      _s(11, 16, FontWeight.w600, 0.44, c.primary);
+      _s(11, 16, FontWeight.w600, 0.275, c.primary);
 
+  /// Glossary / explanation card term: text-sm font-semibold gray-100.
   static TextStyle glossaryTerm(PaperColors c) =>
-      _s(15, 22, FontWeight.w600, 0, c.textPrimary);
+      _s(14, 20, FontWeight.w600, 0, c.textPrimary);
 
   static TextStyle noteBody(PaperColors c) =>
-      _s(15, 24, FontWeight.w400, 0, c.textPrimary);
+      _s(14, 22.75, FontWeight.w400, 0, c.textSecondary);
 
+  /// Zoom percentage in the PDF toolbar: text-xs tabular-nums gray-300.
   static TextStyle pageIndicator(PaperColors c) => _s(
     12,
     16,
-    FontWeight.w500,
+    FontWeight.w400,
     0,
     c.textSecondary,
-    family: mono,
   ).copyWith(fontFeatures: const <FontFeature>[FontFeature.tabularFigures()]);
 
+  /// Inline code in explanations: font-mono 0.9em on gray-800.
   static TextStyle code(PaperColors c) =>
-      _s(13, 20, FontWeight.w400, 0, c.textPrimary, family: mono);
+      _s(12.6, 22.75, FontWeight.w400, 0, c.textSecondary, family: mono);
 }
 
 // ---------------------------------------------------------------------------
@@ -1125,14 +1337,29 @@ class PaperFadePageTransitionsBuilder extends PageTransitionsBuilder {
 }
 
 abstract final class PaperTheme {
-  /// Light theme. [platform] picks touch vs pointer density; defaults to the
-  /// current platform.
-  static ThemeData light({TargetPlatform? platform}) =>
-      _build(PaperColors.light, Brightness.light, platform);
+  /// `PaperMenu` surface (components.md §13): gray-900, 1px gray-700,
+  /// radius 8, padding 4, width 160–320.
+  static const MenuStyle menuStyle = MenuStyle(
+    backgroundColor: WidgetStatePropertyAll<Color>(Color(0xFF171717)),
+    surfaceTintColor: WidgetStatePropertyAll<Color>(Color(0x00000000)),
+    shadowColor: WidgetStatePropertyAll<Color>(Color(0x33000000)),
+    elevation: WidgetStatePropertyAll<double>(6),
+    padding: WidgetStatePropertyAll<EdgeInsets>(EdgeInsets.all(4)),
+    minimumSize: WidgetStatePropertyAll<Size>(Size(160, 0)),
+    maximumSize: WidgetStatePropertyAll<Size>(Size(320, double.infinity)),
+    visualDensity: VisualDensity.standard,
+    shape: WidgetStatePropertyAll<OutlinedBorder>(
+      RoundedRectangleBorder(
+        borderRadius: PaperRadii.borderLg,
+        side: BorderSide(color: Color(0xFF404040)),
+      ),
+    ),
+  );
 
-  /// Dark theme.
+  /// The app theme (web parity, dark-only). [platform] only changes scroll
+  /// physics/typography defaults; sizes are the web's on every platform.
   static ThemeData dark({TargetPlatform? platform}) =>
-      _build(PaperColors.dark, Brightness.dark, platform);
+      _build(PaperColors.dark, platform);
 
   // material.dart does not re-export `defaultTargetPlatform`; ThemeData
   // resolves it for us. Computed once per isolate.
@@ -1154,18 +1381,13 @@ abstract final class PaperTheme {
     },
   );
 
-  static ThemeData _build(
-    PaperColors c,
-    Brightness brightness,
-    TargetPlatform? platform,
-  ) {
+  static ThemeData _build(PaperColors c, TargetPlatform? platform) {
+    const Brightness brightness = Brightness.dark;
     final TargetPlatform p = platform ?? _hostPlatform;
     final bool desktop = _isDesktop(p);
     final TextTheme text = PaperTypography.textTheme(c);
-    final double controlHeight = desktop
-        ? PaperHitTarget.buttonHeightPointer
-        : PaperHitTarget.buttonHeightTouch;
-    final bool isLight = brightness == Brightness.light;
+    // Web sizes on every platform (no touch enlargement).
+    const double controlHeight = PaperHitTarget.buttonHeightTouch;
 
     final ColorScheme scheme = ColorScheme(
       brightness: brightness,
@@ -1178,7 +1400,7 @@ abstract final class PaperTheme {
       secondaryContainer: c.surfaceVariant,
       onSecondaryContainer: c.textPrimary,
       tertiary: c.info,
-      onTertiary: isLight ? const Color(0xFFFFFFFF) : const Color(0xFF172554),
+      onTertiary: const Color(0xFF172554),
       tertiaryContainer: c.infoSurface,
       onTertiaryContainer: c.info,
       error: c.error,
@@ -1188,9 +1410,9 @@ abstract final class PaperTheme {
       surface: c.background,
       onSurface: c.textPrimary,
       onSurfaceVariant: c.textSecondary,
-      surfaceDim: isLight ? const Color(0xFFF5F5F5) : c.background,
-      surfaceBright: isLight ? c.surface : c.surfaceVariant,
-      surfaceContainerLowest: isLight ? c.surface : c.background,
+      surfaceDim: c.background,
+      surfaceBright: c.surfaceVariant,
+      surfaceContainerLowest: c.background,
       surfaceContainerLow: c.surface,
       surfaceContainer: c.surface,
       surfaceContainerHigh: c.surfaceVariant,
@@ -1205,15 +1427,18 @@ abstract final class PaperTheme {
       surfaceTint: const Color(0x00000000),
     );
 
+    // .btn-ghost: hover bg gray-800, active bg gray-700.
     final Color hoverFill = c.surfaceVariant;
-    final Color pressedFill = isLight ? c.border : c.outlineVariant;
+    final Color pressedFill = c.outline;
 
     const RoundedRectangleBorder buttonShape = RoundedRectangleBorder(
       borderRadius: PaperRadii.borderMd,
     );
-    final Size minButton = Size(64, controlHeight);
+    const Size minButton = Size(0, controlHeight);
+    // .btn-*: px-4 py-2.
     const EdgeInsets buttonPadding = EdgeInsets.symmetric(
       horizontal: PaperSpacing.lg,
+      vertical: PaperSpacing.sm,
     );
 
     BorderSide? focusSide(Set<WidgetState> s) => s.contains(WidgetState.focused)
@@ -1237,15 +1462,15 @@ abstract final class PaperTheme {
       dividerColor: c.divider,
       disabledColor: c.textDisabled,
       hoverColor: c.surfaceVariant,
-      focusColor: c.primary.withValues(alpha: 0.12),
+      focusColor: const Color(0x00000000),
       highlightColor: const Color(0x00000000),
-      splashColor: c.primary.withValues(alpha: 0.10),
-      // Perf: InkSparkle compiles a fragment shader on first tap.
-      splashFactory: desktop ? NoSplash.splashFactory : InkRipple.splashFactory,
-      visualDensity: desktop ? VisualDensity.compact : VisualDensity.standard,
-      materialTapTargetSize: desktop
-          ? MaterialTapTargetSize.shrinkWrap
-          : MaterialTapTargetSize.padded,
+      splashColor: const Color(0x00000000),
+      // The web has no ink ripples: colour changes only (150ms).
+      splashFactory: NoSplash.splashFactory,
+      // Standard density: sizes come from the web numbers below verbatim
+      // (compact would shave 8px off every 36px button).
+      visualDensity: VisualDensity.standard,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       fontFamily: PaperTypography.sans,
       fontFamilyFallback: PaperTypography.sansFallback,
       textTheme: text,
@@ -1253,7 +1478,7 @@ abstract final class PaperTheme {
         bodyColor: c.onPrimary,
         displayColor: c.onPrimary,
       ),
-      iconTheme: IconThemeData(color: c.textSecondary, size: PaperIconSize.md),
+      iconTheme: IconThemeData(color: c.textMuted, size: PaperIconSize.sm),
       primaryIconTheme: IconThemeData(color: c.onPrimary),
       pageTransitionsTheme: _pageTransitions,
       extensions: <ThemeExtension<dynamic>>[c, PaperHighlightColors.whitePaper],
@@ -1263,23 +1488,24 @@ abstract final class PaperTheme {
         selectionHandleColor: c.selectionHandle,
       ),
       appBarTheme: AppBarThemeData(
-        // Web header: bg-white (light) / gray-950 (dark) + bottom border.
-        backgroundColor: isLight ? c.surface : c.background,
+        // Web reader header: gray-950, px-4 py-3, border-b gray-800,
+        // title text-lg semibold tracking-tight.
+        backgroundColor: c.background,
         foregroundColor: c.textPrimary,
         elevation: 0,
         scrolledUnderElevation: 0,
         surfaceTintColor: const Color(0x00000000),
         shadowColor: const Color(0x00000000),
         centerTitle: false,
-        toolbarHeight: desktop ? 48 : 56,
-        titleSpacing: PaperSpacing.lg,
-        titleTextStyle: text.titleMedium,
+        toolbarHeight: 52,
+        titleSpacing: PaperSpacing.sm,
+        titleTextStyle: text.titleLarge,
         iconTheme: IconThemeData(
-          color: c.textSecondary,
+          color: c.textMuted,
           size: PaperIconSize.appBar,
         ),
         actionsIconTheme: IconThemeData(
-          color: c.textSecondary,
+          color: c.textMuted,
           size: PaperIconSize.appBar,
         ),
         shape: Border(bottom: BorderSide(color: c.border)),
@@ -1297,13 +1523,16 @@ abstract final class PaperTheme {
           side: BorderSide(color: c.border),
         ),
       ),
+      // .field-input: gray-900 fill, 1px gray-700 border, rounded-md,
+      // px-3 py-2 text-sm, placeholder gray-400; focus = accent border +
+      // 1px accent ring (2px accent edge in total).
       inputDecorationTheme: InputDecorationThemeData(
         filled: true,
         fillColor: c.surface,
-        isDense: desktop,
-        contentPadding: EdgeInsets.symmetric(
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(
           horizontal: PaperSpacing.md,
-          vertical: desktop ? PaperSpacing.sm : PaperSpacing.md,
+          vertical: PaperSpacing.sm + 1,
         ),
         hintStyle: text.bodyMedium?.copyWith(color: c.textMuted),
         labelStyle: text.bodyMedium?.copyWith(color: c.textSecondary),
@@ -1314,18 +1543,23 @@ abstract final class PaperTheme {
         suffixIconColor: c.textMuted,
         border: inputBorder(c.outline),
         enabledBorder: inputBorder(c.outline),
-        focusedBorder: inputBorder(c.primary, PaperElevation.borderStrong),
-        errorBorder: inputBorder(c.error),
-        focusedErrorBorder: inputBorder(c.error, PaperElevation.borderStrong),
-        disabledBorder: inputBorder(c.border),
+        focusedBorder: inputBorder(c.primary, PaperElevation.focusRingWidth),
+        errorBorder: inputBorder(const Color(0xFFEF4444)),
+        focusedErrorBorder: inputBorder(
+          const Color(0xFFEF4444),
+          PaperElevation.focusRingWidth,
+        ),
+        disabledBorder: inputBorder(c.outline.withValues(alpha: 0.5)),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: ButtonStyle(
-          minimumSize: WidgetStatePropertyAll<Size>(minButton),
+          minimumSize: const WidgetStatePropertyAll<Size>(minButton),
           padding: const WidgetStatePropertyAll<EdgeInsets>(buttonPadding),
           shape: WidgetStatePropertyAll<OutlinedBorder>(buttonShape),
           elevation: const WidgetStatePropertyAll<double>(0),
           textStyle: WidgetStatePropertyAll<TextStyle?>(text.labelLarge),
+          // .btn-primary: accent fill, indigo-950 label; hover/active
+          // accent-hover; disabled = whole button at 50% opacity.
           backgroundColor: WidgetStateProperty.resolveWith((s) {
             if (s.contains(WidgetState.disabled)) {
               return c.primary.withValues(alpha: 0.5);
@@ -1338,16 +1572,21 @@ abstract final class PaperTheme {
           }),
           foregroundColor: WidgetStateProperty.resolveWith(
             (s) => s.contains(WidgetState.disabled)
-                ? c.onPrimary.withValues(alpha: 0.7)
+                ? c.onPrimary.withValues(alpha: 0.5)
                 : c.onPrimary,
           ),
           overlayColor: const WidgetStatePropertyAll<Color>(Color(0x00000000)),
           side: WidgetStateProperty.resolveWith(focusSide),
         ),
       ),
+      // .btn-secondary: gray-900 fill, 1px gray-700 border, gray-200 label,
+      // hover/active gray-800; disabled 50% opacity.
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: ButtonStyle(
-          minimumSize: WidgetStatePropertyAll<Size>(minButton),
+          // The border adds 1px top and bottom on the web: 38 tall.
+          minimumSize: const WidgetStatePropertyAll<Size>(
+            Size(0, PaperHitTarget.borderedControlHeight),
+          ),
           padding: const WidgetStatePropertyAll<EdgeInsets>(buttonPadding),
           shape: WidgetStatePropertyAll<OutlinedBorder>(buttonShape),
           textStyle: WidgetStatePropertyAll<TextStyle?>(text.labelLarge),
@@ -1361,8 +1600,8 @@ abstract final class PaperTheme {
           }),
           foregroundColor: WidgetStateProperty.resolveWith(
             (s) => s.contains(WidgetState.disabled)
-                ? c.textDisabled
-                : c.textPrimary,
+                ? c.secondary.withValues(alpha: 0.5)
+                : c.secondary,
           ),
           overlayColor: const WidgetStatePropertyAll<Color>(Color(0x00000000)),
           side: WidgetStateProperty.resolveWith(
@@ -1370,15 +1609,17 @@ abstract final class PaperTheme {
                 focusSide(s) ??
                 BorderSide(
                   color: s.contains(WidgetState.disabled)
-                      ? c.border
+                      ? c.outline.withValues(alpha: 0.5)
                       : c.outline,
                 ),
           ),
         ),
       ),
+      // .btn-ghost: gray-400 label; hover gray-800 fill + gray-100 label;
+      // active gray-700 fill.
       textButtonTheme: TextButtonThemeData(
         style: ButtonStyle(
-          minimumSize: WidgetStatePropertyAll<Size>(minButton),
+          minimumSize: const WidgetStatePropertyAll<Size>(minButton),
           padding: const WidgetStatePropertyAll<EdgeInsets>(buttonPadding),
           shape: WidgetStatePropertyAll<OutlinedBorder>(buttonShape),
           textStyle: WidgetStatePropertyAll<TextStyle?>(text.labelLarge),
@@ -1388,12 +1629,14 @@ abstract final class PaperTheme {
             return const Color(0x00000000);
           }),
           foregroundColor: WidgetStateProperty.resolveWith((s) {
-            if (s.contains(WidgetState.disabled)) return c.textDisabled;
+            if (s.contains(WidgetState.disabled)) {
+              return c.textMuted.withValues(alpha: 0.5);
+            }
             if (s.contains(WidgetState.hovered) ||
                 s.contains(WidgetState.pressed)) {
               return c.textPrimary;
             }
-            return c.textSecondary;
+            return c.textMuted;
           }),
           overlayColor: const WidgetStatePropertyAll<Color>(Color(0x00000000)),
           side: WidgetStateProperty.resolveWith(focusSide),
@@ -1401,21 +1644,25 @@ abstract final class PaperTheme {
       ),
       iconButtonTheme: IconButtonThemeData(
         style: ButtonStyle(
-          minimumSize: WidgetStatePropertyAll<Size>(
-            Size.square(
-              desktop ? PaperHitTarget.pointerMin : PaperHitTarget.touchMin,
-            ),
+          // Web h-8 w-8 rounded-md, gray-400 glyph, hover gray-800 +
+          // gray-100 glyph.
+          minimumSize: const WidgetStatePropertyAll<Size>(
+            Size.square(PaperHitTarget.iconButton),
           ),
+          padding: const WidgetStatePropertyAll<EdgeInsets>(EdgeInsets.zero),
           shape: const WidgetStatePropertyAll<OutlinedBorder>(
             RoundedRectangleBorder(borderRadius: PaperRadii.borderMd),
           ),
-          foregroundColor: WidgetStateProperty.resolveWith(
-            (s) => s.contains(WidgetState.disabled)
-                ? c.textDisabled
-                : c.textSecondary,
-          ),
+          foregroundColor: WidgetStateProperty.resolveWith((s) {
+            if (s.contains(WidgetState.disabled)) return c.textDisabled;
+            if (s.contains(WidgetState.hovered) ||
+                s.contains(WidgetState.pressed)) {
+              return c.textPrimary;
+            }
+            return c.textMuted;
+          }),
           backgroundColor: WidgetStateProperty.resolveWith((s) {
-            if (s.contains(WidgetState.pressed)) return pressedFill;
+            if (s.contains(WidgetState.pressed)) return hoverFill;
             if (s.contains(WidgetState.hovered)) return hoverFill;
             return const Color(0x00000000);
           }),
@@ -1478,26 +1725,33 @@ abstract final class PaperTheme {
       dialogTheme: DialogThemeData(
         backgroundColor: c.surface,
         surfaceTintColor: const Color(0x00000000),
-        elevation: isLight ? PaperElevation.level3 : 0,
-        shadowColor: const Color(0x33000000),
+        // Web dialog: .card (gray-900, border gray-800, rounded-lg) p-5
+        // shadow-xl, max-w-md, over rgba(10,10,10,.60).
+        elevation: 0,
+        shadowColor: const Color(0x00000000),
         barrierColor: c.scrim,
         shape: RoundedRectangleBorder(
-          borderRadius: PaperRadii.borderXl,
+          borderRadius: PaperRadii.borderLg,
           side: BorderSide(color: c.border),
         ),
-        titleTextStyle: text.titleLarge,
-        contentTextStyle: text.bodyMedium?.copyWith(color: c.textSecondary),
+        titleTextStyle: text.titleSmall,
+        contentTextStyle: text.bodyMedium?.copyWith(color: c.textMuted),
         insetPadding: const EdgeInsets.all(PaperSpacing.xl),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: c.inverseSurface,
-        contentTextStyle: text.bodyMedium?.copyWith(color: c.onInverseSurface),
-        actionTextColor: c.inversePrimary,
-        closeIconColor: c.onInverseSurface,
+        // Web toast: gray-900/90 + blur, border gray-800, rounded-lg, p-3,
+        // shadow-md, max-w-xs (320), bottom-6 right-6.
+        backgroundColor: PaperWeb.gray900Toast,
+        contentTextStyle: text.bodySmall?.copyWith(color: c.textMuted),
+        actionTextColor: c.primary,
+        closeIconColor: c.textMuted,
         elevation: 0,
-        width: desktop ? 420 : null,
-        shape: const RoundedRectangleBorder(borderRadius: PaperRadii.borderLg),
+        width: 320,
+        shape: RoundedRectangleBorder(
+          borderRadius: PaperRadii.borderLg,
+          side: BorderSide(color: c.border),
+        ),
       ),
       tooltipTheme: TooltipThemeData(
         waitDuration: const Duration(milliseconds: 500),
@@ -1506,10 +1760,12 @@ abstract final class PaperTheme {
           horizontal: PaperSpacing.sm,
           vertical: PaperSpacing.xs,
         ),
-        textStyle: text.bodySmall?.copyWith(color: c.onInverseSurface),
+        // The web only has native title tooltips; styled like a small card.
+        textStyle: text.bodySmall?.copyWith(color: c.textPrimary),
         decoration: BoxDecoration(
-          color: c.inverseSurface,
-          borderRadius: PaperRadii.borderSm,
+          color: c.surface,
+          border: Border.all(color: c.outline),
+          borderRadius: PaperRadii.borderMd,
         ),
       ),
       dividerTheme: DividerThemeData(
@@ -1520,7 +1776,7 @@ abstract final class PaperTheme {
       // SettingsTile (design/specs/components.md §6).
       listTileTheme: ListTileThemeData(
         contentPadding: const EdgeInsets.symmetric(horizontal: PaperSpacing.lg),
-        minTileHeight: desktop ? 44 : 52,
+        minTileHeight: 44,
         iconColor: c.textSecondary,
         textColor: c.textPrimary,
         titleTextStyle: text.labelLarge?.copyWith(color: c.textPrimary),
@@ -1551,6 +1807,131 @@ abstract final class PaperTheme {
         overlayColor: WidgetStatePropertyAll<Color>(
           c.textPrimary.withValues(alpha: 0.08),
         ),
+      ),
+      // Leftover Material SegmentedButtons render as PaperSegmented md
+      // would (components.md §8.1); new code uses PaperSegmented itself.
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          minimumSize: const WidgetStatePropertyAll<Size>(
+            Size(0, PaperHitTarget.borderedControlHeight),
+          ),
+          padding: const WidgetStatePropertyAll<EdgeInsets>(
+            EdgeInsets.symmetric(horizontal: PaperSpacing.md),
+          ),
+          visualDensity: VisualDensity.standard,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          textStyle: WidgetStatePropertyAll<TextStyle?>(text.labelLarge),
+          shape: const WidgetStatePropertyAll<OutlinedBorder>(
+            RoundedRectangleBorder(borderRadius: PaperRadii.borderMd),
+          ),
+          side: WidgetStatePropertyAll<BorderSide>(BorderSide(color: c.border)),
+          overlayColor: const WidgetStatePropertyAll<Color>(Color(0x00000000)),
+          backgroundColor: WidgetStateProperty.resolveWith((s) {
+            if (s.contains(WidgetState.selected)) return c.primarySoft;
+            if (s.contains(WidgetState.pressed)) return pressedFill;
+            if (s.contains(WidgetState.hovered)) return hoverFill;
+            return c.surface;
+          }),
+          foregroundColor: WidgetStateProperty.resolveWith((s) {
+            if (s.contains(WidgetState.selected)) return c.onPrimarySoft;
+            if (s.contains(WidgetState.hovered) ||
+                s.contains(WidgetState.pressed)) {
+              return c.textPrimary;
+            }
+            return c.textMuted;
+          }),
+        ),
+      ),
+      // Chromium's dark native checkbox (components.md §5.1).
+      checkboxTheme: CheckboxThemeData(
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: VisualDensity.compact,
+        splashRadius: 0,
+        shape: const RoundedRectangleBorder(borderRadius: PaperRadii.borderXs),
+        fillColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected)
+              ? c.primary
+              : const Color(0xFF3B3B3B),
+        ),
+        checkColor: const WidgetStatePropertyAll<Color>(Color(0xFF0A0A0A)),
+        side: WidgetStateBorderSide.resolveWith(
+          (s) => s.contains(WidgetState.selected)
+              ? BorderSide.none
+              : const BorderSide(color: Color(0xFF858585)),
+        ),
+        overlayColor: const WidgetStatePropertyAll<Color>(Color(0x00000000)),
+      ),
+      // PaperMenu surface (components.md §13) for MenuAnchor menus.
+      menuTheme: const MenuThemeData(style: menuStyle),
+      menuButtonTheme: MenuButtonThemeData(
+        style: ButtonStyle(
+          minimumSize: const WidgetStatePropertyAll<Size>(Size(0, 32)),
+          padding: const WidgetStatePropertyAll<EdgeInsets>(
+            EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          ),
+          visualDensity: VisualDensity.standard,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          shape: const WidgetStatePropertyAll<OutlinedBorder>(
+            RoundedRectangleBorder(borderRadius: PaperRadii.borderSm),
+          ),
+          textStyle: WidgetStatePropertyAll<TextStyle?>(text.labelLarge),
+          overlayColor: const WidgetStatePropertyAll<Color>(Color(0x00000000)),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (s) => s.contains(WidgetState.disabled)
+                ? c.secondary.withValues(alpha: 0.5)
+                : c.secondary,
+          ),
+          iconColor: WidgetStatePropertyAll<Color>(c.secondary),
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (s) =>
+                s.contains(WidgetState.hovered) ||
+                    s.contains(WidgetState.pressed) ||
+                    s.contains(WidgetState.focused)
+                ? hoverFill
+                : const Color(0x00000000),
+          ),
+        ),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: c.surface,
+        surfaceTintColor: const Color(0x00000000),
+        elevation: 6,
+        menuPadding: const EdgeInsets.all(PaperSpacing.xs),
+        textStyle: text.labelLarge?.copyWith(color: c.secondary),
+        labelTextStyle: WidgetStatePropertyAll<TextStyle?>(
+          text.labelLarge?.copyWith(color: c.secondary),
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: PaperRadii.borderLg,
+          side: BorderSide(color: c.outline),
+        ),
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: c.primary,
+        linearTrackColor: c.outline,
+        circularTrackColor: const Color(0x00000000),
+        linearMinHeight: 6,
+        borderRadius: PaperRadii.borderFull,
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: c.background,
+        surfaceTintColor: const Color(0x00000000),
+        modalBackgroundColor: c.background,
+        modalBarrierColor: c.scrim,
+        elevation: 0,
+        modalElevation: 0,
+        showDragHandle: false,
+        shape: Border(top: BorderSide(color: c.border)),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: c.surfaceVariant,
+        selectedColor: c.primarySoft,
+        labelStyle: text.labelSmall?.copyWith(color: c.textSecondary),
+        padding: const EdgeInsets.symmetric(horizontal: PaperSpacing.sm),
+        labelPadding: EdgeInsets.zero,
+        side: BorderSide.none,
+        shape: const StadiumBorder(),
+        showCheckmark: false,
       ),
       scrollbarTheme: ScrollbarThemeData(
         thumbVisibility: WidgetStatePropertyAll<bool>(desktop),

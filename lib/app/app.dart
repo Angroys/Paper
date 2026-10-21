@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../auth/auth_providers.dart';
 import '../core/build_flags.dart';
+import '../core/immersive.dart';
 import '../domain/domain.dart';
 import '../l10n/app_localizations.dart';
 import '../sync/sync_providers.dart';
@@ -14,6 +15,17 @@ import 'app_settings.dart';
 import 'app_shortcuts.dart';
 import 'deep_link_listener.dart';
 import 'router.dart';
+
+/// The app theme: [PaperTheme.dark] with the immersive-mode system bar
+/// style on every app bar, so routes don't reset it.
+final ThemeData _theme = () {
+  final base = PaperTheme.dark();
+  return base.copyWith(
+    appBarTheme: base.appBarTheme.copyWith(
+      systemOverlayStyle: ImmersiveMode.overlayStyle,
+    ),
+  );
+}();
 
 /// Root widget. Wrap in a `ProviderScope` (main.dart / tests).
 class PaperApp extends ConsumerWidget {
@@ -25,10 +37,9 @@ class PaperApp extends ConsumerWidget {
     return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context).appName,
       debugShowCheckedModeBanner: false,
-      theme: PaperTheme.light(),
-      darkTheme: PaperTheme.dark(),
-      themeMode: ref.watch(themeModeProvider),
-      // Theme switches are instant (no colour lerp across the whole tree).
+      // Dark-only, like paper.college (`<html class="dark">`).
+      theme: _theme,
+      themeMode: ThemeMode.dark,
       themeAnimationDuration: Duration.zero,
       localizationsDelegates: const <LocalizationsDelegate<Object?>>[
         AppLocalizations.delegate,
