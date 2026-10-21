@@ -2502,5 +2502,57 @@
   "signInCloseTooltip": "Close sign-in",
   "@signInCloseTooltip": {
     "description": "Sign-in screen close button tooltip (returns to where you were). Max 18 chars."
+  },
+  "libraryYourPapers": "Your papers",
+  "@libraryYourPapers": {
+    "description": "Library: heading above the papers table (web \"Your papers\", heading level 2). Max 24 chars."
+  },
+  "libraryColumnPhoto": "Photo",
+  "@libraryColumnPhoto": {
+    "description": "Library table column header: first-page thumbnail. Shown upper-cased. Max 12 chars."
+  },
+  "libraryColumnName": "Name",
+  "@libraryColumnName": {
+    "description": "Library table column header: paper title and date. Shown upper-cased. Max 12 chars."
+  },
+  "libraryColumnRate": "Rate",
+  "@libraryColumnRate": {
+    "description": "Library table column header: read meter. Shown upper-cased. Max 12 chars."
+  },
+  "libraryColumnStatus": "Status",
+  "@libraryColumnStatus": {
+    "description": "Library table column header: sync/download chips. Shown upper-cased. Max 12 chars."
+  },
+  "libraryColumnOpened": "Opened",
+  "@libraryColumnOpened": {
+    "description": "Library table column header: when the paper was last opened. Shown upper-cased. Max 12 chars."
+  },
+  "libraryColumnAction": "Action",
+  "@libraryColumnAction": {
+    "description": "Library table column header: row buttons (right-aligned). Shown upper-cased. Max 12 chars."
+  },
+  "glossarySearchNoMatch": "No terms match your search. Try another word or clear the filters.",
+  "@glossarySearchNoMatch": {
+    "description": "Glossary tab: search or tag filter matches nothing (card text). Max 100 chars."
+  },
+  "signInCreateAccountLead": "New here?",
+  "@signInCreateAccountLead": {
+    "description": "Sign-in toggle line, sign-in mode: gray prompt before the signInCreateAccountAction link. Max 24 chars."
+  },
+  "signInCreateAccountAction": "Create an account",
+  "@signInCreateAccountAction": {
+    "description": "Sign-in toggle line, sign-in mode: link that switches to create-account mode. Max 24 chars."
+  },
+  "signInHaveAccountLead": "Already have an account?",
+  "@signInHaveAccountLead": {
+    "description": "Sign-in toggle line, create-account mode: gray prompt before the signInHaveAccountAction link. Max 32 chars."
+  },
+  "signInHaveAccountAction": "Sign in",
+  "@signInHaveAccountAction": {
+    "description": "Sign-in toggle line, create-account mode: link that switches back to sign-in mode. Max 18 chars."
+  },
+  "a11yAppNavigation": "App navigation",
+  "@a11yAppNavigation": {
+    "description": "Screen-reader name of the top navigation bar (Library, Settings, sync). Max 32 chars."
   }
 }
