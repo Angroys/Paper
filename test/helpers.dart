@@ -14,6 +14,7 @@ void setWindowSize(WidgetTester tester, Size size) {
 /// Minimal themed + localised MaterialApp for widget tests (dark-only,
 /// like the app).
 Widget testApp(Widget home) => MaterialApp(
+  debugShowCheckedModeBanner: false,
   theme: PaperTheme.dark(),
   themeMode: ThemeMode.dark,
   localizationsDelegates: const <LocalizationsDelegate<Object?>>[
