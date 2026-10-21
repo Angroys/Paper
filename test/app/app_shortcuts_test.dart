@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +19,7 @@ import 'package:paper/features/reader/reader_controller.dart';
 import 'package:paper/features/reader/reader_screen.dart';
 import 'package:paper/features/reader/reader_viewport.dart';
 import 'package:paper/features/settings/settings_screen.dart';
+import 'package:paper/features/sync/sync_badge.dart';
 import 'package:paper/sync/sync_providers.dart';
 
 import '../data/fakes.dart';
@@ -156,23 +159,44 @@ void main() {
     },
   );
 
-  testWidgets('signed out goes to sign-in; signing in goes to the library '
-      'and starts sync; signing out stops it', (tester) async {
+  testWidgets('signed out opens on the library as a guest (no redirect); '
+      'sign-in is pushed, can be closed, and pops back once signed in', (
+    tester,
+  ) async {
     auth = FakeAuthRepository();
-    await pumpApp(tester);
-    expect(find.byType(SignInScreen), findsOneWidget);
-    expect(find.byType(LibraryScreen), findsNothing);
-    expect(sync.calls, isNot(contains('start')));
-
-    auth.emit(const AuthState.signedIn(testUser));
-    await tester.pumpAndSettle();
+    final container = await pumpApp(tester);
+    // No auth gate: the library, not /sign-in.
     expect(find.byType(LibraryScreen), findsOneWidget);
     expect(find.byType(SignInScreen), findsNothing);
-    expect(sync.calls, contains('start'));
+    expect(sync.calls, isNot(contains('start')));
 
-    auth.emit(const AuthState.signedOut());
+    // The rail's "Sign in" affordance opens sign-in on top…
+    await tester.tap(find.byKey(GuestSignInBadge.badgeKey));
     await tester.pumpAndSettle();
     expect(find.byType(SignInScreen), findsOneWidget);
+    // …and it can be dismissed back to where the user was.
+    await tester.tap(find.byKey(SignInScreen.closeKey));
+    await tester.pumpAndSettle();
+    expect(find.byType(SignInScreen), findsNothing);
+    expect(find.byType(LibraryScreen), findsOneWidget);
+
+    // From the reader: signing in returns to the reader.
+    container.read(routerProvider).go(AppRoutes.reader('p1'));
+    await tester.pumpAndSettle();
+    unawaited(container.read(routerProvider).push<void>(AppRoutes.signIn));
+    await tester.pumpAndSettle();
+    expect(find.byType(SignInScreen), findsOneWidget);
+    auth.emit(const AuthState.signedIn(testUser));
+    await tester.pumpAndSettle();
+    expect(find.byType(SignInScreen), findsNothing);
+    expect(find.byType(ReaderScreen), findsOneWidget);
+    expect(sync.calls, contains('start'));
+
+    // Signing out keeps a usable app (no redirect to sign-in).
+    auth.emit(const AuthState.signedOut());
+    await tester.pumpAndSettle();
+    expect(find.byType(SignInScreen), findsNothing);
+    expect(find.byType(ReaderScreen), findsOneWidget);
     expect(sync.calls.last, 'stop');
     await disposeTree(tester);
   });

@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../auth/auth_providers.dart';
 import '../../core/build_flags.dart';
 import '../../domain/domain.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/paper_tokens.dart';
 import '../../theme/theme_x.dart';
+import '../auth/sign_in_prompt.dart';
 import 'highlights_tab.dart';
 import 'panel_tab.dart';
 
@@ -116,6 +118,9 @@ class ReaderSidePanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final slots = ref.watch(readerPanelSlotsProvider);
+    // Guests see the AI tabs with a "Sign in to use …" prompt (sign-in is
+    // optional; the tabs stay visible).
+    final guest = ref.watch(isGuestProvider);
     final l10n = AppLocalizations.of(context);
     return Semantics(
       container: true,
@@ -134,6 +139,12 @@ class ReaderSidePanel extends ConsumerWidget {
             child: _TabBodies(
               tab: tab,
               builder: (context, t) {
+                if (guest && t == ReaderPanelTab.glossary) {
+                  return const SignInPrompt(feature: GuestFeature.glossary);
+                }
+                if (guest && t == ReaderPanelTab.explanation) {
+                  return const SignInPrompt(feature: GuestFeature.explanation);
+                }
                 final slot = slots[t];
                 if (slot != null) return slot(context, panel);
                 if (t == ReaderPanelTab.highlights) {

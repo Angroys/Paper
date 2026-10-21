@@ -10,6 +10,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../app/app_commands.dart';
 import '../../app/app_shell.dart';
 import '../../app/routes.dart';
+import '../../auth/auth_providers.dart';
 import '../../core/build_flags.dart';
 import '../../core/core_providers.dart';
 import '../../data/data_providers.dart';
@@ -18,6 +19,7 @@ import '../../l10n/app_localizations.dart';
 import '../../theme/motion_extras.dart';
 import '../../theme/paper_tokens.dart';
 import '../../theme/theme_x.dart';
+import '../auth/sign_in_prompt.dart';
 import '../panel/ai_states.dart' show InlineError;
 import '../sync/sync_sheet.dart';
 import 'library_controller.dart';
@@ -252,6 +254,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   }
 
   Future<void> _importUrl() async {
+    // Guests: import by link runs on the server, so ask to sign in.
+    if (ref.read(isGuestProvider)) {
+      return showSignInPromptDialog(context, GuestFeature.importLink);
+    }
     final url = await showImportUrlDialog(context, online: _online);
     if (url == null || !mounted) return;
     final paper = await ref
@@ -298,6 +304,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     final online = ref.watch(isOnlineProvider).value ?? true;
     // Offline-only builds: file import only, no download / sync states.
     final offlineOnly = ref.watch(offlineOnlyProvider);
+    // Guests (no account): papers live on this device only, so no download
+    // or sync states either; import by link asks to sign in.
+    final localOnly = offlineOnly || ref.watch(isGuestProvider);
     final VoidCallback? onImportUrl = offlineOnly
         ? null
         : () => unawaited(_importUrl());
@@ -378,7 +387,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               list: list,
               columns: columns,
               online: online,
-              localOnly: offlineOnly,
+              localOnly: localOnly,
               activity: activity,
               actions: _actions,
             );
@@ -406,7 +415,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               header,
-              _FilterRow(view: view, list: list, localOnly: offlineOnly),
+              _FilterRow(view: view, list: list, localOnly: localOnly),
               for (final job in activity.imports)
                 Padding(
                   padding: const EdgeInsets.only(bottom: PaperSpacing.sm),
