@@ -15,7 +15,7 @@
       "The PDF page stays WHITE in both themes (web parity). Highlights multiply over the white page so glyphs stay dark.",
       "Dark accent flips to indigo-400 with DARK label ink (indigo-950); white on indigo-400 fails AA."
     ],
-    "contrastGate": "Parity beats AA where the web itself is below AA. Known web pairs below AA, kept on purpose: outline #404040 on #171717 (1.73:1, input/secondary-button border), textSubtle #737373 on #171717 (3.78:1, small meta text), white on accent #818cf8 (2.98:1, CitationPopover/FigureHighlightsPanel buttons). All other text pairs pass AA; see tokens.md section 12.",
+    "contrastGate": "Parity beats AA where the web itself is below AA. Known web pairs below AA, kept on purpose: outline #404040 on #171717 (1.73:1, input/secondary-button border), textSubtle #737373 on #171717 (3.78:1, small meta text); every accent button uses indigo-950 text (5.36:1). All other text pairs pass AA; see tokens.md section 12.",
     "theme": "dark-only: the web server-renders <html class=\"dark\"> with no toggle, so color.light was removed and PaperTheme.light()/PaperColors.light alias the dark values.",
     "webParity": "Every value equals what paper.college renders (RPR tailwind.config.ts, src/app/globals.css, src/components). Full extraction, Tailwind-class table and old->new changes: design/web-parity/tokens.md."
   },

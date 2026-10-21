@@ -157,7 +157,6 @@ Contrast is checked in `design/web-parity/tokens.md` §12. A few web pairs are b
 
 - outline: 1.73:1
 - gray-500 meta text: 3.78:1
-- white on accent: 2.98:1
 
 **Breakpoints.** The app's window classes are unchanged: 600, 840, 1200 and 1600. Responsive changes that mirror a web `sm:` / `md:` / `lg:` / `xl:` switch use `PaperBreakpoints.twSm` (640), `twMd` (768), `twLg` (1024) and `twXl` (1280). The reader side panel default is now 384 (the web's `w-96`) in every class.
 
