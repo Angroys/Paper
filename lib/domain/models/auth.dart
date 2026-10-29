@@ -1,5 +1,14 @@
 import 'package:meta/meta.dart';
 
+/// Owner id of data made on this device without an account: the guest in
+/// online builds (sign-in is optional) and the local user of offline-only
+/// builds. A fixed nil UUID, so local rows keep a UUID-shaped `user_id`.
+/// Signing in re-owns these rows to the account (`GuestDataMerge`).
+const String kGuestUserId = '00000000-0000-0000-0000-000000000000';
+
+/// True for [kGuestUserId].
+bool isGuestUserId(String? id) => id == kGuestUserId;
+
 /// The signed-in user (subset of Supabase `User` + `profiles`).
 @immutable
 class AppUser {

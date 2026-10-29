@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/app_settings.dart';
 import '../../app/app_shell.dart';
+import '../../auth/auth_providers.dart';
 import '../../core/build_flags.dart';
 import '../../core/core_providers.dart';
 import '../../core/env.dart';
@@ -18,6 +19,7 @@ import '../../l10n/app_localizations.dart';
 import '../../sync/sync_providers.dart';
 import '../../theme/paper_tokens.dart';
 import '../../theme/theme_x.dart';
+import '../auth/sign_in_prompt.dart';
 import '../auth/sign_in_screen.dart' show kAppVersion;
 import '../sync/sync_badge.dart';
 import '../sync/sync_sheet.dart';
@@ -268,6 +270,31 @@ class _AccountSection extends ConsumerWidget {
     final user = currentUser(ref);
     final name = user?.displayName ?? user?.email ?? '';
     final initials = name.isEmpty ? '?' : name.characters.first.toUpperCase();
+    // Guests: sign-in / create account lives here (sign-in is optional).
+    if (ref.watch(isGuestProvider)) {
+      return Column(
+        children: <Widget>[
+          ListTile(
+            key: const ValueKey<String>('settings-guest'),
+            leading: CircleAvatar(
+              backgroundColor: c.surfaceVariant,
+              foregroundColor: c.textSecondary,
+              child: const Icon(Symbols.person_rounded, size: 20),
+            ),
+            title: Text(l10n.guestAccountTitle),
+            subtitle: Text(l10n.guestAccountBody),
+            isThreeLine: true,
+          ),
+          ListTile(
+            key: const ValueKey<String>('settings-sign-in'),
+            leading: Icon(Symbols.login_rounded, size: 20, color: c.primary),
+            title: Text(l10n.commonSignIn, style: TextStyle(color: c.primary)),
+            onTap: () => unawaited(openSignIn(context)),
+          ),
+          const _ExportNotesTile(),
+        ],
+      );
+    }
     return Column(
       children: <Widget>[
         if (user != null)
@@ -696,6 +723,9 @@ class _SyncSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    if (ref.watch(isGuestProvider)) {
+      return const SignInPrompt(feature: GuestFeature.sync, dense: true);
+    }
     final status = ref.watch(syncStatusProvider).value ?? SyncStatus.idle;
     final replaced =
         ref.watch(replacedVersionsProvider).value ?? const <ReplacedVersion>[];

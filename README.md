@@ -10,10 +10,12 @@ as the web app when you are back online.
 
 iOS/iPhone and Linux are not v1 targets.
 
-> **The v0.x test releases are offline builds.** They are compiled with
-> `PAPER_OFFLINE_ONLY=true` (see [Offline-only builds](#offline-only-builds)):
-> no sign-in, sync or AI. The online features below are in the code and in
-> PR / `main` builds.
+> **Sign-in is optional.** Paper opens straight into the library. Without an
+> account everything stays on the device; signing in adds sync and the AI
+> features and moves what you made into your account (see
+> [Optional sign-in](#optional-sign-in)). Tag releases are this online
+> build. A fully offline build is still one flag away
+> ([Offline-only builds](#offline-only-builds)).
 
 ## Architecture map
 
@@ -94,6 +96,43 @@ If `SUPABASE_URL` or `SUPABASE_ANON_KEY` is missing, the app runs in
 signed out, and every network feature reports that it is unavailable. Tests
 and plain `flutter run` use this mode.
 
+### Optional sign-in
+
+Online builds do not require an account. There is no auth gate in the
+router: the app opens on the library as a **guest** (`isGuestProvider`) when
+nobody is signed in.
+
+- **Works without an account:** import from a file, the reader, text, figure
+  and stylus highlights, notes, split view, export notes. Rows are owned by
+  the guest id `kGuestUserId` (the nil UUID, shared with offline-only
+  builds) and queued in the outbox, but nothing is pushed.
+- **Needs an account, shown as a calm prompt, never hidden:** sync (the sync
+  badge becomes a "Sign in" affordance in the rail / sidebar / top bar /
+  reader toolbar, Settings › Sync), the Explanation and Glossary tabs
+  (including visual aids), and import by link (library and citation
+  popover). Each shows "Sign in to use …" with a Sign in button
+  (`lib/features/auth/sign_in_prompt.dart`).
+- **Sign-in** is reachable from Settings › Account and the "Sign in"
+  affordance. It is pushed on top of the current route, can be closed (close
+  button or back), and pops itself once signed in, so the user lands where
+  they were.
+- **Guest → account merge** (`lib/sync/guest_merge.dart`, run by the sync
+  engine before every round with a signed-in user): rows of any *other*
+  account are removed; guest papers, highlights and figure highlights are
+  re-owned to the user, storage paths move from `<guest>/…` to
+  `<user_id>/<uuid>.pdf` / `<user_id>/<paper_id>/<figure_id>.png` in the rows
+  and in queued payloads, and any re-owned row without an op gets a `create`
+  op. The engine then uploads the PDFs and upserts the rows. Client UUIDs
+  plus upserts make it idempotent: nothing is duplicated, and a second run
+  changes nothing. Notes, colors and reading positions are device-only and
+  simply stay.
+- **Sign-out** keeps a usable app. By default papers **on this device stay
+  readable**, labelled "From account" in the library; papers that are only in
+  the cloud are removed (they come back on sign-in). Queued changes stay and
+  sync if the same account signs in again; a different account signing in
+  removes them. Ticking "Remove papers from this device" in the sign-out
+  dialog wipes the local data instead.
+
 ### Offline-only builds
 
 `--dart-define=PAPER_OFFLINE_ONLY=true` builds a fully offline app
@@ -130,7 +169,10 @@ without recompiling (`test/offline/`, tagged `offline`).
 
 Supabase dashboard setup (Authentication):
 
-- Add `paper://auth-callback` to the **redirect URL allow-list**.
+- Add `paper://auth-callback` and `paper://auth-callback/**` to the
+  **redirect URL allow-list**. Without them Supabase falls back to the Site
+  URL (https://paper.college) and Google sign-in ends on the website
+  instead of returning to the app.
 - Enable the **Google** provider.
 
 ## Run and build
@@ -165,12 +207,27 @@ How each platform registers the scheme:
 - **Android:** `<intent-filter>` entries in
   `android/app/src/main/AndroidManifest.xml`.
 - **macOS:** `CFBundleURLTypes` in `macos/Runner/Info.plist`.
-- **Windows:** the app registers itself under `HKCU\Software\Classes\paper`
-  on every launch (`lib/auth/windows_protocol_registration.dart`, no admin
+- **Android:** the activity is `launchMode="singleTask"`, so the browser's
+  `paper://auth-callback` intent reaches the running activity (app_links
+  stream) instead of starting a second copy. Custom scheme: no
+  `autoVerify`. `flutter_deeplinking_enabled` is off (app_links handles
+  links, not the router).
+- **macOS:** besides `CFBundleURLTypes`, nothing is needed in `AppDelegate`:
+  app_links 7 installs its own Apple-event (`kAEGetURL`) handler.
+- **Windows:** `main()` registers the app under `HKCU\Software\Classes\paper`
+  at startup (`lib/auth/windows_protocol_registration.dart`, no admin
   rights needed). This covers the portable zip and `flutter run`. The Inno
-  Setup installer (`installer/windows/paper.iss`) writes the same keys and
-  removes them on uninstall. `windows/runner/main.cpp` forwards a link to an
-  instance that is already running.
+  Setup installer (`installer/windows/paper.iss`) registers the same handler
+  under `HKA` (HKLM for its admin install, so not in the hive of whichever
+  admin approved UAC) and removes it on uninstall.
+  `windows/runner/main.cpp` makes Paper single-instance: a second
+  `Paper.exe "paper://…"` forwards the link to the running instance
+  (`SendAppLinkToInstance`, WM_COPYDATA), focuses it and exits.
+- **Code exchange:** `DeepLinkListener` exchanges the PKCE code
+  (`handleAuthCallback` → `getSessionFromUrl`) on warm starts (link stream)
+  and cold starts (initial link, argv on Windows). On a cold start it waits
+  for `Supabase.initialize` first, and each code is handled once although
+  app_links reports the launch link more than once.
 - **Desktop fallback:** if the browser cannot hand the link back, the sign-in
   screen offers a **"paste the link"** field. Copy the `paper://auth-callback`
   URL from the browser and paste it there.
@@ -194,7 +251,9 @@ How each platform registers the scheme:
     mine".
   - On 401 the outbox is kept. Other 4xx errors mark the op as failed, with
     Retry and Discard in the SyncSheet.
-  - Signing in as a different user wipes the local data first.
+  - Without an account nothing is pushed. Signing in merges the guest's
+    rows into the account; another account's rows are removed first (see
+    [Optional sign-in](#optional-sign-in)).
 
   The full rules are in the doc block at the top of
   [`lib/sync/sync_engine.dart`](lib/sync/sync_engine.dart).
@@ -316,12 +375,15 @@ gen-l10n and build_runner.
 - **Optional repository secrets:** `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
   `PAPER_API_BASE_URL`. They are passed as `--dart-define`. Without them,
   the builds boot in "not configured" mode.
-- **Offline flag:** `v*` tag builds pass `--dart-define=PAPER_OFFLINE_ONLY=true`
-  on all three platforms, so **v0.x test releases are offline builds**
-  (no sign-in, sync or AI). Pushes to `main` and PRs build the online
-  variant.
-- **Releases:** pushing a `v*` tag creates a **GitHub prerelease** marked
-  "Offline build — no sign-in, sync or AI", with auto-generated notes and
+- **Online everywhere:** tag, `main` and PR builds are the online variant
+  with optional sign-in (`PAPER_OFFLINE_ONLY=false`). Tag releases therefore
+  need the repository secrets above, or they boot "not configured". For an
+  offline-only build run the workflow manually (Actions › CI › Run
+  workflow) with **offline_only** ticked, or build locally with
+  `--dart-define=PAPER_OFFLINE_ONLY=true`.
+- **Releases:** pushing a `v*` tag creates a **GitHub prerelease** headed
+  "Sign-in optional — use locally, sign in for sync and AI", with
+  auto-generated notes and
   these assets: `Paper-<ver>-android.apk`,
   `Paper-<ver>-windows-setup.exe` (Inno Setup), `Paper-<ver>-windows.zip`
   and `Paper-<ver>-macos.dmg`.

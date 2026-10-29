@@ -31,9 +31,10 @@ Future<bool> _launchExternal(Uri url) =>
 ///   the user in on this device (PKCE: only the device that asked can
 ///   exchange it); there is no "set new password" screen in v1.
 /// * Guests: RPR's web app signs visitors in with anonymous Supabase
-///   identities. The native app requires a real account, so it never calls
-///   `signInAnonymously`, and an anonymous session found on disk is treated
-///   as signed out.
+///   identities. The native app's guest mode is local instead (sign-in is
+///   optional; guest rows are owned by `kGuestUserId` and merged into the
+///   account on sign-in), so it never calls `signInAnonymously`, and an
+///   anonymous session found on disk is treated as signed out.
 ///
 /// Callback failures (cancelled, denied, stale code) are not thrown, since
 /// the deep-link listener fires and forgets them. They go to [authErrors]
