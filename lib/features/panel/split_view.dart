@@ -5,11 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
-import '../../core/window_class.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/motion_extras.dart';
 import '../../theme/paper_tokens.dart';
-import '../../theme/theme_x.dart';
 import 'panel_layout.dart';
 
 /// Reader + side panel container (layout-system.md §4, motion #3–#6).
@@ -21,10 +19,11 @@ import 'panel_layout.dart';
 ///   drag the viewport keeps its pre-drag constraints and is drawn through a
 ///   `Transform.scale` (no relayout, no re-render), committed on drag end
 ///   (§1.5).
-/// - `overlay` (medium, or a split class that falls back): side sheet from
-///   the right over a colour-animated scrim; the PDF never resizes and is
-///   inert while the scrim is up.
-/// - `bottomSheet` (compact): sheet snapping 40% / 90% of the height.
+/// - `overlay` (640–1023, or the "Overlay" panel style): 384 side sheet
+///   from the right with `shadowXl` and **no scrim**; the PDF never resizes
+///   and stays interactive (side-panel.md §1.2).
+/// - `bottomSheet` (< 640): sheet at 70% of the height (snaps 40 / 70 /
+///   90%) over the `dialogBackdrop` barrier.
 ///
 /// Live window resizes keep the viewport at its last committed size, scaled
 /// to fit, and commit [kRerasterIdle] after the last size change (§4.2).
@@ -75,7 +74,6 @@ class _ReaderSplitViewState extends State<ReaderSplitView>
   )..addStatusListener(_onSlideStatus);
 
   final GlobalKey _readerKey = GlobalKey(debugLabel: 'reader-viewport');
-  PaperWindowClass? _windowClass;
   PanelLayout? _layout;
   double? _panelWidth;
 
@@ -93,7 +91,7 @@ class _ReaderSplitViewState extends State<ReaderSplitView>
   Timer? _resizeTimer;
 
   // Bottom sheet height fraction.
-  double _sheetFraction = 0.4;
+  double _sheetFraction = kSheetDefaultFraction;
 
   @override
   void didUpdateWidget(ReaderSplitView old) {
@@ -111,8 +109,8 @@ class _ReaderSplitViewState extends State<ReaderSplitView>
   void _animateOpen(bool open) {
     final layout = _layout;
     if (open) {
-      _slide.duration = PaperMotion.of(context, PaperMotion.slow);
-      _sheetFraction = 0.4;
+      _slide.duration = PaperMotion.of(context, PaperMotion.base);
+      _sheetFraction = kSheetDefaultFraction;
       if (_slide.duration == Duration.zero) {
         // Reduced motion: instant layout change, one commit, no slide.
         _committedOpen = layout?.isSplit ?? false;
@@ -125,7 +123,7 @@ class _ReaderSplitViewState extends State<ReaderSplitView>
         // Commit, then slide: the viewport widens under the panel first.
         setState(() => _committedOpen = false);
       }
-      _slide.duration = PaperMotion.of(context, PaperMotion.base);
+      _slide.duration = PaperMotion.of(context, PaperMotion.fast);
       unawaited(_slide.animateBack(0, curve: PaperMotion.accelerate));
     }
   }
@@ -199,12 +197,9 @@ class _ReaderSplitViewState extends State<ReaderSplitView>
     return LayoutBuilder(
       builder: (context, constraints) {
         final size = constraints.biggest;
-        final wc = resolveWindowClass(size.width, previous: _windowClass);
-        _windowClass = wc;
         final layout = resolvePanelLayout(
-          width: size.width,
+          width: MediaQuery.sizeOf(context).width,
           height: size.height,
-          windowClass: wc,
           preferOverlay: widget.preferOverlay,
         );
         if (layout != _layout) {
@@ -278,8 +273,19 @@ class _ReaderSplitViewState extends State<ReaderSplitView>
     );
   }
 
+  /// The panel with the window insets it does not border removed: docked /
+  /// overlay sit under the reader strip on the right edge (no top / left
+  /// inset); the sheet sits on the bottom edge (no top inset). The panel
+  /// adds what remains to its content (side-panel.md §5).
+  Widget _panelInsets(Widget panel, {required bool sheet}) =>
+      MediaQuery.removeViewPadding(
+        context: context,
+        removeTop: true,
+        removeLeft: !sheet,
+        child: RepaintBoundary(child: panel),
+      );
+
   Widget _buildSplit(BuildContext context, Size size, PanelLayout layout) {
-    final c = context.paper;
     final panelW = _currentWidth(layout);
     final dragW = _dragWidth;
     final visiblePanelW = dragW ?? panelW;
@@ -339,8 +345,8 @@ class _ReaderSplitViewState extends State<ReaderSplitView>
                     right: 0,
                     width: visiblePanelW,
                     child: ColoredBox(
-                      color: c.surface,
-                      child: RepaintBoundary(child: widget.panel),
+                      color: PaperWeb.gray950,
+                      child: _panelInsets(widget.panel, sheet: false),
                     ),
                   ),
                   Positioned(
@@ -367,34 +373,13 @@ class _ReaderSplitViewState extends State<ReaderSplitView>
     );
   }
 
-  Widget _scrim(BuildContext context) {
-    final c = context.paper;
-    return AnimatedModalBarrier(
-      color: ColorTween(
-        begin: c.scrim.withValues(alpha: 0),
-        end: c.scrim,
-      ).animate(_slide),
-      dismissible: true,
-      onDismiss: widget.onClose,
-    );
-  }
-
   Widget _buildOverlay(BuildContext context, Size size, PanelLayout layout) {
-    final c = context.paper;
     final panelW = layout.clampWidth(_panelWidth ?? layout.defaultWidth);
     final showPanel = widget.open || !_slide.isDismissed;
+    // No scrim: the PDF stays visible and interactive to the left.
     return Stack(
       children: <Widget>[
-        Positioned.fill(
-          child: ExcludeFocus(
-            excluding: widget.open,
-            child: AbsorbPointer(
-              absorbing: widget.open,
-              child: _viewport(size.width, size.height),
-            ),
-          ),
-        ),
-        if (showPanel) Positioned.fill(child: _scrim(context)),
+        Positioned.fill(child: _viewport(size.width, size.height)),
         if (showPanel)
           Positioned(
             top: 0,
@@ -407,14 +392,12 @@ class _ReaderSplitViewState extends State<ReaderSplitView>
                 end: Offset.zero,
               ).animate(_slide),
               child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: c.surface,
-                  border: Border(left: BorderSide(color: c.border)),
-                  boxShadow: PaperElevation.shadow3(
-                    Theme.of(context).brightness,
-                  ),
+                decoration: const BoxDecoration(
+                  color: PaperWeb.gray950,
+                  border: Border(left: BorderSide(color: PaperWeb.gray800)),
+                  boxShadow: PaperElevation.shadowXl,
                 ),
-                child: RepaintBoundary(child: widget.panel),
+                child: _panelInsets(widget.panel, sheet: false),
               ),
             ),
           ),
@@ -423,7 +406,6 @@ class _ReaderSplitViewState extends State<ReaderSplitView>
   }
 
   Widget _buildSheet(BuildContext context, Size size) {
-    final c = context.paper;
     final showPanel = widget.open || !_slide.isDismissed;
     final height = size.height * _sheetFraction;
     return Stack(
@@ -437,7 +419,17 @@ class _ReaderSplitViewState extends State<ReaderSplitView>
             ),
           ),
         ),
-        if (showPanel) Positioned.fill(child: _scrim(context)),
+        if (showPanel)
+          Positioned.fill(
+            child: AnimatedModalBarrier(
+              color: ColorTween(
+                begin: PaperWeb.dialogBackdrop.withValues(alpha: 0),
+                end: PaperWeb.dialogBackdrop,
+              ).animate(_slide),
+              dismissible: true,
+              onDismiss: widget.onClose,
+            ),
+          ),
         if (showPanel)
           Positioned(
             left: 0,
@@ -450,14 +442,13 @@ class _ReaderSplitViewState extends State<ReaderSplitView>
                 end: Offset.zero,
               ).animate(_slide),
               child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: c.surface,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(PaperRadii.xxl),
+                decoration: const BoxDecoration(
+                  color: PaperWeb.gray950,
+                  border: Border(top: BorderSide(color: PaperWeb.gray800)),
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(PaperRadii.lg),
                   ),
-                  boxShadow: PaperElevation.shadow3(
-                    Theme.of(context).brightness,
-                  ),
+                  boxShadow: PaperElevation.shadowXl,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -479,27 +470,32 @@ class _ReaderSplitViewState extends State<ReaderSplitView>
                           return;
                         }
                         setState(() {
-                          _sheetFraction = (_sheetFraction > 0.65 || v < -1200)
+                          _sheetFraction = (_sheetFraction > 0.8 || v < -1200)
                               ? 0.9
-                              : 0.4;
+                              : (_sheetFraction < 0.55
+                                    ? 0.4
+                                    : kSheetDefaultFraction);
                         });
                       },
-                      child: SizedBox(
-                        height: 24,
+                      // 32×4 grabber, gray-700, centred 8 from the top.
+                      child: const SizedBox(
+                        height: kSheetHandleHeight,
                         width: double.infinity,
                         child: Center(
-                          child: Container(
+                          child: SizedBox(
                             width: 32,
                             height: 4,
-                            decoration: BoxDecoration(
-                              color: c.outlineVariant,
-                              borderRadius: PaperRadii.borderFull,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: PaperWeb.gray700,
+                                borderRadius: PaperRadii.borderFull,
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                    Expanded(child: RepaintBoundary(child: widget.panel)),
+                    Expanded(child: _panelInsets(widget.panel, sheet: true)),
                   ],
                 ),
               ),
@@ -510,8 +506,14 @@ class _ReaderSplitViewState extends State<ReaderSplitView>
   }
 }
 
-/// `SplitDragHandle`: 1dp divider + 24×48 grabber, 16 (pointer) / 24
-/// (touch) dp hit area over the divider. Keyboard: ←/→ 16dp, Shift 64dp,
+/// Bottom sheet default height (side-panel.md §1.3).
+const double kSheetDefaultFraction = 0.7;
+
+/// Sheet drag-handle strip: 8 + 4 grabber + 8.
+const double kSheetHandleHeight = 20;
+
+/// `SplitDragHandle`: the 1px gray-800 divider, a 4×32 grabber shown on
+/// hover / drag / focus, and a 16 (pointer) / 24 (touch) hit area. Keyboard: ←/→ 16dp, Shift 64dp,
 /// Home/End min/max; double-click resets. Semantics: slider.
 class SplitDragHandle extends StatefulWidget {
   const SplitDragHandle({
@@ -576,7 +578,6 @@ class _SplitDragHandleState extends State<SplitDragHandle> {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.paper;
     final l10n = AppLocalizations.of(context);
     final active = _hover || _dragging;
     return Semantics(
@@ -608,41 +609,27 @@ class _SplitDragHandleState extends State<SplitDragHandle> {
             child: Stack(
               alignment: Alignment.center,
               children: <Widget>[
+                // The divider is the panel's 1px gray-800 left border, on
+                // the whole pixel just left of the panel (centring it in
+                // the hit area put it on a half pixel: a blurred 2px line).
                 Positioned(
                   top: 0,
                   bottom: 0,
-                  width: active ? 2 : PaperChrome.splitDividerWidth,
-                  child: ColoredBox(color: active ? c.primary : c.border),
+                  left: widget.hitWidth / 2,
+                  width: PaperChrome.splitDividerWidth,
+                  child: ColoredBox(color: PaperWeb.gray800),
                 ),
-                Container(
-                  width: PaperChrome.splitGrabberWidth,
-                  height: PaperChrome.splitGrabberHeight,
-                  decoration: BoxDecoration(
-                    color: active ? c.primarySoft : c.surfaceVariant,
-                    borderRadius: PaperRadii.borderFull,
-                    border: Border.all(
-                      color: _focused
-                          ? c.focusRing
-                          : (active ? c.primary : c.outlineVariant),
-                      width: _focused ? 2 : 1,
+                // Grabber only on hover / drag / keyboard focus: 4×32,
+                // radius full, gray-700 (reader.md §1).
+                if (active || _focused)
+                  Container(
+                    width: 4,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: _focused ? PaperWeb.accent : PaperWeb.gray700,
+                      borderRadius: PaperRadii.borderFull,
                     ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      for (var i = 0; i < 2; i++) ...<Widget>[
-                        if (i == 1) const SizedBox(width: 6),
-                        SizedBox(
-                          width: 1.5,
-                          height: 16,
-                          child: ColoredBox(
-                            color: active ? c.onPrimarySoft : c.textMuted,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
               ],
             ),
           ),

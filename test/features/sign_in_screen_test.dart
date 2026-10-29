@@ -115,16 +115,65 @@ void main() {
     );
   });
 
-  testWidgets('offline disables Google and shows the offline banner', (
+  testWidgets('offline shows the placeholder card instead of the form', (
     tester,
   ) async {
     connectivity.online = false;
     await pump(tester);
-    expect(find.textContaining('You’re offline'), findsOneWidget);
-    final google = tester.widget<OutlinedButton>(
-      find.byKey(SignInScreen.googleButtonKey),
+    expect(find.text('You’re offline'), findsOneWidget);
+    expect(
+      find.text('Signing in needs a connection. Connect and try again.'),
+      findsOneWidget,
     );
-    expect(google.onPressed, isNull);
+    expect(find.byKey(SignInScreen.googleButtonKey), findsNothing);
+    expect(find.byKey(SignInScreen.emailFieldKey), findsNothing);
+    expect(find.text('Try again'), findsOneWidget);
+  });
+
+  testWidgets('web layout: 336 column, no brand panel, split toggle line', (
+    tester,
+  ) async {
+    await pump(tester, size: const Size(1280, 800));
+    final email = find.byKey(SignInScreen.emailFieldKey);
+    final rect = tester.getRect(email);
+    expect(rect.left, 472);
+    expect(rect.width, 336);
+    expect(rect.height, 38);
+    expect(tester.getSize(find.byKey(SignInScreen.submitKey)).height, 36);
+    final google = tester.getRect(find.byKey(SignInScreen.googleButtonKey));
+    expect(google.width, 336);
+    expect(google.height, 38);
+    expect(find.text('or'), findsNothing);
+    expect(find.text('Read any paper without getting stuck.'), findsNothing);
+    expect(find.text('New here? '), findsOneWidget);
+    expect(find.text('Create an account'), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(SignInScreen.closeKey)),
+      const Size(32, 32),
+    );
+    expect(
+      tester.getTopLeft(find.byKey(SignInScreen.closeKey)),
+      const Offset(16, 16),
+    );
+
+    await tester.tap(find.byKey(SignInScreen.modeToggleKey));
+    await tester.pump();
+    expect(find.text('Already have an account? '), findsOneWidget);
+    expect(find.text('Create account'), findsWidgets);
+    expect(find.text('Forgot password?'), findsNothing);
+  });
+
+  testWidgets('invalid email shows in the alert row; submitting label', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.enterText(find.byKey(SignInScreen.emailFieldKey), 'nope');
+    await tester.enterText(find.byKey(SignInScreen.passwordFieldKey), 'pw');
+    await tester.tap(find.byKey(SignInScreen.submitKey));
+    await tester.pump();
+    expect(find.byKey(SignInScreen.bannerKey), findsOneWidget);
+    expect(find.text('Enter a full email address.'), findsOneWidget);
+    expect(auth.calls, isEmpty);
   });
 
   testWidgets('unconfigured builds say sign-in is not set up', (tester) async {

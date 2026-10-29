@@ -68,6 +68,39 @@ const double kInkStrokeWidth = 14;
 /// Page-indicator update throttle during scroll (reader spec: ≤ every 100ms).
 const Duration kPageIndicatorThrottle = Duration(milliseconds: 100);
 
+/// Space between pages (`mb-4`) and around them (`p-6`), in document units
+/// (≈ logical px at fit width).
+const double kPageGap = 16;
+const double kPagePadding = 24;
+
+/// Pages stacked and centred with [kPagePadding] around and [kPageGap]
+/// between them (the web pane's `px-6 py-6` + `mb-4`).
+PdfPageLayout layoutReaderPages(List<PdfPage> pages, PdfViewerParams params) {
+  final width =
+      pages.fold(0.0, (w, p) => math.max(w, p.width)) + kPagePadding * 2;
+  final rects = <Rect>[];
+  var y = kPagePadding;
+  for (var i = 0; i < pages.length; i++) {
+    final page = pages[i];
+    rects.add(
+      Rect.fromLTWH((width - page.width) / 2, y, page.width, page.height),
+    );
+    y += page.height + (i == pages.length - 1 ? kPagePadding : kPageGap);
+  }
+  return PdfPageLayout(pageLayouts: rects, documentSize: Size(width, y));
+}
+
+/// The 1px `ring-1 ring-white/10` outer hairline (no shadow, no radius).
+void paintPageHairline(ui.Canvas canvas, Rect pageRect, PdfPage page) {
+  canvas.drawRect(
+    pageRect.inflate(0.5),
+    Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = PaperWeb.white10,
+  );
+}
+
 /// Popovers reappear this long after the page stops moving (motion #12).
 const Duration kOverlaySettle = Duration(milliseconds: 150);
 
@@ -314,6 +347,10 @@ class _PdfReaderViewportState extends ConsumerState<PdfReaderViewport> {
     final c = s.citation;
     if (c != null) {
       _ctrl.updateCitationAnchor(_anchor(c.anchor.pageNumber, c.anchor.rect));
+    }
+    final e = s.explainAnchor;
+    if (e != null) {
+      _ctrl.updateExplainAnchor(_anchor(e.pageNumber, e.rect));
     }
     final f = _pendingFigure;
     if (f != null) {
@@ -857,8 +894,16 @@ class _PdfReaderViewportState extends ConsumerState<PdfReaderViewport> {
       controller: _pdf,
       initialPageNumber: _initialPage,
       params: PdfViewerParams(
-        margin: PaperSpacing.lg,
-        backgroundColor: c.readerBackdrop,
+        // Web pane: `p-6` around the pages, `mb-4` between them, white
+        // pages with a 1px white/10 outer hairline and no shadow
+        // (reader.md §3.1).
+        margin: kPageGap,
+        layoutPages: layoutReaderPages,
+        pageDropShadow: null,
+        pageBackgroundPaintCallbacks: const <PdfViewerPagePaintCallback>[
+          paintPageHairline,
+        ],
+        backgroundColor: PaperWeb.gray950,
         sizeDelegateProvider: const PdfViewerSizeDelegateProviderLegacy(
           minScale: kMinZoom,
           maxScale: kMaxZoom,
@@ -959,7 +1004,14 @@ class _PdfReaderViewportState extends ConsumerState<PdfReaderViewport> {
                     ReaderTool.highlight => SystemMouseCursors.precise,
                     ReaderTool.select => MouseCursor.defer,
                   },
-                  child: viewer,
+                  // PDF text selection: indigo-600 @ .30 (reader.md §3.1).
+                  child: Theme(
+                    data: Theme.of(context).copyWith(
+                      textSelectionTheme: Theme.of(context).textSelectionTheme
+                          .copyWith(selectionColor: PaperWeb.pdfSelection),
+                    ),
+                    child: viewer,
+                  ),
                 ),
               ),
             ),

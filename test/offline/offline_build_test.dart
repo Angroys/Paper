@@ -265,8 +265,11 @@ void main() {
     ) async {
       await boot(tester);
 
-      // The Import button picks a file directly (no menu with a link item).
+      // The add panel has only the file card (no link card).
       await tester.tap(find.byKey(LibraryScreen.importButtonKey));
+      await tester.pumpAndSettle();
+      expect(find.text('Add a paper from a link'), findsNothing);
+      await tester.tap(find.byKey(LibraryScreen.chooseFileKey));
       // Real file IO (copy into the file store, SQLite insert).
       for (var i = 0; i < 20 && find.text('local').evaluate().isEmpty; i++) {
         await tester.runAsync(
@@ -304,14 +307,14 @@ void main() {
 
       for (final s in <String>['account', 'sync']) {
         expect(
-          find.byKey(ValueKey<String>('settings-nav-$s')),
+          find.byKey(ValueKey<String>('settings-section-$s')),
           findsNothing,
           reason: s,
         );
       }
       for (final s in <String>['appearance', 'reader', 'storage', 'about']) {
         expect(
-          find.byKey(ValueKey<String>('settings-nav-$s')),
+          find.byKey(ValueKey<String>('settings-section-$s')),
           findsOneWidget,
           reason: s,
         );
@@ -320,13 +323,8 @@ void main() {
         find.byKey(const ValueKey<String>('settings-sign-out')),
         findsNothing,
       );
-      // Opens on Appearance (the first section).
-      expect(find.text('Theme'), findsOneWidget);
-
-      await tester.tap(
-        find.byKey(const ValueKey<String>('settings-nav-storage')),
-      );
-      await tester.pumpAndSettle();
+      // Dark-only, so no theme selector.
+      expect(find.text('Reduce motion'), findsOneWidget);
       expect(
         find.byKey(const ValueKey<String>('settings-export-notes')),
         findsOneWidget,

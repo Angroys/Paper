@@ -4,9 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/routes.dart';
@@ -15,8 +13,9 @@ import '../../core/core_providers.dart';
 import '../../core/env.dart';
 import '../../domain/domain.dart';
 import '../../l10n/app_localizations.dart';
+import '../../core/immersive.dart';
 import '../../theme/paper_tokens.dart';
-import '../../theme/theme_x.dart';
+import '../../ui/ui.dart';
 
 /// App version shown in the sign-in footer (`--dart-define=APP_VERSION`).
 const String kAppVersion = String.fromEnvironment(
@@ -37,13 +36,12 @@ const int kResendCooldownSeconds = 60;
 
 enum _Mode { form, browserWait, checkEmail }
 
-/// Status-region message. [error] = AuthErrorBanner; otherwise an info /
-/// offline banner.
+/// Alert-row message (sign-in.md §1.1 2e): [error] = `sm red-400`
+/// (`role=alert`), otherwise a `sm gray-300` notice.
 class _Banner {
-  const _Banner(this.text, {this.error = true, this.icon});
+  const _Banner(this.text, {this.error = true});
   final String text;
   final bool error;
-  final IconData? icon;
 }
 
 /// Sign-in (screens/sign-in.md, flows F2): Google via the system browser,
@@ -64,6 +62,7 @@ class SignInScreen extends ConsumerStatefulWidget {
   static const Key pasteLinkSubmitKey = Key('signIn.pasteLinkSubmit');
   static const Key bannerKey = Key('signIn.banner');
   static const Key closeKey = Key('signIn.close');
+  static const Key modeToggleKey = Key('signIn.modeToggle');
 
   @override
   ConsumerState<SignInScreen> createState() => _SignInScreenState();
@@ -103,9 +102,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     _emailFocus.addListener(() {
       if (!_emailFocus.hasFocus) _validateEmailOnBlur();
     });
-    if (widget.sessionExpired) {
-      _banner = const _Banner('');
-    }
     // Sign-in is optional and pushed on top of where the user was: once
     // signed in (form, Google return or magic link), go back there.
     ref.listenManual<AsyncValue<AuthState>>(authStateProvider, (prev, next) {
@@ -298,9 +294,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   // ----------------------------------------------------------------- Email
 
-  bool get _canSubmit =>
-      !_busy && _email.text.trim().isNotEmpty && _password.text.isNotEmpty;
-
   Future<void> _submit() async {
     if (!_validEmail(_email.text)) {
       setState(() => _emailError = _l10n.authEmailInvalid);
@@ -351,11 +344,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     final ok = await _run(() => repo.sendPasswordReset(email));
     if (ok && mounted) {
       setState(
-        () => _banner = _Banner(
-          _l10n.authResetSent(email),
-          error: false,
-          icon: Symbols.mail_rounded,
-        ),
+        () => _banner = _Banner(_l10n.authResetSent(email), error: false),
       );
     }
   }
@@ -386,522 +375,425 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   // ----------------------------------------------------------------- Build
 
+  TextStyle? _sm(Color color) =>
+      Theme.of(context).textTheme.bodyMedium?.copyWith(color: color);
+
+  TextStyle? _xs(Color color) =>
+      Theme.of(context).textTheme.bodySmall?.copyWith(color: color);
+
   @override
   Widget build(BuildContext context) {
     final l10n = _l10n;
-    final c = context.paper;
     // Unconfigured builds get an auth repository that is always
     // notConfigured (lib/auth/auth_providers.dart).
     final configured =
         ref.watch(authRepositoryProvider).currentState.status !=
         AuthStatus.notConfigured;
     final online = ref.watch(isOnlineProvider).value ?? true;
-    final disabled = !configured || !online || _busy;
+    final bp = WebBreakpoint.of(context);
+    final pad = MediaQuery.viewPaddingOf(context);
+    final vertical = bp.isSmUp ? PaperSpacing.tw24 : PaperSpacing.tw16;
 
-    // Status region (live): not configured > offline > error / info.
-    _Banner? banner;
+    final Widget body;
     if (!configured) {
-      banner = _Banner(
-        l10n.authNotConfigured,
-        error: false,
-        icon: Symbols.cloud_off_rounded,
-      );
+      body = _PlaceholderCard(title: l10n.authNotConfigured);
     } else if (!online) {
-      banner = _Banner(
-        '${l10n.authOfflineTitle}. ${l10n.authOfflineBody}',
-        error: false,
-        icon: Symbols.cloud_off_rounded,
+      body = _PlaceholderCard(
+        title: l10n.authOfflineTitle,
+        body: l10n.authOfflineBody,
+        action: PaperButton.secondary(
+          label: l10n.authRetry,
+          focusGap: PaperWeb.gray900,
+          onPressed: () => ref.invalidate(isOnlineProvider),
+        ),
       );
-    } else if (_banner != null) {
-      banner = _banner!.text.isEmpty
-          ? _Banner(l10n.authSessionExpired)
-          : _banner;
+    } else {
+      body = switch (_mode) {
+        _Mode.form => _buildForm(context, bp),
+        _Mode.browserWait => _buildWait(context),
+        _Mode.checkEmail => _buildCheckEmail(context),
+      };
     }
 
-    final Widget stateBody = switch (_mode) {
-      _Mode.form => _buildForm(context, disabled: disabled),
-      _Mode.browserWait => _buildWait(context),
-      _Mode.checkEmail => _buildCheckEmail(context),
-    };
-
-    final form = Column(
-      mainAxisSize: MainAxisSize.min,
+    final column = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Row(
-          children: <Widget>[
-            SvgPicture.asset(
-              'assets/brand/splash/splash-logo.svg',
-              width: 32,
-              height: 32,
-              semanticsLabel: l10n.a11yAppLogo,
-            ),
-            const SizedBox(width: PaperSpacing.sm),
-            Text(
-              l10n.appName,
-              style: Theme.of(context).textTheme.titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-        const SizedBox(height: PaperSpacing.xl),
         Semantics(
           header: true,
           child: Text(
-            l10n.signInScreenHeading,
-            style: Theme.of(context).textTheme.headlineLarge,
+            _signUp ? l10n.signUpSubmit : l10n.signInSubmit,
+            style: PaperTypography.pageTitle(PaperColors.dark),
           ),
         ),
-        const SizedBox(height: PaperSpacing.xs),
-        Text(
-          l10n.signInTagline,
-          style: Theme.of(context).textTheme.bodyMedium
-              ?.copyWith(color: c.textSecondary),
-        ),
-        const SizedBox(height: PaperSpacing.xl),
-        AnimatedSwitcher(
-          duration: PaperMotion.fade(context, PaperMotion.fast),
-          child: banner == null
-              ? const SizedBox.shrink()
-              : Padding(
-                  key: ValueKey<String>(banner.text),
-                  padding: const EdgeInsets.only(bottom: PaperSpacing.lg),
-                  child: _StatusBanner(banner: banner),
-                ),
-        ),
-        AnimatedSwitcher(
-          duration: PaperMotion.fade(context, PaperMotion.base),
-          switchInCurve: PaperMotion.standard,
-          switchOutCurve: PaperMotion.standard,
-          layoutBuilder: (current, previous) => Stack(
-            alignment: Alignment.topCenter,
-            children: <Widget>[...previous, ?current],
-          ),
-          child: KeyedSubtree(key: ValueKey<_Mode>(_mode), child: stateBody),
-        ),
-        const SizedBox(height: PaperSpacing.xl),
-        _Footer(),
+        if (widget.sessionExpired) ...<Widget>[
+          const SizedBox(height: PaperSpacing.tw2),
+          Text(l10n.authSessionExpired, style: _sm(PaperWeb.gray400)),
+        ],
+        const SizedBox(height: PaperSpacing.tw8),
+        body,
+        const SizedBox(height: PaperSpacing.tw6),
+        _LegalFooter(),
       ],
     );
 
     return Scaffold(
-      body: SafeArea(
-        child: Stack(
-          children: <Widget>[
-            Positioned.fill(child: _layout(form)),
-            // Sign-in is optional: it can always be dismissed (also with
-            // the system back gesture).
-            Positioned(
-              top: PaperSpacing.sm,
-              left: PaperSpacing.sm,
-              child: IconButton(
-                key: SignInScreen.closeKey,
-                tooltip: l10n.signInCloseTooltip,
-                onPressed: _close,
-                icon: const Icon(Symbols.close_rounded),
+      backgroundColor: PaperWeb.gray950,
+      resizeToAvoidBottomInset: true,
+      body: Stack(
+        children: <Widget>[
+          Positioned.fill(
+            child: SingleChildScrollView(
+              padding: SafeViewPadding.resolve(
+                context,
+                base: EdgeInsets.fromLTRB(
+                  PaperSpacing.tw6,
+                  vertical,
+                  PaperSpacing.tw6,
+                  vertical,
+                ),
+              ),
+              child: Center(
+                child: ConstrainedBox(
+                  // `max-w-sm` 384 box with `px-6`: a 336 column.
+                  constraints: const BoxConstraints(maxWidth: 336),
+                  child: AutofillGroup(child: column),
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+          // Sign-in is optional: it can always be dismissed (also with the
+          // system back gesture).
+          Positioned(
+            top: PaperSpacing.tw4 + pad.top,
+            left: PaperSpacing.tw4 + pad.left,
+            child: PaperIconButton(
+              key: SignInScreen.closeKey,
+              tooltip: l10n.signInCloseTooltip,
+              onPressed: _close,
+              icon: const PaperIcon(PaperIcons.readerBack, size: 20),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _layout(Widget form) => LayoutBuilder(
-    builder: (context, constraints) {
-      final wc = PaperWindowClass.of(constraints.maxWidth);
-      final column = Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(PaperSpacing.xl),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: AutofillGroup(child: form),
-          ),
-        ),
-      );
-      final showBrand =
-          wc.index >= PaperWindowClass.expanded.index &&
-          constraints.maxHeight >= 560;
-      if (!showBrand) return column;
-      return Padding(
-        padding: EdgeInsets.all(PaperSpacing.margin(wc)),
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              flex: wc == PaperWindowClass.extraLarge ? 6 : 5,
-              child: const _BrandPanel(),
-            ),
-            SizedBox(width: PaperSpacing.gutter(wc)),
-            Expanded(
-              flex: wc == PaperWindowClass.extraLarge ? 6 : 7,
-              child: column,
-            ),
-          ],
-        ),
-      );
-    },
-  );
+  /// The alert row (2e): field errors, then auth errors / notices.
+  Widget? _alertRow() {
+    final field = _emailError ?? _passwordError;
+    final banner = field != null ? _Banner(field) : _banner;
+    if (banner == null) return null;
+    return Semantics(
+      key: SignInScreen.bannerKey,
+      liveRegion: true,
+      child: Text(
+        banner.text,
+        style: _sm(banner.error ? PaperWeb.red400 : PaperWeb.gray300),
+      ),
+    );
+  }
 
-  Widget _buildForm(BuildContext context, {required bool disabled}) {
+  Widget _buildForm(BuildContext context, WebBreakpoint bp) {
     final l10n = _l10n;
-    final c = context.paper;
     final submitting = _busy;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        SizedBox(
-          height: 48,
-          child: OutlinedButton.icon(
-            key: SignInScreen.googleButtonKey,
-            onPressed: disabled ? null : () => unawaited(_google()),
-            style: OutlinedButton.styleFrom(
-              backgroundColor: c.surface,
-              foregroundColor: c.textPrimary,
-              side: BorderSide(color: c.outline),
-            ),
-            icon: SvgPicture.asset(
-              'assets/brand/icons/google_g.svg',
-              width: 20,
-              height: 20,
-              excludeFromSemantics: true,
-            ),
-            label: Text(l10n.signInGoogle),
-          ),
+    final fieldSize = bp.isSmUp
+        ? PaperTextFieldSize.md
+        : PaperTextFieldSize.mdBase;
+    final alert = _alertRow();
+    final children = <Widget>[
+      PaperTextField(
+        fieldKey: SignInScreen.emailFieldKey,
+        controller: _email,
+        focusNode: _emailFocus,
+        label: l10n.signInEmailLabel,
+        size: fieldSize,
+        autofocus: _desktop,
+        keyboardType: TextInputType.emailAddress,
+        autofillHints: const <String>[AutofillHints.email],
+        textInputAction: TextInputAction.next,
+        autocorrect: false,
+        onChanged: (_) {
+          if (_emailError != null) setState(() => _emailError = null);
+        },
+        onSubmitted: (_) => _passwordFocus.requestFocus(),
+      ),
+      const SizedBox(height: PaperSpacing.tw5),
+      PaperTextField(
+        fieldKey: SignInScreen.passwordFieldKey,
+        controller: _password,
+        focusNode: _passwordFocus,
+        label: l10n.signInPasswordLabel,
+        size: fieldSize,
+        obscureText: !_showPassword,
+        autocorrect: false,
+        autofillHints: <String>[
+          _signUp ? AutofillHints.newPassword : AutofillHints.password,
+        ],
+        onChanged: (_) {
+          if (_passwordError != null) setState(() => _passwordError = null);
+        },
+        onSubmitted: (_) {
+          if (!submitting) unawaited(_submit());
+        },
+        suffix: PaperIconButton(
+          size: PaperIconButtonSize.s24,
+          tooltip: _showPassword
+              ? l10n.authHidePassword
+              : l10n.authShowPassword,
+          focusGap: PaperWeb.gray900,
+          onPressed: () => setState(() => _showPassword = !_showPassword),
+          icon: PaperIcon(_showPassword ? PaperIcons.eyeOff : PaperIcons.eye),
         ),
-        const SizedBox(height: PaperSpacing.lg),
-        Row(
-          children: <Widget>[
-            const Expanded(child: Divider()),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: PaperSpacing.md),
-              child: Text(
-                l10n.signInDividerOr,
-                style: Theme.of(context).textTheme.labelMedium
-                    ?.copyWith(color: c.textMuted),
-              ),
-            ),
-            const Expanded(child: Divider()),
-          ],
-        ),
-        const SizedBox(height: PaperSpacing.lg),
-        _Label(l10n.signInEmailLabel),
-        TextField(
-          key: SignInScreen.emailFieldKey,
-          controller: _email,
-          focusNode: _emailFocus,
-          readOnly: submitting,
-          keyboardType: TextInputType.emailAddress,
-          autofillHints: const <String>[AutofillHints.email],
-          textInputAction: TextInputAction.next,
-          onChanged: (_) => setState(() {
-            if (_emailError != null) _emailError = null;
-          }),
-          onSubmitted: (_) => _passwordFocus.requestFocus(),
-          decoration: InputDecoration(errorText: _emailError),
-        ),
-        const SizedBox(height: PaperSpacing.md),
-        _Label(l10n.signInPasswordLabel),
-        TextField(
-          key: SignInScreen.passwordFieldKey,
-          controller: _password,
-          focusNode: _passwordFocus,
-          readOnly: submitting,
-          obscureText: !_showPassword,
-          autofillHints: <String>[
-            _signUp ? AutofillHints.newPassword : AutofillHints.password,
-          ],
-          onChanged: (_) => setState(() {
-            if (_passwordError != null) _passwordError = null;
-          }),
-          onSubmitted: (_) {
-            if (_canSubmit && !disabled) unawaited(_submit());
-          },
-          decoration: InputDecoration(
-            errorText: _passwordError,
-            suffixIcon: IconButton(
-              tooltip: _showPassword
-                  ? l10n.authHidePassword
-                  : l10n.authShowPassword,
-              onPressed: () => setState(() => _showPassword = !_showPassword),
-              icon: Icon(
-                _showPassword
-                    ? Symbols.visibility_off_rounded
-                    : Symbols.visibility_rounded,
-                size: 20,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: PaperSpacing.lg),
-        SizedBox(
-          height: 48,
-          child: FilledButton(
-            key: SignInScreen.submitKey,
-            onPressed: disabled || !_canSubmit
-                ? null
-                : () => unawaited(_submit()),
-            child: submitting
-                ? Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                      const SizedBox(width: PaperSpacing.sm),
-                      Text(l10n.authSigningIn),
-                    ],
-                  )
-                : Text(_signUp ? l10n.signUpSubmit : l10n.signInSubmit),
-          ),
-        ),
-        const SizedBox(height: PaperSpacing.sm),
+      ),
+      if (alert != null) ...<Widget>[
+        const SizedBox(height: PaperSpacing.tw5),
+        alert,
+      ],
+      const SizedBox(height: PaperSpacing.tw5),
+      PaperButton.primary(
+        key: SignInScreen.submitKey,
+        expand: true,
+        label: submitting
+            ? l10n.authSigningIn
+            : (_signUp ? l10n.signUpSubmit : l10n.signInSubmit),
+        onPressed: submitting ? null : () => unawaited(_submit()),
+      ),
+      if (!_signUp) ...<Widget>[
+        const SizedBox(height: PaperSpacing.tw5),
         Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          runSpacing: PaperSpacing.tw2,
           children: <Widget>[
-            if (!_signUp)
-              TextButton(
-                onPressed: disabled ? null : () => unawaited(_forgotPassword()),
-                child: Text(l10n.signInForgotPassword),
-              ),
-            TextButton(
-              onPressed: disabled ? null : () => unawaited(_magicLink()),
-              child: Text(l10n.signInMagicLink),
+            PaperLink.muted(
+              label: l10n.signInForgotPassword,
+              onPressed: submitting ? null : () => unawaited(_forgotPassword()),
+            ),
+            PaperLink.muted(
+              label: l10n.signInMagicLink,
+              onPressed: submitting ? null : () => unawaited(_magicLink()),
             ),
           ],
         ),
-        Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: TextButton(
-            onPressed: _busy
+      ],
+      const SizedBox(height: PaperSpacing.tw4),
+      PaperButton.secondary(
+        key: SignInScreen.googleButtonKey,
+        expand: true,
+        label: l10n.signInGoogle,
+        onPressed: submitting ? null : () => unawaited(_google()),
+      ),
+      const SizedBox(height: PaperSpacing.tw6),
+      Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: <Widget>[
+          Text(
+            '${_signUp ? l10n.signInHaveAccountLead : l10n.signInCreateAccountLead} ',
+            style: _sm(PaperWeb.gray400),
+          ),
+          PaperLink.strong(
+            key: SignInScreen.modeToggleKey,
+            label: _signUp
+                ? l10n.signInHaveAccountAction
+                : l10n.signInCreateAccountAction,
+            onPressed: submitting
                 ? null
                 : () => setState(() {
                     _signUp = !_signUp;
                     _passwordError = null;
+                    _banner = null;
                   }),
-            child: Text(
-              _signUp
-                  ? l10n.signInHaveAccountPrompt
-                  : l10n.signInCreateAccountPrompt,
-            ),
           ),
-        ),
-      ],
+        ],
+      ),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: children,
     );
   }
 
   Widget _buildWait(BuildContext context) {
     final l10n = _l10n;
-    final c = context.paper;
-    final t = Theme.of(context).textTheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Center(
-          child: Semantics(
-            label: l10n.authBrowserWaitTitle,
-            child: const SizedBox(
-              width: 32,
-              height: 32,
-              child: CircularProgressIndicator(strokeWidth: 3),
-            ),
-          ),
-        ),
-        const SizedBox(height: PaperSpacing.lg),
-        Text(
-          l10n.authBrowserWaitTitle,
-          style: t.titleLarge,
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: PaperSpacing.sm),
-        Text(
-          l10n.authBrowserWaitBody,
-          style: t.bodyMedium?.copyWith(color: c.textSecondary),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: PaperSpacing.lg),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: PaperSpacing.sm,
-          children: <Widget>[
-            OutlinedButton(
-              onPressed: _busy ? null : () => unawaited(_google()),
-              child: Text(l10n.authReopenBrowser),
-            ),
-            TextButton(onPressed: _cancelWait, child: Text(l10n.authCancel)),
-          ],
-        ),
-        if (_returnHint && !_deepLinkMissing) ...<Widget>[
-          const SizedBox(height: PaperSpacing.md),
-          Text(
-            l10n.authBrowserReturnHint,
-            textAlign: TextAlign.center,
-            style: t.bodySmall?.copyWith(color: c.textSecondary),
-          ),
-        ],
-        if (_deepLinkMissing && _desktop) ...<Widget>[
-          const SizedBox(height: PaperSpacing.lg),
-          Text(
-            l10n.authDeepLinkMissingHint,
-            style: t.bodySmall?.copyWith(color: c.textSecondary),
-          ),
-          const SizedBox(height: PaperSpacing.md),
-          _Label(l10n.authPasteLinkLabel),
+    // Desktop only: the browser may be unable to hand the link back.
+    final missing = _deepLinkMissing && _desktop;
+    return PaperCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
+              const PaperSpinner(),
+              const SizedBox(width: PaperSpacing.tw2),
               Expanded(
-                child: TextField(
-                  key: SignInScreen.pasteLinkFieldKey,
-                  controller: _pasteLink,
-                  keyboardType: TextInputType.url,
-                  onSubmitted: (_) => unawaited(_submitPastedLink()),
-                  decoration: InputDecoration(
-                    hintText: '${Env.authCallbackUrl}?code=…',
-                    errorText: _pasteError,
-                    errorMaxLines: 3,
+                child: Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    l10n.authBrowserWaitTitle,
+                    style: PaperTypography.cardTitle(PaperColors.dark),
                   ),
                 ),
               ),
-              const SizedBox(width: PaperSpacing.sm),
-              FilledButton(
-                key: SignInScreen.pasteLinkSubmitKey,
-                onPressed: () => unawaited(_submitPastedLink()),
-                child: Text(l10n.commonContinue),
+            ],
+          ),
+          const SizedBox(height: PaperSpacing.tw2),
+          Text(l10n.authBrowserWaitBody, style: _sm(PaperWeb.gray400)),
+          const SizedBox(height: PaperSpacing.tw4),
+          Wrap(
+            spacing: PaperSpacing.tw3,
+            runSpacing: PaperSpacing.tw2,
+            children: <Widget>[
+              PaperButton.secondary(
+                label: l10n.authReopenBrowser,
+                focusGap: PaperWeb.gray900,
+                onPressed: _busy ? null : () => unawaited(_google()),
+              ),
+              PaperButton.ghost(
+                label: l10n.authCancel,
+                focusGap: PaperWeb.gray900,
+                onPressed: _cancelWait,
               ),
             ],
           ),
-          const SizedBox(height: PaperSpacing.sm),
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: TextButton(
-              onPressed: _cancelWait,
-              child: Text(l10n.authUseEmailInstead),
+          if (_returnHint || missing) ...<Widget>[
+            const SizedBox(height: PaperSpacing.tw3),
+            Text(
+              missing
+                  ? l10n.authDeepLinkMissingHint
+                  : l10n.authBrowserReturnHint,
+              style: _xs(PaperWeb.gray400),
             ),
-          ),
+            const SizedBox(height: PaperSpacing.tw1),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: PaperLink(
+                label: l10n.authUseEmailInstead,
+                fontSize: 12,
+                onPressed: _cancelWait,
+              ),
+            ),
+          ],
+          if (missing) ...<Widget>[
+            const SizedBox(height: PaperSpacing.tw4),
+            PaperTextField(
+              fieldKey: SignInScreen.pasteLinkFieldKey,
+              controller: _pasteLink,
+              label: l10n.authPasteLinkLabel,
+              hintText: '${Env.authCallbackUrl}?code=…',
+              keyboardType: TextInputType.url,
+              autocorrect: false,
+              onSubmitted: (_) => unawaited(_submitPastedLink()),
+            ),
+            if (_pasteError != null) ...<Widget>[
+              const SizedBox(height: PaperSpacing.tw1_5),
+              Semantics(
+                liveRegion: true,
+                child: Text(_pasteError!, style: _xs(PaperWeb.red400)),
+              ),
+            ],
+            const SizedBox(height: PaperSpacing.tw3),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: PaperButton.primary(
+                key: SignInScreen.pasteLinkSubmitKey,
+                label: l10n.commonContinue,
+                focusGap: PaperWeb.gray900,
+                onPressed: () => unawaited(_submitPastedLink()),
+              ),
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
   Widget _buildCheckEmail(BuildContext context) {
     final l10n = _l10n;
-    final c = context.paper;
-    final t = Theme.of(context).textTheme;
     final email = _email.text.trim();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Center(
-          child: Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: c.primarySoft,
-              shape: BoxShape.circle,
+    return PaperCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Semantics(
+            liveRegion: true,
+            child: Text(
+              _confirmEmail
+                  ? l10n.authConfirmEmailTitle
+                  : l10n.authCheckEmailTitle,
+              style: PaperTypography.cardTitle(PaperColors.dark),
             ),
-            child: Icon(Symbols.mail_rounded, size: 32, color: c.primary),
           ),
-        ),
-        const SizedBox(height: PaperSpacing.lg),
-        Text(
-          _confirmEmail ? l10n.authConfirmEmailTitle : l10n.authCheckEmailTitle,
-          style: t.titleLarge,
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: PaperSpacing.sm),
-        Text(
-          l10n.authCheckEmailBody(email),
-          style: t.bodyMedium?.copyWith(color: c.textSecondary),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: PaperSpacing.lg),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: PaperSpacing.sm,
-          children: <Widget>[
-            OutlinedButton(
-              onPressed: _cooldown > 0 || _busy
-                  ? null
-                  : () => unawaited(_resend()),
-              child: Text(
-                _cooldown > 0
+          const SizedBox(height: PaperSpacing.tw2),
+          Text(l10n.authCheckEmailBody(email), style: _sm(PaperWeb.gray400)),
+          if (_banner != null) ...<Widget>[
+            const SizedBox(height: PaperSpacing.tw3),
+            ?_alertRow(),
+          ],
+          const SizedBox(height: PaperSpacing.tw4),
+          Wrap(
+            spacing: PaperSpacing.tw3,
+            runSpacing: PaperSpacing.tw2,
+            children: <Widget>[
+              PaperButton.secondary(
+                label: _cooldown > 0
                     ? l10n.authResendCooldown(_cooldown)
                     : l10n.authResend,
+                focusGap: PaperWeb.gray900,
+                onPressed: _cooldown > 0 || _busy
+                    ? null
+                    : () => unawaited(_resend()),
               ),
-            ),
-            TextButton(
-              onPressed: () {
-                _cooldownTimer?.cancel();
-                setState(() {
-                  _mode = _Mode.form;
-                  _cooldown = 0;
-                });
-              },
-              child: Text(l10n.authUseAnotherEmail),
-            ),
-          ],
-        ),
-      ],
+              PaperButton.ghost(
+                label: l10n.authUseAnotherEmail,
+                focusGap: PaperWeb.gray900,
+                onPressed: () {
+                  _cooldownTimer?.cancel();
+                  setState(() {
+                    _mode = _Mode.form;
+                    _cooldown = 0;
+                    _banner = null;
+                  });
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _Label extends StatelessWidget {
-  const _Label(this.text);
+/// `PlaceholderCard` (components.md §17): offline / not configured.
+class _PlaceholderCard extends StatelessWidget {
+  const _PlaceholderCard({required this.title, this.body, this.action});
 
-  final String text;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: PaperSpacing.sm),
-    child: Text(
-      text,
-      style: Theme.of(context).textTheme.labelLarge
-          ?.copyWith(color: context.paper.textPrimary),
-    ),
-  );
-}
-
-/// `AuthErrorBanner` (error) / `OfflineBanner` (info): live region.
-class _StatusBanner extends StatelessWidget {
-  const _StatusBanner({required this.banner});
-
-  final _Banner banner;
+  final String title;
+  final String? body;
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
-    final c = context.paper;
-    final error = banner.error;
+    final t = Theme.of(context).textTheme;
     return Semantics(
       key: SignInScreen.bannerKey,
       liveRegion: true,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: PaperSpacing.md,
-          vertical: PaperSpacing.md,
-        ),
-        decoration: BoxDecoration(
-          color: error ? c.errorSurface : c.surfaceVariant,
-          border: Border.all(color: error ? c.errorBorder : c.border),
-          borderRadius: PaperRadii.borderLg,
-        ),
-        child: Row(
+      child: PaperCard(
+        padding: const EdgeInsets.all(PaperSpacing.tw6),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Icon(
-              banner.icon ?? Symbols.error_rounded,
-              size: PaperIconSize.md,
-              color: error ? c.error : c.textSecondary,
-            ),
-            const SizedBox(width: PaperSpacing.sm),
-            Expanded(
-              child: Text(
-                banner.text,
-                style: Theme.of(context).textTheme.bodyMedium
-                    ?.copyWith(color: error ? c.onErrorSurface : c.textPrimary),
+            Text(title, style: t.labelLarge?.copyWith(color: PaperWeb.gray100)),
+            if (body != null) ...<Widget>[
+              const SizedBox(height: PaperSpacing.tw1),
+              Text(
+                body!,
+                style: t.bodyMedium?.copyWith(color: PaperWeb.gray300),
               ),
-            ),
+            ],
+            if (action != null) ...<Widget>[
+              const SizedBox(height: PaperSpacing.tw4),
+              action!,
+            ],
           ],
         ),
       ),
@@ -909,97 +801,36 @@ class _StatusBanner extends StatelessWidget {
   }
 }
 
-class _BrandPanel extends StatelessWidget {
-  const _BrandPanel();
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.paper;
-    final l10n = AppLocalizations.of(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: c.surface,
-        border: Border.all(color: c.border),
-        borderRadius: PaperRadii.borderXl,
-      ),
-      padding: const EdgeInsets.all(PaperSpacing.xxl),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 280),
-          child: AspectRatio(
-            aspectRatio: 3 / 4,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: c.pdfPage,
-                borderRadius: PaperRadii.borderSm,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(PaperSpacing.xl),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    for (var i = 0; i < 9; i++) ...<Widget>[
-                      FractionallySizedBox(
-                        widthFactor: i == 8 ? 0.5 : 1,
-                        child: Container(
-                          height: 8,
-                          color: i == 3
-                              ? PaperHighlightColor.blue.wash.withValues(
-                                  alpha: 0.5,
-                                )
-                              : const Color(0xFFE5E5E5),
-                        ),
-                      ),
-                      const SizedBox(height: PaperSpacing.md),
-                    ],
-                    const Spacer(),
-                    Semantics(
-                      excludeSemantics: true,
-                      child: Text(
-                        l10n.appName,
-                        style: const TextStyle(
-                          color: Color(0xFF737373),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Footer extends StatelessWidget {
+/// App-only legal footer: "Terms · Privacy Policy", `xs gray-400`.
+class _LegalFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final c = context.paper;
-    final small = Theme.of(context).textTheme.bodySmall;
     Future<void> open(String path) => launchUrl(
       Uri.parse('${Env.defaultPaperApiBaseUrl}$path'),
       mode: LaunchMode.externalApplication,
     );
-    return Wrap(
-      crossAxisAlignment: WrapCrossAlignment.center,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
-        TextButton(
+        PaperLink.muted(
+          label: l10n.signInTerms,
+          fontSize: 12,
           onPressed: () => unawaited(open('/terms')),
-          child: Text(l10n.signInTerms, style: small),
         ),
-        Text('·', style: small?.copyWith(color: c.textMuted)),
-        TextButton(
+        const SizedBox(width: PaperSpacing.tw2),
+        ExcludeSemantics(
+          child: Text(
+            '·',
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: PaperWeb.gray400),
+          ),
+        ),
+        const SizedBox(width: PaperSpacing.tw2),
+        PaperLink.muted(
+          label: l10n.signInPrivacy,
+          fontSize: 12,
           onPressed: () => unawaited(open('/privacy')),
-          child: Text(l10n.signInPrivacy, style: small),
-        ),
-        const SizedBox(width: PaperSpacing.md),
-        Text(
-          l10n.aboutVersion(kAppVersion),
-          style: small?.copyWith(color: c.textMuted),
         ),
       ],
     );

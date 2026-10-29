@@ -227,6 +227,17 @@ class ExplanationStackController extends Notifier<ExplanationStackState> {
 
   Future<void> retry(String id) => _run(id);
 
+  /// The card's `×` ("Close explanation"): removes it from the stack.
+  void dismiss(String id) {
+    if (_entry(id) == null) return;
+    state = state.copyWith(
+      entries: <ExplanationEntry>[
+        for (final e in state.entries)
+          if (e.id != id) e,
+      ],
+    );
+  }
+
   /// AiOfflineState "unavailable" Retry: clears the block and re-runs every
   /// card that hit it.
   Future<void> retryUnavailable() async {

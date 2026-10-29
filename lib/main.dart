@@ -14,6 +14,7 @@ import 'core/build_flags.dart';
 import 'core/core_providers.dart';
 import 'core/desktop_window.dart';
 import 'core/env.dart';
+import 'core/immersive.dart';
 import 'core/licenses.dart';
 import 'core/supabase_bootstrap.dart';
 import 'data/data_providers.dart';
@@ -28,6 +29,10 @@ Future<void> main(List<String> args) async {
   final binding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: binding);
   final splashCap = Timer(_splashCap, FlutterNativeSplash.remove);
+
+  // Android sticky-immersive full screen (web-parity README §4); no-op
+  // elsewhere. Re-applies on resume, bar reveal and IME close.
+  unawaited(ImmersiveMode.instance.install());
 
   registerFontLicenses();
   final env = Env.fromEnvironment();

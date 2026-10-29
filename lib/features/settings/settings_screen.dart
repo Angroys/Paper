@@ -1,27 +1,25 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/app_settings.dart';
-import '../../app/app_shell.dart';
 import '../../auth/auth_providers.dart';
 import '../../core/build_flags.dart';
-import '../../core/core_providers.dart';
 import '../../core/env.dart';
 import '../../data/data_providers.dart';
 import '../../domain/domain.dart';
 import '../../l10n/app_localizations.dart';
 import '../../sync/sync_providers.dart';
 import '../../theme/paper_tokens.dart';
-import '../../theme/theme_x.dart';
+import '../../ui/ui.dart';
 import '../auth/sign_in_prompt.dart';
 import '../auth/sign_in_screen.dart' show kAppVersion;
-import '../sync/sync_badge.dart';
+import '../sync/sync_badge.dart' show syncLongText;
 import '../sync/sync_sheet.dart';
 import 'sign_out_dialog.dart';
 
@@ -50,20 +48,72 @@ final downloadedPapersProvider = StreamProvider.autoDispose<List<Paper>>(
       ),
 );
 
-/// Settings (screens/settings.md): single grouped list on compact / medium,
-/// master–detail on expanded+. Every setting applies instantly and is
-/// device-local.
-class SettingsScreen extends ConsumerStatefulWidget {
+/// Settings (design/web-parity/screens/settings.md): one centred 720
+/// column at every width, "Settings" title, then each section as a web
+/// `.card p-5` with `PaperListRow` rows. Every setting applies instantly
+/// and is device-local.
+class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
+  static Key sectionKey(SettingsSection s) =>
+      ValueKey<String>('settings-section-${s.name}');
+
   @override
-  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final sections = settingsSectionsFor(
+      offlineOnly: ref.watch(offlineOnlyProvider),
+    );
+    final pad = MediaQuery.viewPaddingOf(context);
+    final top = WebBreakpoint.of(context).isSmUp
+        ? PaperSpacing.tw16
+        : PaperSpacing.tw12;
+    return ColoredBox(
+      color: PaperWeb.gray950,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          // `mx-auto max-w-3xl px-6`: a 768 box (padding included).
+          final side = (width - math.min(width, 768)) / 2 + PaperSpacing.tw6;
+          // A handful of cards: built eagerly in one scroll region.
+          return SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              side + pad.left,
+              top,
+              side + pad.right,
+              // `padding`: 0 under the IME, which the shell Scaffold
+              // already resizes for.
+              top + MediaQuery.paddingOf(context).bottom,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Semantics(
+                  header: true,
+                  child: Text(
+                    l10n.settingsTitle,
+                    style: PaperTypography.pageTitle(PaperColors.dark),
+                  ),
+                ),
+                for (var i = 0; i < sections.length; i++) ...<Widget>[
+                  SizedBox(
+                    height: i == 0 ? PaperSpacing.tw8 : PaperSpacing.tw6,
+                  ),
+                  _SectionCard(
+                    key: sectionKey(sections[i]),
+                    title: _label(l10n, sections[i]),
+                    child: _section(sections[i]),
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
 
-class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  SettingsSection? _picked;
-
-  String _label(AppLocalizations l10n, SettingsSection s) => switch (s) {
+  static String _label(AppLocalizations l10n, SettingsSection s) => switch (s) {
     SettingsSection.account => l10n.settingsSectionAccount,
     SettingsSection.appearance => l10n.settingsSectionAppearance,
     SettingsSection.reader => l10n.settingsSectionReader,
@@ -72,16 +122,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     SettingsSection.about => l10n.settingsSectionAbout,
   };
 
-  IconData _icon(SettingsSection s) => switch (s) {
-    SettingsSection.account => Symbols.person_rounded,
-    SettingsSection.appearance => Symbols.contrast_rounded,
-    SettingsSection.reader => Symbols.menu_book_rounded,
-    SettingsSection.storage => Symbols.download_rounded,
-    SettingsSection.sync => Symbols.sync_rounded,
-    SettingsSection.about => Symbols.info_rounded,
-  };
-
-  Widget _section(SettingsSection s) => switch (s) {
+  static Widget _section(SettingsSection s) => switch (s) {
     SettingsSection.account => const _AccountSection(),
     SettingsSection.appearance => const _AppearanceSection(),
     SettingsSection.reader => const _ReaderSection(),
@@ -89,175 +130,109 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     SettingsSection.sync => const _SyncSection(),
     SettingsSection.about => const _AboutSection(),
   };
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final c = context.paper;
-    final sections = settingsSectionsFor(
-      offlineOnly: ref.watch(offlineOnlyProvider),
-    );
-    final picked = _picked;
-    final selected = picked != null && sections.contains(picked)
-        ? picked
-        : sections.first;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final wc = PaperWindowClass.of(constraints.maxWidth);
-        final margin = PaperSpacing.margin(wc);
-        final title = Padding(
-          padding: EdgeInsets.fromLTRB(margin, PaperSpacing.xl, margin, 0),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: Semantics(
-                  header: true,
-                  child: Text(
-                    l10n.settingsTitle,
-                    style: Theme.of(context).textTheme.headlineLarge,
-                  ),
-                ),
-              ),
-              const ShellSyncBadge(),
-            ],
-          ),
-        );
-
-        if (!wc.hasSplitView) {
-          return ListView(
-            padding: const EdgeInsets.only(bottom: PaperSpacing.xxl),
-            children: <Widget>[
-              title,
-              for (final s in sections)
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: margin),
-                  child: _SectionGroup(
-                    title: _label(l10n, s),
-                    child: _section(s),
-                  ),
-                ),
-            ],
-          );
-        }
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            title,
-            const SizedBox(height: PaperSpacing.lg),
-            Expanded(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  SizedBox(
-                    width: 280,
-                    child: ListView(
-                      padding: EdgeInsets.symmetric(horizontal: margin / 2),
-                      children: <Widget>[
-                        for (final s in sections)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 2),
-                            child: ListTile(
-                              key: ValueKey<String>('settings-nav-${s.name}'),
-                              dense: true,
-                              selected: s == selected,
-                              selectedTileColor: c.primarySoft,
-                              selectedColor: c.onPrimarySoft,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: PaperRadii.borderMd,
-                              ),
-                              leading: Icon(_icon(s), size: 20),
-                              title: Text(_label(l10n, s)),
-                              trailing: s == SettingsSection.sync
-                                  ? const SyncBadge()
-                                  : null,
-                              onTap: () => setState(() => _picked = s),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  VerticalDivider(width: 1, color: c.border),
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.topLeft,
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 720),
-                        child: ListView(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 40,
-                            vertical: PaperSpacing.sm,
-                          ),
-                          children: <Widget>[
-                            _SectionGroup(
-                              title: _label(l10n, selected),
-                              child: _section(selected),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
 }
 
-/// `SettingsSection`: overline + grouped card.
-class _SectionGroup extends StatelessWidget {
-  const _SectionGroup({required this.title, required this.child});
+/// A section: `PaperCard p-5`, `cardTitle` heading, content below.
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({super.key, required this.title, required this.child});
 
   final String title;
   final Widget child;
 
   @override
-  Widget build(BuildContext context) {
-    final c = context.paper;
-    return Padding(
-      padding: const EdgeInsets.only(top: PaperSpacing.xl),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Semantics(
-            header: true,
-            child: Text(
-              title.toUpperCase(),
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.44,
-                color: c.textMuted,
-              ),
-            ),
+  Widget build(BuildContext context) => PaperCard(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Semantics(
+          header: true,
+          child: Text(
+            title,
+            style: PaperTypography.cardTitle(PaperColors.dark),
           ),
-          const SizedBox(height: PaperSpacing.sm),
-          Material(
-            color: c.surface,
-            shape: RoundedRectangleBorder(
-              borderRadius: PaperRadii.borderLg,
-              side: BorderSide(color: c.border),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: child,
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+        child,
+      ],
+    ),
+  );
 }
+
+/// `PaperListRow` list at `mt-3`.
+class _Rows extends StatelessWidget {
+  const _Rows({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: PaperSpacing.tw3),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: children,
+    ),
+  );
+}
+
+/// Footer actions: `mt-4 flex flex-wrap items-center gap-3`.
+class _Footer extends StatelessWidget {
+  const _Footer({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: PaperSpacing.tw4),
+    child: Wrap(
+      spacing: PaperSpacing.tw3,
+      runSpacing: PaperSpacing.tw3,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: children,
+    ),
+  );
+}
+
+TextStyle? _sm(BuildContext context, Color color) =>
+    Theme.of(context).textTheme.bodyMedium?.copyWith(color: color);
+
+TextStyle? _xs(BuildContext context, Color color) =>
+    Theme.of(context).textTheme.bodySmall?.copyWith(color: color);
 
 Future<void> _openWeb(String path) => launchUrl(
   Uri.parse('${Env.defaultPaperApiBaseUrl}$path'),
   mode: LaunchMode.externalApplication,
 );
 
-void _snack(BuildContext context, String text) {
-  ScaffoldMessenger.maybeOf(context)
-    ?..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(text)));
+/// A row whose only content is a `PaperLink.accent` (Manage account,
+/// Terms, Privacy, Licenses, How syncing works).
+class _LinkRow extends StatelessWidget {
+  const _LinkRow({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.external = false,
+    this.last = false,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+  final bool external;
+  final bool last;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(vertical: PaperSpacing.tw3),
+    decoration: BoxDecoration(
+      border: last
+          ? null
+          : const Border(bottom: BorderSide(color: PaperWeb.gray800)),
+    ),
+    alignment: AlignmentDirectional.centerStart,
+    child: PaperLink(
+      label: label,
+      trailing: external ? '↗' : null,
+      onPressed: onPressed,
+    ),
+  );
 }
 
 class _AccountSection extends ConsumerWidget {
@@ -266,81 +241,185 @@ class _AccountSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final c = context.paper;
-    final user = currentUser(ref);
-    final name = user?.displayName ?? user?.email ?? '';
-    final initials = name.isEmpty ? '?' : name.characters.first.toUpperCase();
     // Guests: sign-in / create account lives here (sign-in is optional).
     if (ref.watch(isGuestProvider)) {
       return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          ListTile(
+          Padding(
             key: const ValueKey<String>('settings-guest'),
-            leading: CircleAvatar(
-              backgroundColor: c.surfaceVariant,
-              foregroundColor: c.textSecondary,
-              child: const Icon(Symbols.person_rounded, size: 20),
+            padding: const EdgeInsets.only(top: PaperSpacing.tw4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  l10n.guestAccountTitle,
+                  style: Theme.of(context).textTheme.labelLarge
+                      ?.copyWith(color: PaperWeb.gray100),
+                ),
+                const SizedBox(height: PaperSpacing.tw1),
+                Text(
+                  l10n.guestAccountBody,
+                  style: _sm(context, PaperWeb.gray400),
+                ),
+              ],
             ),
-            title: Text(l10n.guestAccountTitle),
-            subtitle: Text(l10n.guestAccountBody),
-            isThreeLine: true,
           ),
-          ListTile(
-            key: const ValueKey<String>('settings-sign-in'),
-            leading: Icon(Symbols.login_rounded, size: 20, color: c.primary),
-            title: Text(l10n.commonSignIn, style: TextStyle(color: c.primary)),
-            onTap: () => unawaited(openSignIn(context)),
+          const _Rows(children: <Widget>[_ExportNotesRow(last: true)]),
+          _Footer(
+            children: <Widget>[
+              PaperButton.primary(
+                key: const ValueKey<String>('settings-sign-in'),
+                label: l10n.commonSignIn,
+                focusGap: PaperWeb.gray900,
+                onPressed: () => unawaited(openSignIn(context)),
+              ),
+            ],
           ),
-          const _ExportNotesTile(),
         ],
       );
     }
+    final user = currentUser(ref);
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         if (user != null)
-          ListTile(
-            leading: CircleAvatar(
-              backgroundColor: c.primarySoft,
-              foregroundColor: c.onPrimarySoft,
-              child: Text(initials),
-            ),
-            title: Text(user.displayName ?? l10n.settingsDisplayName),
-            subtitle: Text(user.email ?? ''),
+          Padding(
+            padding: const EdgeInsets.only(top: PaperSpacing.tw4),
+            child: _Identity(user: user),
           ),
-        ListTile(
-          title: Text(l10n.settingsManageAccount),
-          trailing: const Icon(Symbols.open_in_new_rounded, size: 18),
-          onTap: () => unawaited(_openWeb('/settings')),
+        _Rows(
+          children: <Widget>[
+            _LinkRow(
+              label: l10n.settingsManageAccount,
+              external: true,
+              onPressed: () => unawaited(_openWeb('/settings')),
+            ),
+            const _ExportNotesRow(last: true),
+          ],
         ),
-        const _ExportNotesTile(),
         if (user != null)
-          ListTile(
-            key: const ValueKey<String>('settings-sign-out'),
-            leading: Icon(Symbols.logout_rounded, size: 20, color: c.error),
-            title: Text(l10n.settingsSignOut, style: TextStyle(color: c.error)),
-            onTap: () => signOutTapped(context, ref),
+          _Footer(
+            children: <Widget>[
+              PaperButton.destructive(
+                key: const ValueKey<String>('settings-sign-out'),
+                label: l10n.settingsSignOut,
+                size: PaperButtonSize.md,
+                focusGap: PaperWeb.gray900,
+                onPressed: () => signOutTapped(context, ref),
+              ),
+            ],
           ),
       ],
     );
   }
 }
 
-/// Copies every note to the clipboard as text.
-class _ExportNotesTile extends ConsumerWidget {
-  const _ExportNotesTile();
+/// Avatar 64 (`accentSoft` + initials) · name · email.
+class _Identity extends StatelessWidget {
+  const _Identity({required this.user});
+
+  final AppUser user;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return ListTile(
+    final name = user.displayName ?? user.email ?? '';
+    final initials = name.isEmpty ? '?' : name.characters.first.toUpperCase();
+    return Row(
+      children: <Widget>[
+        ExcludeSemantics(
+          child: Container(
+            width: 64,
+            height: 64,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: PaperWeb.accentSoft,
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              initials,
+              style: Theme.of(context).textTheme.headlineMedium
+                  ?.copyWith(color: PaperWeb.accentInk, letterSpacing: 0),
+            ),
+          ),
+        ),
+        const SizedBox(width: PaperSpacing.tw4),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                user.displayName ?? l10n.settingsDisplayName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelLarge
+                    ?.copyWith(color: PaperWeb.gray100),
+              ),
+              if (user.email != null)
+                Text(
+                  user.email!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: _xs(context, PaperWeb.gray400),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Copies every note to the clipboard as text; "Notes copied." shows
+/// inline in green for 2 s.
+class _ExportNotesRow extends ConsumerStatefulWidget {
+  const _ExportNotesRow({this.last = false});
+
+  final bool last;
+
+  @override
+  ConsumerState<_ExportNotesRow> createState() => _ExportNotesRowState();
+}
+
+class _ExportNotesRowState extends ConsumerState<_ExportNotesRow> {
+  Timer? _timer;
+  bool _copied = false;
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _copy() async {
+    final text = await ref.read(noteRepositoryProvider).exportAllAsText();
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!mounted) return;
+    setState(() => _copied = true);
+    _timer?.cancel();
+    _timer = Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _copied = false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return PaperListRow(
       key: const ValueKey<String>('settings-export-notes'),
-      title: Text(l10n.settingsExportNotes),
-      leading: const Icon(Symbols.content_copy_rounded, size: 20),
-      onTap: () async {
-        final text = await ref.read(noteRepositoryProvider).exportAllAsText();
-        await Clipboard.setData(ClipboardData(text: text));
-        if (context.mounted) _snack(context, l10n.settingsNotesCopied);
-      },
+      title: l10n.settingsExportNotes,
+      last: widget.last,
+      onTap: () => unawaited(_copy()),
+      trailing: _copied
+          ? Semantics(
+              liveRegion: true,
+              child: Text(
+                l10n.settingsNotesCopied,
+                style: _xs(context, PaperWeb.green400),
+              ),
+            )
+          : null,
     );
   }
 }
@@ -351,146 +430,30 @@ class _AppearanceSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final mode = ref.watch(themeModeProvider);
     final reduce = ref.watch(reduceMotionProvider);
-    return Padding(
-      padding: const EdgeInsets.all(PaperSpacing.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            l10n.settingsTheme,
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
-          const SizedBox(height: PaperSpacing.sm),
-          ThemeSelector(
-            mode: mode,
-            onChanged: ref.read(themeModeProvider.notifier).set,
-          ),
-          const SizedBox(height: PaperSpacing.xl),
-          Text(
-            l10n.settingsReduceMotion,
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
-          Text(
-            l10n.settingsReduceMotionBody,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          const SizedBox(height: PaperSpacing.sm),
-          SegmentedButton<bool>(
+    return _Rows(
+      children: <Widget>[
+        PaperListRow(
+          title: l10n.settingsReduceMotion,
+          description: l10n.settingsReduceMotionBody,
+          last: true,
+          stackBelowSm: true,
+          trailing: PaperSegmented<bool>(
             key: const ValueKey<String>('settings-reduce-motion'),
-            segments: <ButtonSegment<bool>>[
-              ButtonSegment(
+            segments: <PaperSegment<bool>>[
+              PaperSegment<bool>(
                 value: false,
-                label: Text(l10n.settingsReduceMotionSystem),
+                label: l10n.settingsReduceMotionSystem,
               ),
-              ButtonSegment(
+              PaperSegment<bool>(
                 value: true,
-                label: Text(l10n.settingsReduceMotionOn),
+                label: l10n.settingsReduceMotionOn,
               ),
             ],
-            selected: <bool>{reduce},
-            onSelectionChanged: (s) =>
-                ref.read(reduceMotionProvider.notifier).set(s.first),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// `ThemeSelector`: System / Light / Dark tiles (radio group, labelled by
-/// name, never by swatch). Switching is instant (motion #53).
-class ThemeSelector extends StatelessWidget {
-  const ThemeSelector({super.key, required this.mode, required this.onChanged});
-
-  final ThemeMode mode;
-  final ValueChanged<ThemeMode> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final c = context.paper;
-    Widget tile(ThemeMode m, String label, Color bg) {
-      final selected = m == mode;
-      return Semantics(
-        inMutuallyExclusiveGroup: true,
-        checked: selected,
-        button: true,
-        label: label,
-        excludeSemantics: true,
-        child: InkWell(
-          key: ValueKey<String>('theme-${m.name}'),
-          borderRadius: PaperRadii.borderLg,
-          onTap: () => onChanged(m),
-          child: Column(
-            children: <Widget>[
-              Container(
-                width: 120,
-                height: 88,
-                decoration: BoxDecoration(
-                  color: bg,
-                  borderRadius: PaperRadii.borderLg,
-                  border: Border.all(
-                    color: selected ? c.primary : c.border,
-                    width: selected ? 2 : 1,
-                  ),
-                ),
-                child: Stack(
-                  children: <Widget>[
-                    Positioned(
-                      left: 24,
-                      top: 16,
-                      right: 24,
-                      bottom: 0,
-                      child: Container(
-                        color: Colors.white,
-                        padding: const EdgeInsets.all(8),
-                        alignment: Alignment.topLeft,
-                        child: Container(
-                          height: 4,
-                          width: 40,
-                          color: PaperHighlightColor.blue.wash,
-                        ),
-                      ),
-                    ),
-                    if (selected)
-                      Positioned(
-                        right: 6,
-                        top: 6,
-                        child: CircleAvatar(
-                          radius: 10,
-                          backgroundColor: c.primary,
-                          child: Icon(
-                            Symbols.check_rounded,
-                            size: 14,
-                            color: c.onPrimary,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: PaperSpacing.xs),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                ),
-              ),
-            ],
+            selected: reduce,
+            onChanged: (v) => ref.read(reduceMotionProvider.notifier).set(v),
           ),
         ),
-      );
-    }
-
-    return Wrap(
-      spacing: PaperSpacing.md,
-      runSpacing: PaperSpacing.md,
-      children: <Widget>[
-        tile(ThemeMode.system, l10n.themeSystem, const Color(0xFF737373)),
-        tile(ThemeMode.light, l10n.themeLight, const Color(0xFFFAFAFA)),
-        tile(ThemeMode.dark, l10n.themeDark, const Color(0xFF0A0A0A)),
       ],
     );
   }
@@ -504,38 +467,56 @@ class _ReaderSection extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final prefs = ref.watch(readerPrefsProvider);
     final ctrl = ref.read(readerPrefsProvider.notifier);
-    return Column(
+    Widget toggle(
+      String key,
+      String label,
+      bool value,
+      ValueChanged<bool> on,
+    ) => PaperListRow(
+      title: label,
+      alignTop: true,
+      last: key == 'settings-single-key',
+      trailing: PaperCheckbox(
+        key: ValueKey<String>(key),
+        size: 20,
+        value: value,
+        semanticLabel: label,
+        focusGap: PaperWeb.gray900,
+        onChanged: (v) => on(v ?? false),
+      ),
+    );
+    return _Rows(
       children: <Widget>[
-        ListTile(
-          title: Text(l10n.settingsPanelStyle),
-          trailing: SegmentedButton<PanelStyle>(
+        PaperListRow(
+          title: l10n.settingsPanelStyle,
+          stackBelowSm: true,
+          trailing: PaperSegmented<PanelStyle>(
             key: const ValueKey<String>('settings-panel-style'),
-            showSelectedIcon: false,
-            segments: <ButtonSegment<PanelStyle>>[
-              ButtonSegment(
+            segments: <PaperSegment<PanelStyle>>[
+              PaperSegment<PanelStyle>(
                 value: PanelStyle.split,
-                label: Text(l10n.panelStyleSplit),
+                label: l10n.panelStyleSplit,
               ),
-              ButtonSegment(
+              PaperSegment<PanelStyle>(
                 value: PanelStyle.overlay,
-                label: Text(l10n.panelStyleOverlay),
+                label: l10n.panelStyleOverlay,
               ),
             ],
-            selected: <PanelStyle>{prefs.panelStyle},
-            onSelectionChanged: (s) => ctrl.setPanelStyle(s.first),
+            selected: prefs.panelStyle,
+            onChanged: ctrl.setPanelStyle,
           ),
         ),
-        SwitchListTile(
-          key: const ValueKey<String>('settings-auto-pen'),
-          title: Text(l10n.settingsAutoPen),
-          value: prefs.autoSwitchToPen,
-          onChanged: ctrl.setAutoSwitchToPen,
+        toggle(
+          'settings-auto-pen',
+          l10n.settingsAutoPen,
+          prefs.autoSwitchToPen,
+          ctrl.setAutoSwitchToPen,
         ),
-        SwitchListTile(
-          key: const ValueKey<String>('settings-single-key'),
-          title: Text(l10n.settingsSingleKeyShortcuts),
-          value: prefs.singleKeyShortcuts,
-          onChanged: ctrl.setSingleKeyShortcuts,
+        toggle(
+          'settings-single-key',
+          l10n.settingsSingleKeyShortcuts,
+          prefs.singleKeyShortcuts,
+          ctrl.setSingleKeyShortcuts,
         ),
       ],
     );
@@ -553,41 +534,57 @@ String _formatBytes(int bytes) {
   return '${v.toStringAsFixed(i == 0 ? 0 : 1)} ${units[i]}';
 }
 
-class _StorageSection extends ConsumerWidget {
+class _StorageSection extends ConsumerStatefulWidget {
   const _StorageSection();
 
-  Widget _clearCacheButton(BuildContext context) => OutlinedButton(
+  @override
+  ConsumerState<_StorageSection> createState() => _StorageSectionState();
+}
+
+class _StorageSectionState extends ConsumerState<_StorageSection> {
+  bool _cleared = false;
+
+  Widget _clearCacheButton(AppLocalizations l10n) => PaperButton.secondary(
     key: const ValueKey<String>('settings-clear-cache'),
+    label: l10n.storageClearCache,
+    focusGap: PaperWeb.gray900,
     onPressed: () {
       // Thumbnails and decoded images; never user data.
       PaintingBinding.instance.imageCache
         ..clear()
         ..clearLiveImages();
-      _snack(context, AppLocalizations.of(context).storageCacheCleared);
+      setState(() => _cleared = true);
     },
-    child: Text(AppLocalizations.of(context).storageClearCache),
   );
 
-  Future<void> _removeAll(
-    BuildContext context,
-    WidgetRef ref,
-    List<Paper> papers,
-  ) async {
+  Widget get _clearedLine => Semantics(
+    liveRegion: true,
+    child: Text(
+      AppLocalizations.of(context).storageCacheCleared,
+      style: _sm(context, PaperWeb.green400),
+    ),
+  );
+
+  Future<void> _removeAll(List<Paper> papers) async {
     final l10n = AppLocalizations.of(context);
-    final ok = await showDialog<bool>(
+    final ok = await showPaperDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.storageRemoveAllTitle),
-        content: Text(l10n.storageRemoveAllBody),
+      builder: (context) => PaperDialog(
+        title: l10n.storageRemoveAllTitle,
+        body: l10n.storageRemoveAllBody,
         actions: <Widget>[
-          TextButton(
+          PaperButton.secondary(
+            label: l10n.commonCancel,
             autofocus: true,
+            focusGap: PaperWeb.gray900,
             onPressed: () => Navigator.of(context).pop(false),
-            child: Text(l10n.commonCancel),
           ),
-          OutlinedButton(
+          PaperButton.destructive(
+            key: const ValueKey<String>('settings-remove-all-confirm'),
+            label: l10n.storageRemoveAll,
+            size: PaperButtonSize.md,
+            focusGap: PaperWeb.gray900,
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text(l10n.storageRemoveAll),
           ),
         ],
       ),
@@ -600,10 +597,8 @@ class _StorageSection extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final c = context.paper;
-    final t = Theme.of(context).textTheme;
     // Offline-only builds: every paper is the only copy on this device, so
     // there are no downloads to manage. Export notes moves here from the
     // (hidden) Account section.
@@ -611,74 +606,78 @@ class _StorageSection extends ConsumerWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          const _ExportNotesTile(),
-          Padding(
-            padding: const EdgeInsets.all(PaperSpacing.lg),
-            child: Wrap(children: <Widget>[_clearCacheButton(context)]),
+          const _Rows(children: <Widget>[_ExportNotesRow(last: true)]),
+          _Footer(
+            children: <Widget>[
+              _clearCacheButton(l10n),
+              if (_cleared) _clearedLine,
+            ],
           ),
         ],
       );
     }
-    final papers = ref.watch(downloadedPapersProvider).value ?? const <Paper>[];
+    final async = ref.watch(downloadedPapersProvider);
+    final papers = async.value ?? const <Paper>[];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            PaperSpacing.lg,
-            PaperSpacing.lg,
-            PaperSpacing.lg,
-            PaperSpacing.xs,
-          ),
-          child: Text(
-            l10n.storageDownloadedPapers(papers.length),
-            style: t.labelLarge,
-          ),
-        ),
-        if (papers.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: PaperSpacing.lg,
-              vertical: PaperSpacing.sm,
-            ),
-            child: Text(
-              l10n.storageNoDownloads,
-              style: t.bodySmall?.copyWith(color: c.textMuted),
-            ),
+        const SizedBox(height: PaperSpacing.tw2),
+        if (!async.hasValue && !async.hasError)
+          const Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: PaperSkeleton(width: 64, height: 12),
           )
         else
-          for (final p in papers)
-            ListTile(
-              key: ValueKey<String>('download-${p.id}'),
-              title: Text(
-                p.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              subtitle: _FileSize(path: p.localFilePath),
-              trailing: OutlinedButton(
-                onPressed: () => unawaited(
-                  ref.read(paperRepositoryProvider).removeDownload(p.id),
-                ),
-                child: Text(l10n.storageRemove),
-              ),
+          Text(
+            l10n.storageDownloadedPapers(papers.length),
+            style: _sm(context, PaperWeb.gray400),
+          ),
+        if (papers.isEmpty && async.hasValue)
+          Padding(
+            padding: const EdgeInsets.only(top: PaperSpacing.tw3),
+            child: Text(
+              l10n.storageNoDownloads,
+              style: _sm(context, PaperWeb.gray400),
             ),
-        Padding(
-          padding: const EdgeInsets.all(PaperSpacing.lg),
-          child: Wrap(
-            spacing: PaperSpacing.sm,
-            runSpacing: PaperSpacing.sm,
+          )
+        else if (papers.isNotEmpty)
+          _Rows(
             children: <Widget>[
-              OutlinedButton(
-                onPressed: papers.isEmpty
-                    ? null
-                    : () => unawaited(_removeAll(context, ref, papers)),
-                style: OutlinedButton.styleFrom(foregroundColor: c.error),
-                child: Text(l10n.storageRemoveAll),
-              ),
-              _clearCacheButton(context),
+              for (var i = 0; i < papers.length; i++)
+                PaperListRow(
+                  key: ValueKey<String>('download-${papers[i].id}'),
+                  title: papers[i].title,
+                  titleColor: PaperWeb.gray100,
+                  titleMaxLines: 1,
+                  descriptionWidget: _FileSize(path: papers[i].localFilePath),
+                  last: i == papers.length - 1,
+                  trailing: PaperButton.secondary(
+                    label: l10n.storageRemove,
+                    size: PaperButtonSize.xs,
+                    focusGap: PaperWeb.gray900,
+                    onPressed: () => unawaited(
+                      ref
+                          .read(paperRepositoryProvider)
+                          .removeDownload(papers[i].id),
+                    ),
+                  ),
+                ),
             ],
           ),
+        _Footer(
+          children: <Widget>[
+            PaperButton.destructive(
+              key: const ValueKey<String>('settings-remove-all'),
+              label: l10n.storageRemoveAll,
+              size: PaperButtonSize.md,
+              focusGap: PaperWeb.gray900,
+              onPressed: papers.isEmpty
+                  ? null
+                  : () => unawaited(_removeAll(papers)),
+            ),
+            _clearCacheButton(l10n),
+            if (_cleared) _clearedLine,
+          ],
         ),
       ],
     );
@@ -710,10 +709,15 @@ class _FileSizeState extends State<_FileSize> {
   @override
   Widget build(BuildContext context) => FutureBuilder<int?>(
     future: _size,
-    builder: (context, snap) => Text(
-      snap.data == null ? '' : _formatBytes(snap.data!),
-      style: PaperTypography.pageIndicator(context.paper),
-    ),
+    builder: (context, snap) {
+      if (snap.connectionState != ConnectionState.done) {
+        return const PaperSkeleton(width: 64, height: 12);
+      }
+      return Text(
+        snap.data == null ? '' : _formatBytes(snap.data!),
+        style: _xs(context, PaperWeb.gray400),
+      );
+    },
   );
 }
 
@@ -724,76 +728,102 @@ class _SyncSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     if (ref.watch(isGuestProvider)) {
-      return const SignInPrompt(feature: GuestFeature.sync, dense: true);
+      return const Padding(
+        padding: EdgeInsets.only(top: PaperSpacing.tw3),
+        child: SignInPrompt(feature: GuestFeature.sync, dense: true),
+      );
     }
     final status = ref.watch(syncStatusProvider).value ?? SyncStatus.idle;
     final replaced =
         ref.watch(replacedVersionsProvider).value ?? const <ReplacedVersion>[];
-    final canSync =
-        status.phase != SyncPhase.offline && status.phase != SyncPhase.syncing;
-    return Column(
+    final offline = status.phase == SyncPhase.offline;
+    final canSync = !offline && status.phase != SyncPhase.syncing;
+    final color = switch (status.phase) {
+      SyncPhase.synced => PaperWeb.green400,
+      SyncPhase.syncing => PaperWeb.accent,
+      SyncPhase.pending => PaperWeb.amber400,
+      SyncPhase.error => PaperWeb.red400,
+      SyncPhase.offline => PaperWeb.gray400,
+    };
+    return _Rows(
       children: <Widget>[
-        Row(
-          children: <Widget>[
-            const Expanded(child: SyncBadge(form: SyncBadgeForm.long)),
-            Padding(
-              padding: const EdgeInsets.only(right: PaperSpacing.md),
-              child: Tooltip(
-                message: status.phase == SyncPhase.offline
-                    ? l10n.settingsNeedsConnection
-                    : '',
-                child: OutlinedButton(
-                  onPressed: canSync
-                      ? () => unawaited(ref.read(syncServiceProvider).syncNow())
-                      : null,
-                  child: Text(l10n.settingsSyncNow),
+        PaperListRow(
+          key: const ValueKey<String>('settings-sync-status'),
+          title: l10n.settingsSectionSync,
+          descriptionWidget: Semantics(
+            liveRegion: true,
+            child: Row(
+              children: <Widget>[
+                if (status.phase == SyncPhase.syncing) ...<Widget>[
+                  const PaperSpinner(),
+                  const SizedBox(width: PaperSpacing.tw1_5),
+                ],
+                Flexible(
+                  child: Text(
+                    offline
+                        ? '${syncLongText(context, status)} · '
+                              '${l10n.settingsNeedsConnection}'
+                        : syncLongText(context, status),
+                    style: _xs(context, color),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
+          trailing: PaperButton.secondary(
+            label: l10n.settingsSyncNow,
+            focusGap: PaperWeb.gray900,
+            onPressed: canSync
+                ? () => unawaited(ref.read(syncServiceProvider).syncNow())
+                : null,
+          ),
         ),
-        ListTile(
-          title: Text(l10n.syncReplacedVersions(replaced.length)),
-          trailing: const Icon(Symbols.chevron_right_rounded),
-          onTap: () => unawaited(showSyncSheet(context)),
+        PaperListRow(
+          title: l10n.syncReplacedVersions(replaced.length),
+          trailing: PaperButton.ghost(
+            label: l10n.syncReview,
+            size: PaperButtonSize.xs,
+            focusGap: PaperWeb.gray900,
+            onPressed: () => unawaited(showSyncSheet(context)),
+          ),
         ),
-        ListTile(
-          title: Text(l10n.syncHowItWorksTitle),
-          trailing: const Icon(Symbols.chevron_right_rounded),
-          onTap: () => unawaited(showSyncHowItWorks(context)),
+        _LinkRow(
+          label: l10n.syncHowItWorksTitle,
+          last: true,
+          onPressed: () => unawaited(showSyncHowItWorks(context)),
         ),
       ],
     );
   }
 }
 
-class _AboutSection extends ConsumerWidget {
+class _AboutSection extends StatelessWidget {
   const _AboutSection();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final online = ref.watch(isOnlineProvider).value ?? true;
-    return Column(
+    return _Rows(
       children: <Widget>[
-        ListTile(title: Text(l10n.aboutVersion(kAppVersion))),
-        ListTile(
-          title: Text(l10n.aboutTerms),
-          trailing: const Icon(Symbols.open_in_new_rounded, size: 18),
-          enabled: online,
-          onTap: () => unawaited(_openWeb('/terms')),
+        PaperListRow(
+          title: l10n.aboutVersion(kAppVersion),
+          titleColor: PaperWeb.gray400,
         ),
-        ListTile(
-          title: Text(l10n.aboutPrivacy),
-          trailing: const Icon(Symbols.open_in_new_rounded, size: 18),
-          enabled: online,
-          onTap: () => unawaited(_openWeb('/privacy')),
+        _LinkRow(
+          label: l10n.aboutTerms,
+          external: true,
+          onPressed: () => unawaited(_openWeb('/terms')),
         ),
-        ListTile(
+        _LinkRow(
+          label: l10n.aboutPrivacy,
+          external: true,
+          onPressed: () => unawaited(_openWeb('/privacy')),
+        ),
+        _LinkRow(
           key: const ValueKey<String>('settings-licenses'),
-          title: Text(l10n.aboutLicenses),
-          trailing: const Icon(Symbols.chevron_right_rounded),
-          onTap: () => showLicensePage(
+          label: l10n.aboutLicenses,
+          last: true,
+          onPressed: () => showLicensePage(
             context: context,
             applicationName: l10n.appName,
             applicationVersion: kAppVersion,

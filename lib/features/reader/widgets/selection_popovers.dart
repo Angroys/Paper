@@ -3,18 +3,23 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../core/build_flags.dart';
 import '../../../core/core_providers.dart';
 import '../../../domain/domain.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../theme/theme_x.dart';
+import '../../../theme/paper_tokens.dart';
+import '../../../ui/ui.dart';
 import '../reader_controller.dart';
 import 'popover.dart';
 
-/// `SelectionPopover`: colours · Explain · Note · Copy (reader spec).
-class SelectionPopover extends ConsumerWidget {
+/// How long "Copied." replaces the Copy label (reader.md §4).
+const Duration kCopiedLabelDuration = Duration(milliseconds: 1500);
+
+/// `SelectionPopover` (components.md §10.1): **Explain** (primary) · 6
+/// swatches · divider · **Note** · **Copy**. Explain stays enabled offline
+/// with a trailing `cloud-off` 14 and a tooltip.
+class SelectionPopover extends ConsumerStatefulWidget {
   const SelectionPopover({
     super.key,
     required this.paperId,
@@ -25,8 +30,33 @@ class SelectionPopover extends ConsumerWidget {
   final ReaderTextSelection selection;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SelectionPopover> createState() => _SelectionPopoverState();
+}
+
+class _SelectionPopoverState extends ConsumerState<SelectionPopover> {
+  Timer? _copied;
+
+  @override
+  void dispose() {
+    _copied?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _copy() async {
+    await Clipboard.setData(ClipboardData(text: widget.selection.text));
+    if (!mounted) return;
+    _copied?.cancel();
+    setState(() {
+      _copied = Timer(kCopiedLabelDuration, () {
+        if (mounted) setState(() => _copied = null);
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final paperId = widget.paperId;
     final ctrl = ref.read(readerControllerProvider(paperId).notifier);
     final color = ref.watch(
       readerControllerProvider(paperId).select((s) => s.highlightColor),
@@ -37,52 +67,48 @@ class SelectionPopover extends ConsumerWidget {
     final online = ref.watch(isOnlineProvider).value ?? true;
     // Offline-only builds have no AI: no Explain action at all.
     final ai = !ref.watch(offlineOnlyProvider);
+    final copied = _copied?.isActive ?? false;
     return PopoverBar(
       children: <Widget>[
+        if (ai)
+          PopoverAction(
+            label: l10n.selectionExplain,
+            emphasized: true,
+            tooltip: online ? null : l10n.selectionExplainOffline,
+            trailing: online
+                ? null
+                : const PaperIcon(
+                    PaperIcons.cloudOff,
+                    size: 14,
+                    color: PaperWeb.indigo950,
+                  ),
+            onPressed: hasText
+                ? () => unawaited(ctrl.explainSelection())
+                : null,
+          ),
         HighlightSwatches(
           checked: color,
           enabled: hasText,
           onPick: (c) => unawaited(ctrl.highlightSelection(c)),
         ),
         const PopoverDivider(),
-        if (ai)
-          PopoverAction(
-            icon: Symbols.auto_awesome_rounded,
-            label: l10n.selectionExplain,
-            emphasized: true,
-            tooltip: online ? null : l10n.selectionExplainOffline,
-            trailing: online
-                ? null
-                : Padding(
-                    padding: const EdgeInsets.only(left: 4),
-                    child: Icon(
-                      Symbols.cloud_off_rounded,
-                      size: 14,
-                      color: context.paper.textMuted,
-                    ),
-                  ),
-            onPressed: hasText
-                ? () => unawaited(ctrl.explainSelection())
-                : null,
-          ),
         PopoverAction(
-          icon: Symbols.sticky_note_2_rounded,
           label: l10n.selectionNote,
           onPressed: () => unawaited(ctrl.noteForSelection()),
         ),
         PopoverAction(
-          icon: Symbols.content_copy_rounded,
-          label: l10n.selectionCopy,
-          onPressed: hasText
-              ? () => unawaited(copySelection(context, ref, paperId))
-              : null,
+          key: const ValueKey<String>('selection-copy'),
+          label: copied ? l10n.selectionCopied : l10n.selectionCopy,
+          onPressed: hasText ? () => unawaited(_copy()) : null,
         ),
       ],
     );
   }
 }
 
-/// Copies the current selection and confirms with `selectionCopied`.
+/// Copies the current selection (the `Mod+C` shortcut) and confirms with a
+/// plain `selectionCopied` toast (the popover's Copy button swaps its label
+/// instead).
 Future<void> copySelection(
   BuildContext context,
   WidgetRef ref,
@@ -90,14 +116,18 @@ Future<void> copySelection(
 ) async {
   final sel = ref.read(readerControllerProvider(paperId)).selection;
   if (sel == null) return;
-  final messenger = ScaffoldMessenger.maybeOf(context);
-  final copied = AppLocalizations.of(context).selectionCopied;
+  final l10n = AppLocalizations.of(context);
   await Clipboard.setData(ClipboardData(text: sel.text));
-  messenger?.showSnackBar(SnackBar(content: Text(copied)));
+  if (!context.mounted) return;
+  showPaperToast(
+    context,
+    message: l10n.selectionCopied,
+    dismissTooltip: l10n.commonDismiss,
+  );
 }
 
-/// `HighlightPicker` on an existing highlight: colours (current checked) ·
-/// Note · Explain · Delete.
+/// `HighlightPicker` on an existing highlight: 6 swatches (current checked)
+/// · divider · Note · Explain (primary) · Delete (destructive text).
 class HighlightPicker extends ConsumerWidget {
   const HighlightPicker({
     super.key,
@@ -121,20 +151,18 @@ class HighlightPicker extends ConsumerWidget {
         ),
         const PopoverDivider(),
         PopoverAction(
-          icon: Symbols.sticky_note_2_rounded,
           label: l10n.selectionNote,
           onPressed: () => ctrl.noteForHighlight(highlight),
         ),
         if (ai)
           PopoverAction(
-            icon: Symbols.auto_awesome_rounded,
             label: l10n.selectionExplain,
             emphasized: true,
             onPressed: () => ctrl.explainHighlight(highlight),
           ),
         PopoverAction(
-          icon: Symbols.delete_rounded,
-          label: l10n.highlightDelete,
+          label: l10n.commonDelete,
+          tooltip: l10n.highlightDelete,
           destructive: true,
           onPressed: () => unawaited(ctrl.deleteHighlight(highlight)),
         ),

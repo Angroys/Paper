@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:material_symbols_icons/symbols.dart';
 
 import '../../auth/auth_providers.dart';
 import '../../core/build_flags.dart';
 import '../../domain/domain.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/paper_tokens.dart';
-import '../../theme/theme_x.dart';
+import '../../ui/ui.dart';
 import '../auth/sign_in_prompt.dart';
+import 'ai_states.dart';
 import 'highlights_tab.dart';
 import 'panel_tab.dart';
 
@@ -136,22 +136,31 @@ class ReaderSidePanel extends ConsumerWidget {
             newResultTabs: newResultTabs,
           ),
           Expanded(
-            child: _TabBodies(
-              tab: tab,
-              builder: (context, t) {
-                if (guest && t == ReaderPanelTab.glossary) {
-                  return const SignInPrompt(feature: GuestFeature.glossary);
-                }
-                if (guest && t == ReaderPanelTab.explanation) {
-                  return const SignInPrompt(feature: GuestFeature.explanation);
-                }
-                final slot = slots[t];
-                if (slot != null) return slot(context, panel);
-                if (t == ReaderPanelTab.highlights) {
-                  return HighlightsTab(panel: panel);
-                }
-                return PanelTabPlaceholder(tab: t);
-              },
+            // IME: only the panel body lifts (side-panel.md §5); the reader
+            // Scaffold never resizes.
+            child: Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.viewInsetsOf(context).bottom,
+              ),
+              child: _TabBodies(
+                tab: tab,
+                builder: (context, t) {
+                  if (guest && t == ReaderPanelTab.glossary) {
+                    return const SignInPrompt(feature: GuestFeature.glossary);
+                  }
+                  if (guest && t == ReaderPanelTab.explanation) {
+                    return const SignInPrompt(
+                      feature: GuestFeature.explanation,
+                    );
+                  }
+                  final slot = slots[t];
+                  if (slot != null) return slot(context, panel);
+                  if (t == ReaderPanelTab.highlights) {
+                    return HighlightsTab(panel: panel);
+                  }
+                  return PanelTabPlaceholder(tab: t);
+                },
+              ),
             ),
           ),
         ],
@@ -160,8 +169,11 @@ class ReaderSidePanel extends ConsumerWidget {
   }
 }
 
-/// `PanelTabBar`: text tabs + close. Selected = weight 600 + 3dp indicator
-/// (not colour only); new-result dot 7dp.
+/// `PanelTabBar`: the web panel header (side-panel.md §2, components
+/// §12.1): `px-3 py-2`, 40 + 1px gray-800 bottom border, gray-950 fill.
+/// Left: `PaperTabs` (24 tall ghost tabs, selected accent-soft /
+/// accent-ink, 6px accent "new result" dot). Right: the 32 hide button
+/// (`panel-hide.svg` 20, `-m-1`), 8 after the tabs.
 class PanelTabBar extends StatelessWidget {
   const PanelTabBar({
     super.key,
@@ -171,6 +183,9 @@ class PanelTabBar extends StatelessWidget {
     this.newResultTabs = const <ReaderPanelTab>{},
     this.tabs = ReaderPanelTab.values,
   });
+
+  /// Header height without its 1px bottom border.
+  static const double height = 40;
 
   final ReaderPanelTab tab;
   final ValueChanged<ReaderPanelTab> onTabChanged;
@@ -182,119 +197,58 @@ class PanelTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.paper;
     final l10n = AppLocalizations.of(context);
-    final t = Theme.of(context).textTheme;
+    final right = MediaQuery.viewPaddingOf(context).right;
     return DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: c.border)),
+      decoration: const BoxDecoration(
+        color: PaperWeb.gray950,
+        border: Border(bottom: BorderSide(color: PaperWeb.gray800)),
       ),
-      child: SizedBox(
-        height: 48,
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: <Widget>[
-                    for (final t2 in tabs)
-                      _Tab(
-                        key: ValueKey<String>('panel-tab-${t2.name}'),
-                        label: panelTabLabel(l10n, t2),
-                        selected: t2 == tab,
-                        dot: newResultTabs.contains(t2) && t2 != tab,
-                        dotLabel: l10n.panelTabNewResult,
-                        style: t.labelLarge,
-                        onTap: () => onTabChanged(t2),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            IconButton(
-              tooltip: l10n.panelClose,
-              onPressed: onClose,
-              icon: const Icon(Symbols.close_rounded, size: PaperIconSize.md),
-            ),
-          ],
+      child: Padding(
+        // 40 + the 1px bottom border = 41.
+        padding: EdgeInsets.only(
+          left: PaperSpacing.tw3,
+          right: PaperSpacing.tw3 + right,
+          bottom: 1,
         ),
-      ),
-    );
-  }
-}
-
-class _Tab extends StatelessWidget {
-  const _Tab({
-    super.key,
-    required this.label,
-    required this.selected,
-    required this.dot,
-    required this.dotLabel,
-    required this.style,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final bool dot;
-  final String dotLabel;
-  final TextStyle? style;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.paper;
-    return Semantics(
-      selected: selected,
-      button: true,
-      label: dot ? '$label, $dotLabel' : label,
-      excludeSemantics: true,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: PaperSpacing.md),
-          child: Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.center,
+        child: SizedBox(
+          height: height,
+          child: Row(
             children: <Widget>[
-              Text(
-                label,
-                style: style?.copyWith(
-                  fontSize: 14,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                  color: selected ? c.textPrimary : c.textSecondary,
-                ),
-              ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: SizedBox(
-                  height: 3,
-                  child: selected
-                      ? DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: c.primary,
-                            borderRadius: PaperRadii.borderFull,
-                          ),
-                        )
-                      : null,
-                ),
-              ),
-              if (dot)
-                Positioned(
-                  top: 10,
-                  right: -8,
-                  child: Container(
-                    width: 7,
-                    height: 7,
-                    decoration: BoxDecoration(
-                      color: c.primary,
-                      shape: BoxShape.circle,
-                    ),
+              Expanded(
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: PaperTabs(
+                    tabs: <PaperTab>[
+                      for (final t in tabs)
+                        PaperTab(
+                          key: ValueKey<String>('panel-tab-${t.name}'),
+                          label: panelTabLabel(l10n, t),
+                          showDot: newResultTabs.contains(t) && t != tab,
+                        ),
+                    ],
+                    selectedIndex: tabs.indexOf(tab),
+                    onSelected: (i) => onTabChanged(tabs[i]),
+                    dotSemanticLabel: l10n.panelTabNewResult,
                   ),
                 ),
+              ),
+              const SizedBox(width: PaperSpacing.tw2),
+              // `-m-1`: a 32 box laid out in 24.
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: OverflowBox(
+                  maxWidth: 32,
+                  maxHeight: 32,
+                  child: PaperIconButton(
+                    key: const ValueKey<String>('panel-hide'),
+                    tooltip: l10n.panelClose,
+                    icon: const PaperIcon(PaperIcons.panelHide, size: 20),
+                    onPressed: onClose,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -389,32 +343,8 @@ class PanelTabPlaceholder extends StatelessWidget {
         l10n.explanationEmptyTitle,
         l10n.explanationEmptyBody,
       ),
-      ReaderPanelTab.highlights => (l10n.panelTabHighlights, ''),
+      ReaderPanelTab.highlights => (null, l10n.readerFirstHighlightHint),
     };
-    final c = context.paper;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(PaperSpacing.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleSmall,
-              textAlign: TextAlign.center,
-            ),
-            if (body.isNotEmpty) ...<Widget>[
-              const SizedBox(height: PaperSpacing.sm),
-              Text(
-                body,
-                style: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(color: c.textMuted),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
+    return PanelEmptyState(title: title, body: body);
   }
 }
